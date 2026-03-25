@@ -1,0 +1,208 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "qft-graph"
+    }
+  ],
+  "settings": {
+    // Python
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+    "python.analysis.extraPaths": ["${workspaceFolder}/src"],
+    "python.autoComplete.extraPaths": ["${workspaceFolder}/src"],
+
+    // Terminal
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    "terminal.integrated.env.windows": {
+      "PYTHONPATH": "${workspaceFolder}/src"
+    },
+    "terminal.integrated.env.linux": {
+      "PYTHONPATH": "${workspaceFolder}/src"
+    },
+
+    // Editor
+    "editor.formatOnSave": true,
+    "editor.rulers": [100],
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+
+    // Testing
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["tests", "-v", "--tb=short"],
+
+    // File associations
+    "files.associations": {
+      "*.yaml": "yaml",
+      "*.yml": "yaml"
+    },
+
+    // Exclude clutter from explorer
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/*.pyc": true,
+      "**/*.egg-info": true,
+      ".eggs": true,
+      "build": true,
+      "dist": true
+    },
+
+    // Ruff (linter/formatter)
+    "[python]": {
+      "editor.defaultFormatter": "charliermarsh.ruff",
+      "editor.codeActionsOnSave": {
+        "source.fixAll.ruff": "explicit",
+        "source.organizeImports.ruff": "explicit"
+      }
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "charliermarsh.ruff",
+      "ms-toolsai.jupyter",
+      "redhat.vscode-yaml"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Generate MC Data (16x16)",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/scripts/generate_mc_data.py",
+        "args": [
+          "--dimensions", "16", "16",
+          "--mass_squared", "-0.5",
+          "--coupling", "0.5",
+          "--n_configs", "5000"
+        ],
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "Generate MC Data (8x8, quick)",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/scripts/generate_mc_data.py",
+        "args": [
+          "--dimensions", "8", "8",
+          "--mass_squared", "-0.5",
+          "--coupling", "0.5",
+          "--n_configs", "1000"
+        ],
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "Train (default config)",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/scripts/train.py",
+        "args": [
+          "--data", "data/mc_configs/phi4_16x16_m2=-0.5_lam=0.5/mc_data.pt",
+          "--config", "configs/defaults.yaml",
+          "--experiment_name", "dev_run",
+          "--device", "cpu"
+        ],
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "Evaluate",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/scripts/evaluate.py",
+        "args": [
+          "--checkpoint", "experiments/runs/dev_run/checkpoint_final.pt",
+          "--data", "data/mc_configs/phi4_16x16_m2=-0.5_lam=0.5/mc_data.pt",
+          "--config", "configs/defaults.yaml"
+        ],
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "Coupling Sweep (8x8)",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/scripts/sweep.py",
+        "args": [
+          "--dimensions", "8", "8",
+          "--m2_min", "-1.0",
+          "--m2_max", "0.0",
+          "--m2_steps", "15",
+          "--n_configs", "1000"
+        ],
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "Run Tests",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "pytest",
+        "args": ["tests/", "-v", "--tb=short"],
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "Debug Current File",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${file}",
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+        "console": "integratedTerminal"
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Install (dev mode)",
+        "type": "shell",
+        "command": "pip install -e \".[dev]\"",
+        "options": { "cwd": "${workspaceFolder}" },
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Run Tests",
+        "type": "shell",
+        "command": "python -m pytest tests/ -v --tb=short",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": { "PYTHONPATH": "${workspaceFolder}/src" }
+        },
+        "group": { "kind": "test", "isDefault": true },
+        "problemMatcher": []
+      },
+      {
+        "label": "Generate MC Data (all sizes)",
+        "type": "shell",
+        "command": "python scripts/generate_mc_data.py --dimensions 8 8 --n_configs 5000 && python scripts/generate_mc_data.py --dimensions 16 16 --n_configs 5000 && python scripts/generate_mc_data.py --dimensions 32 32 --n_configs 5000",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": { "PYTHONPATH": "${workspaceFolder}/src" }
+        },
+        "group": "none",
+        "problemMatcher": []
+      },
+      {
+        "label": "Lint (ruff)",
+        "type": "shell",
+        "command": "ruff check src/ scripts/ tests/",
+        "options": { "cwd": "${workspaceFolder}" },
+        "problemMatcher": []
+      }
+    ]
+  }
+}
