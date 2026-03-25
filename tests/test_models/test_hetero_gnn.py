@@ -59,7 +59,6 @@ class TestHeteroGNN:
 
     def test_deterministic(self, graph_builder, sample_config, model_config, small_lattice):
         """Same input should produce same output."""
-        data = graph_builder.build({"scalar": sample_config})
         model = HeteroGNN(
             config=model_config,
             lattice_dim=small_lattice.dimension(),
@@ -67,13 +66,16 @@ class TestHeteroGNN:
         )
         model.eval()
 
+        # Build fresh data each time since forward() mutates node features in-place
         torch.manual_seed(42)
+        data1 = graph_builder.build({"scalar": sample_config})
         with torch.no_grad():
-            out1 = model(data)["energy"]
+            out1 = model(data1)["energy"]
 
         torch.manual_seed(42)
+        data2 = graph_builder.build({"scalar": sample_config})
         with torch.no_grad():
-            out2 = model(data)["energy"]
+            out2 = model(data2)["energy"]
 
         assert torch.allclose(out1, out2)
 

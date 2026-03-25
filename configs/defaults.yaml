@@ -6,7 +6,7 @@ lattice:
   spacing: 1.0
   boundary: periodic
 
-field:
+scalar_field:
   mass_squared: -0.5
   coupling: 0.5
   initialization: hot

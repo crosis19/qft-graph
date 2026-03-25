@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as dataclass_field
 from pathlib import Path
 from typing import Any
 
@@ -68,11 +68,11 @@ class TrainingConfig:
 class ExperimentConfig:
     """Top-level experiment configuration composing all sub-configs."""
 
-    lattice: LatticeConfig = field(default_factory=LatticeConfig)
-    field: ScalarFieldConfig = field(default_factory=ScalarFieldConfig)
-    mc: MCConfig = field(default_factory=MCConfig)
-    model: ModelConfig = field(default_factory=ModelConfig)
-    training: TrainingConfig = field(default_factory=TrainingConfig)
+    lattice: LatticeConfig = dataclass_field(default_factory=LatticeConfig)
+    scalar_field: ScalarFieldConfig = dataclass_field(default_factory=ScalarFieldConfig)
+    mc: MCConfig = dataclass_field(default_factory=MCConfig)
+    model: ModelConfig = dataclass_field(default_factory=ModelConfig)
+    training: TrainingConfig = dataclass_field(default_factory=TrainingConfig)
     device: str = "cuda"
     experiment_name: str = "default"
 

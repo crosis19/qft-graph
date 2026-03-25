@@ -41,19 +41,19 @@ def main() -> None:
     if args.dimensions is not None:
         overrides["lattice.dimensions"] = args.dimensions
     if args.mass_squared is not None:
-        overrides["field.mass_squared"] = args.mass_squared
+        overrides["scalar_field.mass_squared"] = args.mass_squared
     if args.coupling is not None:
-        overrides["field.coupling"] = args.coupling
+        overrides["scalar_field.coupling"] = args.coupling
 
     config = load_config(args.config, overrides if overrides else None)
 
     set_seed(config.mc.seed)
     logger.info("Config: lattice=%s, m2=%.3f, lam=%.3f",
-                config.lattice.dimensions, config.field.mass_squared, config.field.coupling)
+                config.lattice.dimensions, config.scalar_field.mass_squared, config.scalar_field.coupling)
 
     # Setup
     lattice = HypercubicLattice(LatticeConfig(**config.lattice))
-    field_config = ScalarFieldConfig(**config.field)
+    field_config = ScalarFieldConfig(**config.scalar_field)
     action = Phi4Action(lattice, field_config)
     mc_config = MCConfig(**config.mc)
     sampler = MetropolisSampler(action, mc_config)
@@ -71,7 +71,7 @@ def main() -> None:
 
     # Save
     dims_str = "x".join(str(d) for d in config.lattice.dimensions)
-    name = f"phi4_{dims_str}_m2={config.field.mass_squared}_lam={config.field.coupling}"
+    name = f"phi4_{dims_str}_m2={config.scalar_field.mass_squared}_lam={config.scalar_field.coupling}"
     out_dir = Path(args.output) / name
     out_dir.mkdir(parents=True, exist_ok=True)
 

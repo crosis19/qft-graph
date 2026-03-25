@@ -39,6 +39,17 @@ class Phi4Action(Action):
         # Number of forward neighbors per site = d (for kinetic term, avoid double-counting)
         self._n_forward_edges = lattice.num_sites() * self.d
 
+        # Precompute per-site neighbor list: (nsites, 2*d) for fast delta_action
+        n_neighbors = 2 * self.d
+        self._neighbor_table = torch.zeros(
+            lattice.num_sites(), n_neighbors, dtype=torch.long
+        )
+        count = torch.zeros(lattice.num_sites(), dtype=torch.long)
+        for i in range(len(src)):
+            s = src[i].item()
+            self._neighbor_table[s, count[s]] = dst[i]
+            count[s] += 1
+
     def __call__(self, phi: torch.Tensor) -> torch.Tensor:
         """Compute total Euclidean action S_E[phi].
 
@@ -53,8 +64,9 @@ class Phi4Action(Action):
     def local_action(self, phi: torch.Tensor) -> torch.Tensor:
         """Compute per-site action density.
 
-        The kinetic term uses only forward differences to avoid double-counting:
-        (1/2) sum_{mu>0} (phi(x+mu) - phi(x))^2 / a^2
+        Uses symmetric kinetic term: assign half of each link's energy to each end.
+        For each edge (x, x+mu): each endpoint gets (1/4)(phi(x+mu)-phi(x))^2/a^2.
+        Summing over all directed edges with factor 1/4 = (1/2 for link) * (1/2 split).
 
         Args:
             phi: Field configuration of shape (num_sites,).
@@ -64,14 +76,15 @@ class Phi4Action(Action):
         """
         nsites = self.lattice.num_sites()
 
-        # Kinetic term: forward differences only (first half of edge list)
-        # neighbor_pairs returns +mu then -mu for each direction
-        fwd_src = self._src[: self._n_forward_edges]
-        fwd_dst = self._dst[: self._n_forward_edges]
-        diff = phi[fwd_dst] - phi[fwd_src]
-        # Scatter kinetic energy to source sites
+        # Kinetic: use ALL directed edges, factor 1/4 per edge
+        # Each undirected link {x, x+mu} appears as two directed edges.
+        # The link energy is (1/2)(dphi)^2/a^2.
+        # With two directed copies, each carrying factor 1/4, the source
+        # site accumulates (1/4)(dphi)^2/a^2 from each direction.
+        # Site x has 2d directed edges as source -> gets d * (1/2)(dphi)^2/a^2 total. Correct.
+        diff = phi[self._dst] - phi[self._src]
         kinetic = torch.zeros(nsites, dtype=phi.dtype, device=phi.device)
-        kinetic.scatter_add_(0, fwd_src, 0.5 * diff**2 / self.a**2)
+        kinetic.scatter_add_(0, self._src, 0.25 * diff**2 / self.a**2)
 
         # Mass term: (1/2) m^2 phi^2
         mass = 0.5 * self.m_sq * phi**2
@@ -120,41 +133,23 @@ class Phi4Action(Action):
             Scalar tensor Delta S = S_new - S_old.
         """
         old_val = phi[site]
-
-        # Find neighbors of this site
-        mask_src = self._src == site
-        neighbor_indices = self._dst[mask_src]
-        neighbor_vals = phi[neighbor_indices]
-        neighbor_sum = neighbor_vals.sum()
-
-        # Old local action contribution
-        s_old = self._ad * (
-            0.5 * ((neighbor_sum - 2 * self.d * old_val) * (-old_val)) / self.a**2
-            + 0.5 * self.m_sq * old_val**2
-            + self.lam * old_val**4
-        )
-
-        # Actually, let's compute it cleanly
-        # Local action at site x: kinetic involves phi(x) and all its neighbors
-        # S_local(x) = a^d * [ sum_mu (phi(x) - phi(x+mu))^2 / (2*a^2) + m^2/2 * phi(x)^2 + lam * phi(x)^4 ]
-        # But this double counts kinetic with neighbors. For delta, we need:
-        # Delta S = sum over all terms involving phi(x)
+        neighbor_vals = phi[self._neighbor_table[site]]
 
         new_val_t = torch.tensor(new_value, dtype=phi.dtype, device=phi.device)
 
-        # Terms involving phi(x): kinetic with each neighbor + mass + quartic
-        kinetic_old = 0.5 * ((old_val - neighbor_vals) ** 2).sum() / self.a**2
-        kinetic_new = 0.5 * ((new_val_t - neighbor_vals) ** 2).sum() / self.a**2
+        # Kinetic: site x "owns" 1/4 of each directed edge where it's the source.
+        # With 2d directed edges from x, that's (1/4)*sum_neighbors (phi(x)-phi(nb))^2/a^2.
+        # But changing phi(x) also affects edges where x is the *destination*.
+        # By symmetry of the undirected links, the total change is:
+        # Delta_kinetic = (1/2) * sum_neighbors [(new-nb)^2 - (old-nb)^2] / a^2
+        diff_old = old_val - neighbor_vals
+        diff_new = new_val_t - neighbor_vals
+        kinetic_delta = 0.5 * (diff_new.dot(diff_new) - diff_old.dot(diff_old)) / self.a**2
 
-        mass_old = 0.5 * self.m_sq * old_val**2
-        mass_new = 0.5 * self.m_sq * new_val_t**2
+        # Mass: 0.5 * m^2 * phi^2
+        mass_delta = 0.5 * self.m_sq * (new_val_t**2 - old_val**2)
 
-        quartic_old = self.lam * old_val**4
-        quartic_new = self.lam * new_val_t**4
+        # Quartic: lambda * phi^4
+        quartic_delta = self.lam * (new_val_t**4 - old_val**4)
 
-        delta = self._ad * (
-            (kinetic_new - kinetic_old)
-            + (mass_new - mass_old)
-            + (quartic_new - quartic_old)
-        )
-        return delta
+        return self._ad * (kinetic_delta + mass_delta + quartic_delta)
