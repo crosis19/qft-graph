@@ -1,0 +1,37 @@
+device: cuda
+experiment_name: default
+
+lattice:
+  dimensions: [16, 16]
+  spacing: 1.0
+  boundary: periodic
+
+field:
+  mass_squared: -0.5
+  coupling: 0.5
+  initialization: hot
+
+mc:
+  n_configs: 10000
+  n_thermalization: 1000
+  n_sweeps_between: 10
+  step_size: 1.0
+  seed: 42
+
+model:
+  hidden_dim: 64
+  n_mp_blocks: 3
+  encoder_layers: 2
+  dropout: 0.0
+  activation: gelu
+  readout: energy
+
+training:
+  epochs: 200
+  batch_size: 32
+  lr: 0.001
+  weight_decay: 0.00001
+  scheduler: cosine
+  loss: energy_matching
+  checkpoint_every: 20
+  seed: 42

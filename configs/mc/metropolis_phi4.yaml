@@ -1,0 +1,6 @@
+mc:
+  n_configs: 10000
+  n_thermalization: 1000
+  n_sweeps_between: 10
+  step_size: 1.0
+  seed: 42
