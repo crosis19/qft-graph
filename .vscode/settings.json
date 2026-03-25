@@ -1,5 +1,5 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.defaultInterpreterPath": "C:\\Users\\joshu\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
   "python.analysis.extraPaths": ["${workspaceFolder}/src"],
   "python.autoComplete.extraPaths": ["${workspaceFolder}/src"],
   "python.testing.pytestEnabled": true,
