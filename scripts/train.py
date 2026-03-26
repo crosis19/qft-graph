@@ -58,8 +58,7 @@ def main() -> None:
     actions = mc_data["actions"]
 
     # Setup lattice and graph builder
-    lattice_config = LatticeConfig(**config.lattice)
-    lattice = HypercubicLattice(lattice_config)
+    lattice = HypercubicLattice(config.lattice)
     scalar_field = ScalarField()
     builder = HeteroGraphBuilder(lattice, [scalar_field])
 
@@ -77,9 +76,8 @@ def main() -> None:
     logger.info("Train: %d, Val: %d", len(train_dataset), len(val_dataset))
 
     # Create model
-    model_config = ModelConfig(**config.model)
     model = HeteroGNN(
-        config=model_config,
+        config=config.model,
         lattice_dim=lattice.dimension(),
         field_types={"scalar": scalar_field.dof_per_site()},
         lattice_spacing=lattice.lattice_spacing(),
@@ -88,7 +86,7 @@ def main() -> None:
     logger.info("Model parameters: %d", n_params)
 
     # Train
-    training_config = TrainingConfig(**config.training)
+    training_config = config.training
     experiment_dir = Path("experiments/runs") / config.experiment_name
     trainer = Trainer(
         model=model,

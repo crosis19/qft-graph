@@ -97,7 +97,15 @@ def load_config(
         schema = OmegaConf.merge(schema, file_conf)
 
     if overrides:
-        override_conf = OmegaConf.create(overrides)
-        schema = OmegaConf.merge(schema, override_conf)
+        # Convert dotted keys like "mc.n_configs" into nested dicts
+        # so OmegaConf.merge works with structured configs
+        nested: dict = {}
+        for dotted_key, value in overrides.items():
+            parts = dotted_key.split(".")
+            d = nested
+            for part in parts[:-1]:
+                d = d.setdefault(part, {})
+            d[parts[-1]] = value
+        schema = OmegaConf.merge(schema, nested)
 
     return OmegaConf.to_object(schema)

@@ -14,7 +14,7 @@ from pathlib import Path
 import torch
 
 from qft_graph.actions.phi4 import Phi4Action
-from qft_graph.config import ExperimentConfig, LatticeConfig, MCConfig, ScalarFieldConfig, load_config
+from qft_graph.config import load_config
 from qft_graph.lattice.hypercubic import HypercubicLattice
 from qft_graph.mc.metropolis import MetropolisSampler
 from qft_graph.mc.observables import ObservableSet
@@ -52,11 +52,9 @@ def main() -> None:
                 config.lattice.dimensions, config.scalar_field.mass_squared, config.scalar_field.coupling)
 
     # Setup
-    lattice = HypercubicLattice(LatticeConfig(**config.lattice))
-    field_config = ScalarFieldConfig(**config.scalar_field)
-    action = Phi4Action(lattice, field_config)
-    mc_config = MCConfig(**config.mc)
-    sampler = MetropolisSampler(action, mc_config)
+    lattice = HypercubicLattice(config.lattice)
+    action = Phi4Action(lattice, config.scalar_field)
+    sampler = MetropolisSampler(action, config.mc)
 
     # Generate
     n = config.mc.n_configs

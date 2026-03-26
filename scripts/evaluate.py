@@ -38,8 +38,7 @@ def main() -> None:
     actions = mc_data["actions"]
 
     # Setup
-    lattice_config = LatticeConfig(**config.lattice)
-    lattice = HypercubicLattice(lattice_config)
+    lattice = HypercubicLattice(config.lattice)
     scalar_field = ScalarField()
     builder = HeteroGraphBuilder(lattice, [scalar_field])
     obs = ObservableSet(lattice)
@@ -51,9 +50,8 @@ def main() -> None:
     )
 
     # Load model
-    model_config = ModelConfig(**config.model)
     model = HeteroGNN(
-        config=model_config,
+        config=config.model,
         lattice_dim=lattice.dimension(),
         field_types={"scalar": scalar_field.dof_per_site()},
         lattice_spacing=lattice.lattice_spacing(),

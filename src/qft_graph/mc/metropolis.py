@@ -109,15 +109,29 @@ class MetropolisSampler(MCSampler):
 
         return torch.from_numpy(phi_np), n_accepted / self._nsites
 
-    def generate(self, n_configs: int) -> MCResult:
+    def generate(
+        self,
+        n_configs: int,
+        initial_phi: torch.Tensor | None = None,
+    ) -> MCResult:
         """Generate decorrelated field configurations.
 
         Pipeline:
-        1. Initialize from hot start
+        1. Initialize from hot start (or use initial_phi for warm-start)
         2. Thermalize for n_thermalization sweeps
         3. Generate n_configs separated by n_sweeps_between sweeps
+
+        Args:
+            n_configs: Number of configurations to generate.
+            initial_phi: Optional initial field configuration for warm-starting.
+                If provided, used instead of random hot start. Useful for
+                scanning over parameter values where the previous config
+                is a good starting point.
         """
-        phi = 2.0 * torch.rand(self._nsites) - 1.0  # hot start
+        if initial_phi is not None:
+            phi = initial_phi.clone()
+        else:
+            phi = 2.0 * torch.rand(self._nsites) - 1.0  # hot start
 
         # Thermalization
         t0 = time.time()
