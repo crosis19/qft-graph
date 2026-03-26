@@ -115,6 +115,12 @@ class HeteroGNN(nn.Module):
     def forward(self, data: HeteroData) -> dict[str, torch.Tensor]:
         """Full forward pass: encode -> message pass -> readout.
 
+        Creates a shallow clone of the input data so that raw features
+        on the original HeteroData are never overwritten. This avoids
+        the in-place mutation bug where re-running eval on the same
+        dataset would fail because features had been replaced with
+        encoded embeddings.
+
         Args:
             data: HeteroData with raw node/edge features.
 
@@ -124,6 +130,9 @@ class HeteroGNN(nn.Module):
               - "local_energy": (num_nodes, 1) per-site energy density
               - "correlator": (num_nodes, num_nodes) learned correlation matrix
         """
+        # Clone to avoid mutating the input data's features in-place
+        data = data.clone()
+
         # --- Encode ---
         data = self.encode(data)
 
@@ -134,7 +143,12 @@ class HeteroGNN(nn.Module):
         return self.readout(data)
 
     def encode(self, data: HeteroData) -> HeteroData:
-        """Apply type-specific encoders to all node and edge types."""
+        """Apply type-specific encoders to all node and edge types.
+
+        Note: This method writes encoded features back into data's
+        attribute tensors. The forward() method clones data first
+        so the original raw features are preserved.
+        """
         # Spacetime nodes
         data["spacetime"].x = self.st_encoder(data["spacetime"].x)
 

@@ -98,6 +98,21 @@
         "console": "integratedTerminal"
       },
       {
+        "name": "Generate MC Data (64x64)",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/scripts/generate_mc_data.py",
+        "args": [
+          "--dimensions", "64", "64",
+          "--mass_squared", "-0.5",
+          "--coupling", "0.5",
+          "--n_configs", "5000"
+        ],
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+        "console": "integratedTerminal"
+      },
+      {
         "name": "Run Tests",
         "type": "debugpy",
         "request": "launch",
@@ -143,7 +158,7 @@
       {
         "label": "Generate MC Data (all sizes)",
         "type": "shell",
-        "command": "python scripts/generate_mc_data.py --dimensions 8 8 --n_configs 5000 && python scripts/generate_mc_data.py --dimensions 16 16 --n_configs 5000 && python scripts/generate_mc_data.py --dimensions 32 32 --n_configs 5000",
+        "command": "python scripts/generate_mc_data.py --dimensions 8 8 --n_configs 5000 && python scripts/generate_mc_data.py --dimensions 16 16 --n_configs 5000 && python scripts/generate_mc_data.py --dimensions 32 32 --n_configs 5000 && python scripts/generate_mc_data.py --dimensions 64 64 --n_configs 5000",
         "options": {
           "cwd": "${workspaceFolder}",
           "env": { "PYTHONPATH": "${workspaceFolder}/src" }

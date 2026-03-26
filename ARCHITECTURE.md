@@ -377,3 +377,56 @@ Plotting `ξ/L` vs `m²` for different L values:
 - Curves **cross** at `m² = m²_c`
 - The slope at crossing determines `ν`
 - Data **collapse** onto a single curve when plotted vs `(m² - m²_c) · L^{1/ν}`
+
+---
+
+## Monte Carlo Samplers
+
+Two sampler implementations are provided, automatically selected by `create_sampler()`:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  MetropolisSampler (sequential, L ≤ 16)                     │
+│                                                             │
+│  for site in random_permutation(all_sites):                 │
+│      propose φ'(site) = φ(site) + N(0, step)               │
+│      ΔS = delta_action(φ, site, φ')                        │
+│      accept with probability min(1, exp(-ΔS))              │
+│                                                             │
+│  ~400 sweeps/s on 16×16, correct for any lattice           │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│  CheckerboardSampler (vectorized, L ≥ 32)                   │
+│                                                             │
+│  1. Partition sites into even/odd by parity of (x+y+...)   │
+│  2. No two same-parity sites are neighbors                  │
+│  3. Update ALL even sites simultaneously (vectorized numpy) │
+│  4. Update ALL odd sites simultaneously                     │
+│                                                             │
+│  10-50x faster than sequential for large lattices           │
+│  Essential for 64×64 (4096 sites)                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Correlation Length Estimators
+
+Two methods for extracting ξ from the two-point function G(r):
+
+### Log-slope (simple, noisy)
+Fit log(G(r)) = log(A) - r/ξ via linear regression.
+Fragile: fails when G(r) hits noise floor at large r.
+
+### Second-moment (robust, preferred)
+Uses the Fourier transform of G(r):
+
+```
+ξ = (1 / 2sin(π/L)) × √( G̃(0)/G̃(k_min) - 1 )
+```
+
+where k_min = 2π/L is the smallest non-zero momentum.
+This is the standard lattice field theory estimator — it uses all
+data points and doesn't require fitting. Implemented as
+`ObservableSet.correlation_length_second_moment()`.

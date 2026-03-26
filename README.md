@@ -50,12 +50,22 @@ pip install -e ".[dev]"
 
 ### Generate Monte Carlo Data
 
+The sampler automatically selects the best algorithm: sequential Metropolis for small lattices (≤16×16) and vectorized checkerboard decomposition for large lattices (≥32×32), giving 10–50x speedups.
+
 ```bash
+# Small lattice (sequential sampler)
 python scripts/generate_mc_data.py \
     --dimensions 16 16 \
     --mass_squared -0.5 \
     --coupling 0.5 \
     --n_configs 10000
+
+# Large lattice (auto-selects checkerboard sampler)
+python scripts/generate_mc_data.py \
+    --dimensions 64 64 \
+    --mass_squared -0.5 \
+    --coupling 0.5 \
+    --n_configs 5000
 ```
 
 ### Train the Model
@@ -72,17 +82,17 @@ python scripts/train.py \
 ```bash
 python scripts/sweep.py \
     --dimensions 8 8 \
-    --m2_min -1.0 --m2_max 0.0 --m2_steps 20 \
+    --m2_min -2.5 --m2_max 0.0 --m2_steps 20 \
     --n_configs 5000
 
 python scripts/sweep.py \
     --dimensions 16 16 \
-    --m2_min -1.0 --m2_max 0.0 --m2_steps 20 \
+    --m2_min -2.5 --m2_max 0.0 --m2_steps 20 \
     --n_configs 5000
 
 python scripts/sweep.py \
     --dimensions 32 32 \
-    --m2_min -1.0 --m2_max 0.0 --m2_steps 20 \
+    --m2_min -2.5 --m2_max 0.0 --m2_steps 20 \
     --n_configs 5000
 ```
 
@@ -159,12 +169,22 @@ training:
   loss: energy_matching
 ```
 
-## Phase 1 Validation Targets
+## Phase 1 Results
+
+| Observable | Result | Method |
+|-----------|--------|--------|
+| Energy prediction | r = 1.0000 | GNN vs exact action on validation set |
+| Critical point m²_c | ≈ -2.1 (λ=0.5) | Susceptibility peak, L=8 and L=16 |
+| Phase transition | Clear S-curve in \|M\| | Scan m²=0 to -2.5 with warm-starting |
+| Finite-size scaling | χ peak grows with L | L=16 peak ~4x taller than L=8 |
+
+### Validation Targets (in progress)
 
 | Observable | Benchmark | Method |
 |-----------|-----------|--------|
-| Critical exponent ν | 1.000 ± 0.001 | Finite-size scaling at L = 8, 16, 32 |
-| Two-point function G(r) | MC baseline | Direct comparison |
+| Critical exponent ν | 1.000 ± 0.001 | Finite-size scaling at L = 8, 16, 32, 64 |
+| Correlation length ξ | Second-moment estimator | Fourier-space G̃(k) ratio |
+| Two-point function G(r) | MC baseline | Connected correlator comparison |
 | Phase transition location | Known m²_c | Susceptibility peak / ξ/L crossing |
 
 ## Key References

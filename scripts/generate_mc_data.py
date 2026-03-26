@@ -16,7 +16,7 @@ import torch
 from qft_graph.actions.phi4 import Phi4Action
 from qft_graph.config import load_config
 from qft_graph.lattice.hypercubic import HypercubicLattice
-from qft_graph.mc.metropolis import MetropolisSampler
+from qft_graph.mc.metropolis import MetropolisSampler, create_sampler
 from qft_graph.mc.observables import ObservableSet
 from qft_graph.utils.logging import setup_logging
 from qft_graph.utils.reproducibility import set_seed
@@ -54,7 +54,7 @@ def main() -> None:
     # Setup
     lattice = HypercubicLattice(config.lattice)
     action = Phi4Action(lattice, config.scalar_field)
-    sampler = MetropolisSampler(action, config.mc)
+    sampler = create_sampler(action, config.mc)
 
     # Generate
     n = config.mc.n_configs
