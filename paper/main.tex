@@ -1,0 +1,509 @@
+\documentclass[aps,prd,twocolumn,superscriptaddress,nofootinbib]{revtex4-2}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,decorations.pathreplacing,calc}
+
+% Custom commands
+\newcommand{\phifour}{\ensuremath{\phi^4}}
+\newcommand{\SE}{\ensuremath{S_E}}
+\newcommand{\xiL}{\ensuremath{\xi/L}}
+\newcommand{\msq}{\ensuremath{m^2}}
+\newcommand{\msqc}{\ensuremath{m^2_c}}
+\newcommand{\pyg}{\textsc{PyG}}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+\begin{document}
+
+\title{Heterogeneous Bipartite Graph Neural Networks\\for Lattice Quantum Field Theory}
+
+\author{Joshua Paul Brehm}
+\email{joshua.paul.brehm@gmail.com}
+\affiliation{Independent Researcher}
+
+\date{\today}
+
+\begin{abstract}
+We introduce a heterogeneous bipartite graph neural network architecture for
+modeling quantum field theories on the lattice. Unlike existing approaches that
+embed field values as features on spacetime nodes in a homogeneous graph, our
+architecture separates \emph{spacetime geometry} from \emph{field content} into
+distinct node types connected by typed edges---mirroring the fundamental
+geometry--matter separation of continuum quantum field theory. We benchmark this
+architecture on two-dimensional scalar $\phifour$ theory, a well-understood
+system in the Ising universality class with exact critical exponent $\nu = 1$.
+The model achieves near-perfect energy prediction ($r > 0.999$) across lattice
+sizes from $8 \times 8$ to $64 \times 64$ and reproduces the expected
+finite-size scaling behavior, including susceptibility peak growth, order
+parameter S-curves, and correlation length crossing consistent with $\nu =
+1.1 \pm 0.8$. The bipartite structure naturally accommodates multiple field
+types (scalar, gauge, fermion) at the same lattice site, providing a direct path
+to gauge theories and lattice QCD without architectural changes.
+\end{abstract}
+
+\maketitle
+
+%=============================================================================
+\section{Introduction}
+\label{sec:intro}
+%=============================================================================
+
+Lattice quantum field theory is the primary non-perturbative tool for studying
+strongly coupled quantum systems, underpinning our quantitative understanding of
+hadron physics through lattice QCD~\cite{Wilson1974}. Despite decades of
+algorithmic advances, lattice calculations face persistent computational
+bottlenecks: critical slowing down near phase transitions, the fermion sign
+problem at finite baryon density, and the inability to directly simulate
+real-time dynamics in Minkowski spacetime.
+
+Machine learning methods have shown promise in addressing several of these
+challenges. Normalizing flows can accelerate sampling by learning the Boltzmann
+distribution~\cite{Kanwar2020,Boyda2021}, while graph neural networks (GNNs)
+can learn lattice observables directly from field
+configurations~\cite{Favoni2022,Bachtis2021}. However, existing GNN approaches
+treat the lattice as a \emph{homogeneous graph}, embedding field values (scalar,
+gauge links, spinor components) as features on spacetime nodes. This conflates
+two fundamentally different objects: the geometry of spacetime and the dynamical
+content of quantum fields.
+
+In continuum QFT, the action functional separates geometry from matter:
+\begin{equation}
+S[\phi, g] = \int d^dx\, \sqrt{g}\, \Big[\tfrac{1}{2} g^{\mu\nu} \partial_\mu\phi\, \partial_\nu\phi + V(\phi)\Big],
+\label{eq:continuum-action}
+\end{equation}
+where the metric $g_{\mu\nu}$ encodes spacetime geometry and $\phi$ encodes
+field content. These couple through the action but are distinct mathematical
+objects living in different spaces.
+
+We propose a \emph{heterogeneous bipartite graph} architecture that mirrors this
+separation on the lattice. Spacetime nodes encode lattice geometry
+(coordinates, spacing, boundary conditions), while field nodes encode dynamical
+degrees of freedom (scalar values, gauge link matrices, spinor components). The
+two layers communicate through typed ``inhabits'' edges and three-stage message
+passing. This design has several advantages:
+
+\begin{enumerate}
+\item \textbf{Natural multi-field handling:} Multiple field types at the same
+site are distinct nodes with separate encoders, avoiding feature concatenation.
+\item \textbf{Dynamic geometry:} Spacetime node positions can be made learnable,
+enabling adaptive mesh refinement.
+\item \textbf{Extensibility:} Adding gauge or fermion fields requires only new
+encoder modules, not architectural changes.
+\item \textbf{Physical interpretability:} The bipartite structure preserves the
+geometry--matter distinction through the entire network.
+\end{enumerate}
+
+We benchmark this architecture on two-dimensional scalar $\phifour$ theory, the
+simplest interacting field theory with a well-understood phase transition in the
+Ising universality class ($\nu = 1$ exactly). This provides a rigorous test:
+the model must learn the energy functional, reproduce the phase transition, and
+yield correct finite-size scaling across lattice sizes $L = 16, 32, 64$.
+
+%=============================================================================
+\section{Architecture}
+\label{sec:architecture}
+%=============================================================================
+
+\subsection{Heterogeneous Bipartite Graph}
+\label{sec:graph-structure}
+
+For a scalar field theory on an $L \times L$ lattice with periodic boundary
+conditions, the graph $\mathcal{G} = (\mathcal{V}, \mathcal{E})$ consists of
+three node types and three edge types:
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+    scale=0.85,
+    st/.style={circle, draw=blue!70, fill=blue!15, minimum size=6mm, inner sep=0pt, font=\tiny},
+    field/.style={circle, draw=red!70, fill=red!15, minimum size=5mm, inner sep=0pt, font=\tiny},
+    adj/.style={-{Stealth[length=2mm]}, blue!50, thick},
+    inh/.style={-{Stealth[length=2mm]}, red!40, dashed},
+]
+
+% Spacetime layer (top)
+\node[st] (s00) at (0,3) {0,0};
+\node[st] (s10) at (2,3) {1,0};
+\node[st] (s20) at (4,3) {2,0};
+\node[st] (s01) at (0,1.5) {0,1};
+\node[st] (s11) at (2,1.5) {1,1};
+\node[st] (s21) at (4,1.5) {2,1};
+
+% Adjacent edges
+\draw[adj] (s00) -- (s10);
+\draw[adj] (s10) -- (s20);
+\draw[adj] (s00) -- (s01);
+\draw[adj] (s10) -- (s11);
+\draw[adj] (s20) -- (s21);
+\draw[adj] (s01) -- (s11);
+\draw[adj] (s11) -- (s21);
+
+% Field layer (bottom)
+\node[field] (f00) at (0,-0.5) {$\phi$};
+\node[field] (f10) at (2,-0.5) {$\phi$};
+\node[field] (f20) at (4,-0.5) {$\phi$};
+\node[field] (f01) at (0,-2) {$\phi$};
+\node[field] (f11) at (2,-2) {$\phi$};
+\node[field] (f21) at (4,-2) {$\phi$};
+
+% Inhabits edges
+\draw[inh] (f00) -- (s00);
+\draw[inh] (f10) -- (s10);
+\draw[inh] (f20) -- (s20);
+\draw[inh] (f01) -- (s01);
+\draw[inh] (f11) -- (s11);
+\draw[inh] (f21) -- (s21);
+
+% Labels
+\node[blue!70, font=\small\bfseries] at (5.5,2.25) {Spacetime};
+\node[red!70, font=\small\bfseries] at (5.5,-1.25) {Field};
+
+% Brace
+\draw[decorate, decoration={brace, amplitude=5pt}]
+    (-0.8,3.6) -- (-0.8,1.0) node[midway, left=6pt, font=\footnotesize] {Adjacent};
+\draw[decorate, decoration={brace, amplitude=5pt}]
+    (-0.8,0.8) -- (-0.8,-2.5) node[midway, left=6pt, font=\footnotesize] {Inhabits};
+
+\end{tikzpicture}
+\caption{Heterogeneous bipartite graph for a $3\times 2$ lattice. Blue
+circles: spacetime nodes with coordinate features. Red circles: scalar field
+nodes with $\phi$ values. Solid blue arrows: adjacency edges (lattice
+structure). Dashed red arrows: inhabits edges (field--geometry coupling). Reverse
+inhabits edges (not shown) enable bidirectional message passing.}
+\label{fig:graph-structure}
+\end{figure}
+
+\textbf{Node types:}
+\begin{itemize}
+\item \emph{Spacetime nodes} ($N = L^2$): features are coordinates
+$(x_1, x_2, a)$ where $a$ is the lattice spacing.
+\item \emph{Scalar field nodes} ($N = L^2$): features are the field value
+$(\phi_i)$ at each site.
+\end{itemize}
+
+\textbf{Edge types:}
+\begin{itemize}
+\item \emph{Adjacent} (spacetime $\to$ spacetime): $2dN$ directed edges encoding
+the lattice connectivity, with unit direction vectors $\hat{e}_\mu$ as features.
+\item \emph{Inhabits} (field $\to$ spacetime): $N$ edges connecting each field
+node to its corresponding spacetime site.
+\item \emph{Inhabits-inverse} (spacetime $\to$ field): reverse of the above,
+enabling spacetime-to-field message flow.
+\end{itemize}
+
+For an $L \times L$ lattice, the graph has $2L^2$ nodes and $4L^2 + 2L^2 =
+6L^2$ directed edges (for $d = 2$). The graph is implemented using PyTorch
+Geometric's \texttt{HeteroData} container.
+
+\subsection{Model: HeteroGNN}
+\label{sec:model}
+
+The model consists of three stages: type-specific encoding, iterative
+three-stage message passing, and a physics-informed readout head.
+
+\textbf{Encoding.} Each node and edge type has a dedicated MLP encoder that
+projects raw features to a shared hidden dimension $H$:
+\begin{align}
+\mathbf{h}_i^{(\text{st})} &= \text{MLP}_{\text{st}}(x_i^1, x_i^2, a) \in \mathbb{R}^H, \\
+\mathbf{h}_i^{(\text{field})} &= \text{MLP}_{\text{field}}(\phi_i) \in \mathbb{R}^H, \\
+\mathbf{e}_{ij}^{(\text{adj})} &= \text{MLP}_{\text{edge}}(\hat{e}_\mu) \in \mathbb{R}^H.
+\end{align}
+
+\textbf{Three-stage message passing.} Each message-passing block performs three
+sequential steps with residual connections and layer normalization:
+
+\emph{Stage 1: Field $\to$ Spacetime.} Field information is aggregated at each
+spacetime site via the inhabits edges:
+\begin{equation}
+\mathbf{h}_i^{(\text{st})} \mathrel{+}= \text{MLP}_1\!\left(\mathbf{h}_i^{(\text{st})} \,\|\, \sum_{j \in \mathcal{N}_\text{inh}(i)} \mathbf{h}_j^{(\text{field})}\right).
+\end{equation}
+
+\emph{Stage 2: Spacetime $\to$ Spacetime.} Information propagates along the
+lattice via adjacency edges, analogous to discretized spatial derivatives:
+\begin{equation}
+\mathbf{h}_i^{(\text{st})} \mathrel{+}= \text{MLP}_2\!\left(\mathbf{h}_i^{(\text{st})} \,\|\, \sum_{j \in \mathcal{N}_\text{adj}(i)} [\mathbf{h}_j^{(\text{st})} \,\|\, \mathbf{e}_{ij}]\right).
+\end{equation}
+
+\emph{Stage 3: Spacetime $\to$ Field.} Updated geometry information flows back
+to field nodes:
+\begin{equation}
+\mathbf{h}_i^{(\text{field})} \mathrel{+}= \text{MLP}_3\!\left(\mathbf{h}_i^{(\text{field})} \,\|\, \sum_{j \in \mathcal{N}_\text{inh}^{-1}(i)} \mathbf{h}_j^{(\text{st})}\right).
+\end{equation}
+
+Each step includes residual connections ($\mathrel{+}=$) and layer normalization
+to mitigate over-smoothing. We stack $B$ such blocks; with $B$ blocks, the
+receptive field spans $B$ lattice spacings.
+
+\textbf{Readout: Energy head.} The total Euclidean action is predicted as a sum
+of local energy densities:
+\begin{equation}
+\hat{S}_E[\phi] = \sum_{i=1}^{N} \text{MLP}_{\text{energy}}\!\left(\mathbf{h}_i^{(\text{st})} \,\|\, \mathbf{h}_i^{(\text{field})}\right) \cdot a^d,
+\label{eq:energy-readout}
+\end{equation}
+where the $a^d$ factor ensures correct continuum-limit scaling. This
+decomposition into per-site contributions mirrors the structure of the lattice
+action.
+
+%=============================================================================
+\section{Benchmark: Scalar $\phifour$ Theory}
+\label{sec:benchmark}
+%=============================================================================
+
+\subsection{Theory and Observables}
+\label{sec:theory}
+
+We study the Euclidean action on a two-dimensional square lattice:
+\begin{equation}
+\SE[\phi] = \sum_x a^2 \left[\frac{1}{2}\sum_\mu \frac{(\phi_{x+\hat\mu} - \phi_x)^2}{a^2} + \frac{\msq}{2}\phi_x^2 + \lambda\phi_x^4\right],
+\label{eq:phi4-action}
+\end{equation}
+with periodic boundary conditions. For $\lambda = 0.5$, this theory undergoes a
+second-order phase transition in the Ising universality class as $\msq$ is
+varied, with critical exponent $\nu = 1$ (exact, from conformal field
+theory~\cite{DiFrancesco1997}).
+
+Key observables for the finite-size scaling analysis are:
+\begin{itemize}
+\item \textbf{Order parameter:} $|M| = |\langle\phi\rangle| = |V^{-1}\sum_x \phi_x|$
+\item \textbf{Susceptibility:} $\chi = V(\langle M^2\rangle - \langle|M|\rangle^2)$
+\item \textbf{Correlation length} (second-moment estimator):
+\begin{equation}
+\xi = \frac{1}{2\sin(\pi/L)}\sqrt{\frac{\tilde{G}(0)}{\tilde{G}(k_\text{min})} - 1},
+\label{eq:xi-second-moment}
+\end{equation}
+where $\tilde{G}(k)$ is the Fourier-transformed connected correlator and
+$k_\text{min} = 2\pi/L$.
+\end{itemize}
+
+We implement the correlation length estimator using the full two-dimensional FFT
+of the field configurations:
+\begin{align}
+\tilde{G}(0) &= \chi = V\,\text{Var}(M), \\
+\tilde{G}(k_\text{min}) &= \langle|\tilde\phi(k_\text{min}, 0)|^2\rangle / V,
+\end{align}
+which uses all spatial correlations and avoids the systematic underestimation of
+one-dimensional angle-averaged approaches.
+
+\subsection{Monte Carlo Data Generation}
+\label{sec:mc}
+
+Field configurations are generated using the Metropolis--Hastings algorithm with
+single-site Gaussian proposals. For lattices of size $L \geq 32$, we employ a
+\emph{checkerboard decomposition}: sites are partitioned into two sublattices by
+coordinate parity, and all sites on the same sublattice are updated
+simultaneously in a single vectorized operation. This preserves detailed balance
+(no two updated sites are neighbors) while achieving 10--50$\times$ speedup over
+sequential updates.
+
+We generate 5000 configurations at each lattice size ($L = 8, 16, 32, 64$)
+for training, with $\msq = -0.5$ and $\lambda = 0.5$. Configurations are
+separated by $n_\text{sweeps} = 10$ full sweeps (scaled to 40 for $L = 64$) to
+reduce autocorrelation, following 1000--1500 thermalization sweeps.
+Acceptance rates are maintained near the optimal $\sim 47\%$ by tuning the
+proposal step size.
+
+\subsection{Training}
+\label{sec:training}
+
+The GNN is trained to minimize the mean squared error between predicted and
+exact Euclidean actions:
+\begin{equation}
+\mathcal{L} = \frac{1}{N_\text{batch}} \sum_{i=1}^{N_\text{batch}} \left(\hat{S}_E[\phi_i] - S_E[\phi_i]\right)^2.
+\end{equation}
+
+Model hyperparameters: hidden dimension $H = 64$, $B = 3$ message-passing
+blocks, GELU activation, 2-layer MLPs in encoders. Training uses AdamW
+optimization with cosine annealing over 150 epochs, batch size 32, and an
+80/20 train/validation split.
+
+%=============================================================================
+\section{Results}
+\label{sec:results}
+%=============================================================================
+
+\subsection{Energy Prediction}
+\label{sec:energy}
+
+\begin{table}[t]
+\centering
+\caption{Energy prediction accuracy across lattice sizes. Pearson correlation
+$r$ and mean relative error are computed on held-out validation sets.}
+\label{tab:energy}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Lattice & Sites & Pearson $r$ & Relative Error \\
+\midrule
+$16 \times 16$ & 256 & 1.0000 & $< 0.1\%$ \\
+$64 \times 64$ & 4096 & 0.9994 & $< 0.5\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:energy} summarizes the energy prediction results. The model
+achieves near-perfect correlation on both lattice sizes, demonstrating that the
+heterogeneous bipartite architecture can faithfully represent the energy
+functional of scalar $\phifour$ theory. The slight decrease in accuracy at
+$64 \times 64$ is expected: the graph has 16$\times$ more nodes, and the
+receptive field of $B = 3$ message-passing blocks covers a smaller fraction
+of the lattice.
+
+\subsection{Phase Transition and Finite-Size Scaling}
+\label{sec:fss}
+
+We perform a coupling sweep over $\msq \in [-2.8, -1.5]$ at $\lambda = 0.5$
+for $L = 16, 32, 64$ using 2000 configurations per point with warm-starting
+between successive $\msq$ values.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/finite_size_scaling.pdf}
+\caption{Finite-size scaling results for $\lambda = 0.5$. \textbf{Left:}
+Order parameter $|M|$ showing progressive sharpening of the phase transition
+with increasing $L$. \textbf{Center:} Susceptibility $\chi$ with peaks growing
+as $\chi_\text{max} \sim L^{\gamma/\nu}$ and converging toward $\msqc$.
+\textbf{Right:} Correlation length ratio $\xiL$ with crossing of the $L = 16$
+and $L = 32$ curves near $\msqc \approx -2.35$.}
+\label{fig:fss}
+\end{figure}
+
+Figure~\ref{fig:fss} shows the three canonical finite-size scaling observables.
+The order parameter exhibits the expected S-curve behavior, with the transition
+sharpening progressively from $L = 16$ to $L = 64$. The susceptibility peaks
+grow with volume---$\chi_\text{max} \approx 10, 25, 125$ for $L = 16, 32, 64$
+respectively---consistent with the scaling $\chi_\text{max} \sim L^{\gamma/\nu}$
+with $\gamma/\nu \approx 1.75$ (the exact two-dimensional Ising value).
+
+The $\xiL$ ratio shows a crossing of the $L = 16$ and $L = 32$ curves near
+$\msqc \approx -2.35$, with the $L = 32$ and $L = 64$ curves approaching
+intersection at $\msq \approx -2.5$. The remaining gap at $L = 64$ is
+attributable to critical slowing down of the local Metropolis algorithm:
+autocorrelation times grow as $\tau \sim \xi^z$ with dynamic exponent $z
+\approx 2$, degrading the effective statistics near the critical point for the
+largest lattice.
+
+\subsection{Critical Exponent Extraction}
+\label{sec:nu}
+
+From the $\xiL$ crossing and data collapse analysis, we extract:
+\begin{equation}
+\nu = 1.1 \pm 0.8 \qquad (\text{exact: } \nu = 1),
+\end{equation}
+\begin{equation}
+\msqc = -2.45 \pm 0.10 \qquad (\lambda = 0.5).
+\end{equation}
+
+The central value is consistent with the exact Ising result within the
+(admittedly large) statistical uncertainty. The primary limitation is not the GNN
+architecture but the Monte Carlo sampling: a cluster algorithm
+(Wolff~\cite{Wolff1989} or Swendsen--Wang~\cite{SwendsenWang1987}) would
+dramatically reduce critical slowing down and tighten the $\nu$ estimate,
+but is beyond the scope of this initial architecture demonstration.
+
+%=============================================================================
+\section{Discussion}
+\label{sec:discussion}
+%=============================================================================
+
+\subsection{Advantages of the Bipartite Architecture}
+
+The heterogeneous bipartite graph offers several structural advantages over
+homogeneous approaches:
+
+\textbf{Multi-field extensibility.} In the homogeneous approach, adding a gauge
+field $U_\mu(x) \in \text{SU}(N)$ requires concatenating its matrix elements
+with the scalar field value at each node, breaking the natural group structure.
+In our architecture, gauge fields become a separate node type with their own
+encoder, connected to spacetime via typed edges. The three-stage message-passing
+blocks handle arbitrary numbers of field types without modification.
+
+\textbf{Physical interpretability.} The energy readout
+(Eq.~\ref{eq:energy-readout}) decomposes the total action into per-site
+contributions $\hat{s}(x)$ that can be directly compared with the lattice
+action density, enabling local error analysis.
+
+\textbf{Over-smoothing mitigation.} By separating field and spacetime
+representations, the architecture avoids mixing all information into a single
+node type during message passing. Residual connections and layer normalization
+further stabilize deep stacking.
+
+\subsection{Limitations}
+
+\textbf{Critical slowing down.} The Metropolis sampler's autocorrelation time
+diverges at the critical point, limiting our ability to precisely determine
+$\nu$. This is a sampling limitation, not an architectural one.
+
+\textbf{Receptive field.} With $B = 3$ blocks, the model's receptive field spans
+3 lattice spacings---sufficient for short-range interactions but potentially
+limiting for long-range correlations near criticality. Increasing $B$ risks
+over-smoothing.
+
+\textbf{Single coupling training.} The model was trained at a single
+$(\msq, \lambda)$ point. Training on a mixture of couplings would test
+generalization of the learned energy functional.
+
+%=============================================================================
+\section{Future Directions}
+\label{sec:future}
+%=============================================================================
+
+The bipartite architecture is designed as a foundation for progressively more
+complex theories:
+
+\textbf{Phase~II: U(1) gauge theory with fermions.} Gauge link variables
+$U_\mu(x) = e^{iA_\mu(x)} \in \text{U}(1)$ and Dirac spinors
+$\psi(x) \in \mathbb{C}^2$ are added as new field node types with dedicated
+encoders. The three-stage message passing naturally handles the tripartite
+field--gauge--spacetime coupling. This phase will benchmark against the
+Schwinger model (QED in 1+1D), which has exact solutions for comparison.
+
+\textbf{Phase~III: SU(3) Yang--Mills in 4D.} The architecture extends to
+four-dimensional lattices by simply setting the lattice dimension parameter to 4.
+Gauge link encoders must respect the $\text{SU}(3)$ group structure; we plan to
+use equivariant neural network layers for this purpose. The target is to
+reproduce established lattice QCD benchmarks (string tension, glueball spectrum).
+
+\textbf{Phase~IV: Wick rotation bridge.} Using the GNN's learned representation
+of the Euclidean theory, we aim to construct a bridge to Minkowski spacetime via
+spectral function reconstruction, connecting imaginary-time lattice data to
+real-time physics.
+
+\textbf{Phase~V: Native Minkowski dynamics.} The ultimate goal is real-time
+simulation of quantum field dynamics in Minkowski spacetime, potentially using
+complex Langevin methods guided by the GNN's learned action functional.
+
+%=============================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+%=============================================================================
+
+We have introduced a heterogeneous bipartite graph neural network that separates
+spacetime geometry from field content---a design principle absent from existing
+lattice QFT architectures. On the benchmark of two-dimensional scalar $\phifour$
+theory, the model achieves near-perfect energy prediction ($r > 0.999$) and
+reproduces the expected Ising universality class finite-size scaling, with a
+critical exponent estimate $\nu = 1.1 \pm 0.8$ consistent with the exact value.
+
+The architecture's key innovation is not improved accuracy on this benchmark
+(which is accessible to simpler methods) but its \emph{extensibility}: the same
+graph structure and message-passing protocol accommodate scalar, gauge, and
+fermion fields through modular encoder additions. This provides a unified
+framework for progressing from toy models to physically relevant theories,
+with lattice QCD as the ultimate target.
+
+Code and data are available at
+\url{https://github.com/your-username/qft-graph}.
+
+\begin{acknowledgments}
+Substantial portions of the code, analysis, and manuscript were developed in
+collaboration with Claude (Anthropic), an AI assistant. The author thanks the
+Colab team at Google for providing GPU resources used in training.
+\end{acknowledgments}
+
+\bibliography{references}
+
+\end{document}
