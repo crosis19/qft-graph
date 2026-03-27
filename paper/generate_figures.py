@@ -77,37 +77,89 @@ def fig_free_field():
 
 
 def fig_energy_prediction():
-    """Figure: Energy prediction scatter (uses pre-generated data)."""
+    """Figure: Energy prediction scatter using saved model checkpoint."""
     print("Generating: energy_prediction.pdf")
 
-    # Load 16x16 data
-    data_path = DATA_DIR / 'phi4_16x16_m2=-0.5_lam=0.5' / 'mc_data.pt'
-    if not data_path.exists():
-        print("  SKIPPED: 16x16 data not found. Run generate_mc_data.py first.")
+    from qft_graph.config import ModelConfig
+    from qft_graph.fields.scalar import ScalarField
+    from qft_graph.graphs.builder import HeteroGraphBuilder
+    from qft_graph.models.hetero_gnn import HeteroGNN
+
+    # Try both 64x64 and 16x16
+    for dims_str, dims in [('64x64', (64, 64)), ('16x16', (16, 16))]:
+        data_path = DATA_DIR / f'phi4_{dims_str}_m2=-0.5_lam=0.5' / 'mc_data.pt'
+        ckpt_path = PROJECT_ROOT / 'experiments' / 'runs' / 'colab_run' / 'model_final.pt'
+
+        if not data_path.exists() or not ckpt_path.exists():
+            continue
+
+        print(f"  Using {dims_str} data with saved model...")
+        mc_data = torch.load(data_path, weights_only=False)
+        configurations = mc_data['configurations']
+        actions = mc_data['actions']
+
+        # Build graph dataset for validation split
+        L = dims[0]
+        lattice = HypercubicLattice(LatticeConfig(dimensions=dims))
+        scalar_field = ScalarField()
+        builder = HeteroGraphBuilder(lattice, [scalar_field])
+
+        n_total = len(configurations)
+        n_train = int(0.8 * n_total)
+        val_configs = configurations[n_train:]
+        val_actions = actions[n_train:]
+
+        val_dataset = builder.build_dataset(
+            configurations={'scalar': val_configs},
+            actions=val_actions,
+        )
+
+        # Load model
+        model_config = ModelConfig()
+        model = HeteroGNN(model_config, lattice_dim=2,
+                          field_types={'scalar': 1}, lattice_spacing=1.0)
+
+        checkpoint = torch.load(ckpt_path, map_location='cpu', weights_only=False)
+        if 'model_state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['model_state_dict'])
+        else:
+            model.load_state_dict(checkpoint)
+        model.eval()
+
+        # Run predictions
+        all_pred, all_true = [], []
+        with torch.no_grad():
+            for graph in val_dataset:
+                output = model(graph)
+                all_pred.append(output['energy'].cpu().reshape(1))
+                all_true.append(graph.y.cpu().reshape(1))
+
+        pred = torch.cat(all_pred)
+        true = torch.cat(all_true)
+        corr = torch.corrcoef(torch.stack([pred, true]))[0, 1].item()
+
+        fig, ax = plt.subplots(figsize=(3.4, 3.4))
+        ax.scatter(true.numpy(), pred.numpy(), alpha=0.3, s=3, color='#4488ff',
+                   rasterized=True)
+        lims = [min(true.min(), pred.min()).item() - 2,
+                max(true.max(), pred.max()).item() + 2]
+        ax.plot(lims, lims, 'r--', linewidth=1.5, label='Perfect prediction')
+        ax.set_xlabel(r'True $S_E[\phi]$')
+        ax.set_ylabel(r'Predicted $S_E[\phi]$')
+        ax.set_title(rf'Energy Prediction ${L}\times{L}$ ($r = {corr:.4f}$)',
+                      fontsize=10)
+        ax.legend(frameon=False, loc='upper left')
+        ax.set_aspect('equal')
+        ax.set_xlim(lims)
+        ax.set_ylim(lims)
+        plt.tight_layout()
+        fig.savefig(FIGURES_DIR / 'energy_prediction.pdf', bbox_inches='tight',
+                    dpi=300)
+        plt.close()
+        print(f"  Done. Pearson r = {corr:.4f}")
         return
 
-    data = torch.load(data_path, weights_only=False)
-    actions = data['actions']
-
-    # Simulate "predicted" by adding small noise (placeholder until real model output saved)
-    # In the actual paper, replace with saved model predictions
-    pred = actions + torch.randn_like(actions) * 0.1
-
-    fig, ax = plt.subplots(figsize=(3.4, 3.4))
-    ax.scatter(actions.numpy(), pred.numpy(), alpha=0.3, s=3, color='#4488ff', rasterized=True)
-    lims = [actions.min().item() - 2, actions.max().item() + 2]
-    ax.plot(lims, lims, 'r--', linewidth=1.5, label='Perfect prediction')
-    ax.set_xlabel(r'True $S_E[\phi]$')
-    ax.set_ylabel(r'Predicted $S_E[\phi]$')
-    ax.set_title(r'Energy Prediction ($16\times 16$)', fontsize=10)
-    ax.legend(frameon=False, loc='upper left')
-    ax.set_aspect('equal')
-    ax.set_xlim(lims)
-    ax.set_ylim(lims)
-    plt.tight_layout()
-    fig.savefig(FIGURES_DIR / 'energy_prediction.pdf', bbox_inches='tight', dpi=300)
-    plt.close()
-    print("  Done. NOTE: Replace with actual model predictions for final version.")
+    print("  SKIPPED: No MC data + model checkpoint found.")
 
 
 def fig_finite_size_scaling():
