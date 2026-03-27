@@ -173,19 +173,13 @@ training:
 
 | Observable | Result | Method |
 |-----------|--------|--------|
-| Energy prediction | r = 1.0000 | GNN vs exact action on validation set |
-| Critical point m²_c | ≈ -2.1 (λ=0.5) | Susceptibility peak, L=8 and L=16 |
-| Phase transition | Clear S-curve in \|M\| | Scan m²=0 to -2.5 with warm-starting |
-| Finite-size scaling | χ peak grows with L | L=16 peak ~4x taller than L=8 |
-
-### Validation Targets (in progress)
-
-| Observable | Benchmark | Method |
-|-----------|-----------|--------|
-| Critical exponent ν | 1.000 ± 0.001 | Finite-size scaling at L = 8, 16, 32, 64 |
-| Correlation length ξ | Second-moment estimator | Fourier-space G̃(k) ratio |
-| Two-point function G(r) | MC baseline | Connected correlator comparison |
-| Phase transition location | Known m²_c | Susceptibility peak / ξ/L crossing |
+| Energy prediction (16×16) | r = 1.0000 | GNN vs exact action on validation set |
+| Energy prediction (64×64) | r = 0.9994 | GNN scales to large lattices |
+| Critical exponent ν | 1.106 ± 0.750 | ξ/L crossing + scaling collapse (exact: ν = 1) |
+| Critical point m²_c | -2.45 (λ=0.5) | ξ/L crossing at L=16/32, susceptibility peaks |
+| Phase transition | Clear S-curve in \|M\| | Scan m²=-1.5 to -2.8, L=16/32/64 |
+| Finite-size scaling | χ_max ~ L^(γ/ν) | χ peaks: L=16→10, L=32→25, L=64→125 |
+| Correlation length | 2D FFT estimator | Power spectrum ratio with jackknife errors |
 
 ## Key References
 
