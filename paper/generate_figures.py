@@ -163,69 +163,32 @@ def fig_energy_prediction():
 
 
 def fig_finite_size_scaling():
-    """Figure: Three-panel finite-size scaling (|M|, χ, ξ/L)."""
+    """Figure: Three-panel finite-size scaling from saved sweep results."""
     print("Generating: finite_size_scaling.pdf")
 
-    COUPLING = 0.5
-    SWEEP_CONFIGS = 1000
-    M2_STEPS = 20
-    m2_values = np.linspace(-1.5, -2.8, M2_STEPS)
+    import json
+    sweep_path = PROJECT_ROOT / 'experiments' / 'runs' / 'colab_run' / 'sweep_results.json'
+    if not sweep_path.exists():
+        print("  SKIPPED: sweep_results.json not found.")
+        return
 
-    sizes = [(16, 16), (32, 32), (64, 64)]
+    with open(sweep_path) as f:
+        sweep_data = json.load(f)
+
     colors = {'16': '#4488ff', '32': '#44bb88', '64': '#cc44ff'}
-    results = {}
-
-    for dims in sizes:
-        L = dims[0]
-        print(f"  Sweeping L={L}...")
-        lat = HypercubicLattice(LatticeConfig(dimensions=dims))
-        obs = ObservableSet(lat)
-        warm_phi = None
-
-        mags, chis, xis = [], [], []
-        xi_errs = []
-
-        n_sweeps = max(10, L // 4 * 10)
-
-        for m2 in m2_values:
-            act = Phi4Action(lat, ScalarFieldConfig(mass_squared=m2, coupling=COUPLING))
-            samp = create_sampler(act, MCConfig(
-                n_configs=SWEEP_CONFIGS, n_thermalization=1000,
-                n_sweeps_between=n_sweeps, seed=None))
-            res = samp.generate(SWEEP_CONFIGS, initial_phi=warm_phi)
-            warm_phi = res.configurations[-1].clone()
-
-            n = len(res.configurations)
-            M_samples = torch.tensor([res.configurations[j].mean().item() for j in range(n)])
-            absM = M_samples.abs()
-            M2 = M_samples ** 2
-
-            mag_mean, _ = jackknife_mean_error(absM)
-            V = lat.num_sites()
-            chi = V * (M2.mean().item() - absM.mean().item()**2)
-
-            xi_mean, xi_err = ObservableSet.correlation_length_fft_jackknife(
-                res.configurations, L, n_blocks=20)
-
-            mags.append(mag_mean)
-            chis.append(chi)
-            xis.append(xi_mean / L)
-            xi_errs.append(xi_err / L)
-
-        results[L] = {'mags': mags, 'chis': chis, 'xis': xis, 'xi_errs': xi_errs}
-
-    # Plot
     fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.5))
 
-    for L, data in results.items():
-        c = colors[str(L)]
-        axes[0].plot(m2_values, data['mags'], 'o-', color=c, label=f'$L={L}$',
+    for L_str in ['16', '32', '64']:
+        data = sweep_data[L_str]
+        m2 = np.array(data['m2_values'])
+        c = colors[L_str]
+
+        axes[0].plot(m2, data['mags'], 'o-', color=c, label=f'$L={L_str}$',
                      markersize=3, linewidth=1)
-        axes[1].plot(m2_values, data['chis'], 's-', color=c, label=f'$L={L}$',
+        axes[1].plot(m2, data['chis'], 's-', color=c, label=f'$L={L_str}$',
                      markersize=3, linewidth=1)
-        axes[2].errorbar(m2_values, data['xis'], yerr=data['xi_errs'],
-                         fmt='^-', color=c, label=f'$L={L}$',
-                         markersize=3, linewidth=1, capsize=1.5)
+        axes[2].plot(m2, data['xi_over_L'], '^-', color=c, label=f'$L={L_str}$',
+                     markersize=3, linewidth=1)
 
     axes[0].set_xlabel(r'$m^2$')
     axes[0].set_ylabel(r'$|\langle\phi\rangle|$')
@@ -248,52 +211,46 @@ def fig_finite_size_scaling():
     plt.tight_layout()
     fig.savefig(FIGURES_DIR / 'finite_size_scaling.pdf', bbox_inches='tight', dpi=300)
     plt.close()
-
-    # Save data for collapse plot
-    torch.save({'m2_values': m2_values, 'results': results},
-               FIGURES_DIR / 'fss_data.pt')
     print("  Done.")
 
 
 def fig_scaling_collapse():
-    """Figure: ξ/L crossing + data collapse (uses saved FSS data)."""
+    """Figure: ξ/L crossing + data collapse from saved sweep results."""
     print("Generating: scaling_collapse.pdf")
 
-    data_path = FIGURES_DIR / 'fss_data.pt'
-    if not data_path.exists():
-        print("  SKIPPED: Run fig_finite_size_scaling() first.")
+    import json
+    sweep_path = PROJECT_ROOT / 'experiments' / 'runs' / 'colab_run' / 'sweep_results.json'
+    if not sweep_path.exists():
+        print("  SKIPPED: sweep_results.json not found.")
         return
 
-    saved = torch.load(data_path, weights_only=False)
-    m2_values = saved['m2_values']
-    results = saved['results']
+    with open(sweep_path) as f:
+        sweep_data = json.load(f)
+
+    m2_values = np.array(sweep_data['16']['m2_values'])
+    xi16 = np.array(sweep_data['16']['xi_over_L'])
+    xi32 = np.array(sweep_data['32']['xi_over_L'])
 
     # Find crossing of L=16 and L=32
-    xi16 = np.array(results[16]['xis'])
-    xi32 = np.array(results[32]['xis'])
     diff = xi16 - xi32
-    # Find sign change
     m2c = -2.45  # default
     for i in range(len(diff) - 1):
         if diff[i] * diff[i+1] < 0:
-            # Linear interpolation
             f = diff[i] / (diff[i] - diff[i+1])
             m2c = m2_values[i] + f * (m2_values[i+1] - m2_values[i])
             break
 
-    # Fit nu from collapse (simple grid search)
+    # Fit nu from collapse (grid search)
     best_nu = 1.0
     best_cost = float('inf')
-    for nu_try in np.linspace(0.5, 2.0, 100):
+    for nu_try in np.linspace(0.5, 2.0, 150):
         cost = 0
-        for L1, L2 in [(16, 32), (32, 64)]:
-            if L2 not in results:
-                continue
+        for L1_str, L2_str in [('16', '32'), ('32', '64')]:
+            L1, L2 = int(L1_str), int(L2_str)
             x1 = (m2_values - m2c) * L1**(1/nu_try)
             x2 = (m2_values - m2c) * L2**(1/nu_try)
-            y1 = np.array(results[L1]['xis'])
-            y2 = np.array(results[L2]['xis'])
-            # Interpolate y2 onto x1 grid and compare
+            y1 = np.array(sweep_data[L1_str]['xi_over_L'])
+            y2 = np.array(sweep_data[L2_str]['xi_over_L'])
             y2_interp = np.interp(x1, x2, y2, left=np.nan, right=np.nan)
             mask = np.isfinite(y2_interp)
             if mask.sum() > 3:
@@ -303,15 +260,14 @@ def fig_scaling_collapse():
             best_nu = nu_try
 
     colors = {'16': '#4488ff', '32': '#44bb88', '64': '#cc44ff'}
-
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.0))
 
     # Left: ξ/L crossing
-    for L, data in results.items():
-        c = colors[str(L)]
-        axes[0].errorbar(m2_values, data['xis'], yerr=data['xi_errs'],
-                         fmt='o-', color=c, label=f'$L={L}$',
-                         markersize=3, linewidth=1, capsize=1.5)
+    for L_str in ['16', '32', '64']:
+        data = sweep_data[L_str]
+        c = colors[L_str]
+        axes[0].plot(m2_values, data['xi_over_L'], 'o-', color=c,
+                     label=f'$L={L_str}$', markersize=3, linewidth=1)
     axes[0].axvline(m2c, color='gray', ls='--', alpha=0.5,
                     label=rf'$m^2_c = {m2c:.2f}$')
     axes[0].set_xlabel(r'$m^2$')
@@ -320,11 +276,13 @@ def fig_scaling_collapse():
     axes[0].legend(frameon=False, fontsize=7)
 
     # Right: Scaling collapse
-    for L, data in results.items():
-        c = colors[str(L)]
+    for L_str in ['16', '32', '64']:
+        L = int(L_str)
+        c = colors[L_str]
         x_scaled = (m2_values - m2c) * L**(1/best_nu)
-        axes[1].scatter(x_scaled, data['xis'], s=15, color=c, alpha=0.7,
-                        label=f'$L={L}$', edgecolors='none')
+        axes[1].scatter(x_scaled, sweep_data[L_str]['xi_over_L'],
+                        s=15, color=c, alpha=0.7,
+                        label=f'$L={L_str}$', edgecolors='none')
     axes[1].set_xlabel(rf'$(m^2 - m^2_c) \cdot L^{{1/\nu}}$, $\nu={best_nu:.2f}$')
     axes[1].set_ylabel(r'$\xi / L$')
     axes[1].set_title(rf'Scaling Collapse: $\nu = {best_nu:.2f}$', fontsize=10)
@@ -336,7 +294,7 @@ def fig_scaling_collapse():
     plt.tight_layout()
     fig.savefig(FIGURES_DIR / 'scaling_collapse.pdf', bbox_inches='tight', dpi=300)
     plt.close()
-    print(f"  Done. m²_c = {m2c:.3f}, ν = {best_nu:.2f}")
+    print(f"  Done. m2_c = {m2c:.3f}, nu = {best_nu:.2f}")
 
 
 if __name__ == '__main__':
