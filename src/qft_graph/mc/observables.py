@@ -197,18 +197,20 @@ class ObservableSet:
     ) -> float:
         """Extract correlation length using the full 2D FFT method.
 
-        This is the correct implementation for finite-size scaling.
-        It uses the power spectrum of the field configurations:
+        Uses the standard second-moment estimator in momentum space:
 
-            G̃(k) = <|φ̃(k)|²> / V
+            ξ = (1 / 2sin(π/L)) × sqrt( χ/F - 1 )
 
-        and then:
-            ξ = (1 / 2sin(π/L)) × sqrt( G̃(0,0)/G̃(k_min,0) - 1 )
+        where:
+            χ = V · Var(M) = V · (<M²> - <M>²)  (connected susceptibility)
+            F = <|φ̃(k_min)|²> / V               (propagator at k_min)
 
-        where k_min = (2π/L, 0). This uses ALL spatial correlations
-        (not just on-axis), giving correct results for all lattice sizes.
+        The key is that χ is computed from magnetization fluctuations
+        (not from the k=0 FFT mode), while F comes from the k≠0 FFT modes
+        which are unaffected by the mean subtraction.
 
-        The FFT approach is also faster than computing G(r) in real space.
+        This correctly handles the connected correlator for all lattice
+        sizes without the systematic suppression of naive approaches.
 
         Args:
             phi_configs: Field configurations, shape (n_configs, n_sites).
@@ -219,34 +221,77 @@ class ObservableSet:
             Correlation length xi in lattice units.
         """
         n_configs = phi_configs.shape[0]
+        V = L * L
 
-        # Reshape to 2D grid and compute ensemble-averaged power spectrum
+        # Reshape to 2D grids
         phi_grids = phi_configs.reshape(n_configs, L, L)
 
-        # Subtract per-config mean to get connected correlator
-        # (equivalent to setting k=0 mode to zero, but we need G̃(0) from
-        #  the ensemble, not per-config, so we subtract ensemble mean)
-        ensemble_mean = phi_grids.mean().item()
-        phi_centered = phi_grids - ensemble_mean
+        # --- Connected susceptibility from magnetization fluctuations ---
+        # M_i = (1/V) Σ_x φ_i(x) for each config
+        M = phi_grids.mean(dim=(1, 2))  # (n_configs,)
+        chi = V * (M.pow(2).mean() - M.mean().pow(2)).item()
 
-        # 2D FFT of each config, then average |φ̃(k)|²
-        phi_fft = torch.fft.fft2(phi_centered)  # (n_configs, L, L) complex
-        power_spectrum = (phi_fft.real**2 + phi_fft.imag**2).mean(dim=0)  # (L, L)
-        power_spectrum /= (L * L)  # Normalize: G̃(k) = <|φ̃(k)|²> / V
+        # --- Propagator at k_min from FFT ---
+        # Subtract per-config spatial mean so k=0 mode is zero.
+        # This doesn't affect k≠0 modes.
+        per_config_mean = M.reshape(n_configs, 1, 1)
+        phi_centered = phi_grids - per_config_mean
 
-        # G̃(0,0): zero-momentum mode (susceptibility)
-        G_tilde_0 = power_spectrum[0, 0].item()
+        # 2D FFT, then ensemble-average the power spectrum at k_min
+        phi_fft = torch.fft.fft2(phi_centered)  # (n_configs, L, L)
+        # F = <|φ̃(k_min, 0)|²> / V  where k_min index = 1
+        F = (phi_fft[:, 1, 0].real**2 + phi_fft[:, 1, 0].imag**2).mean().item() / V
 
-        # G̃(k_min, 0): smallest non-zero momentum along x
-        # k_min = 2π/L corresponds to FFT index 1
-        G_tilde_k = power_spectrum[1, 0].item()
-
-        if G_tilde_k <= 0 or G_tilde_0 <= 0:
+        if F <= 0 or chi <= 0:
             return 0.0
 
-        ratio = G_tilde_0 / G_tilde_k - 1.0
+        ratio = chi / F - 1.0
         if ratio <= 0:
             return 0.0
 
         xi = lattice_spacing / (2.0 * np.sin(np.pi / L)) * np.sqrt(ratio)
         return float(xi) if np.isfinite(xi) else 0.0
+
+    @staticmethod
+    def correlation_length_fft_jackknife(
+        phi_configs: torch.Tensor,
+        L: int,
+        n_blocks: int = 20,
+        lattice_spacing: float = 1.0,
+    ) -> tuple[float, float]:
+        """Extract ξ with jackknife error estimate.
+
+        Splits configurations into n_blocks jackknife blocks, computes ξ
+        from each leave-one-block-out subset, and returns the mean and
+        standard error.
+
+        Args:
+            phi_configs: Field configurations, shape (n_configs, n_sites).
+            L: Linear lattice size.
+            n_blocks: Number of jackknife blocks.
+            lattice_spacing: Physical lattice spacing.
+
+        Returns:
+            (xi_mean, xi_err) tuple.
+        """
+        n_configs = phi_configs.shape[0]
+        block_size = n_configs // n_blocks
+        # Trim to exact multiple of block_size
+        n_use = block_size * n_blocks
+        configs = phi_configs[:n_use]
+
+        xi_jack = []
+        for b in range(n_blocks):
+            # Leave out block b
+            mask = torch.ones(n_use, dtype=torch.bool)
+            mask[b * block_size : (b + 1) * block_size] = False
+            subset = configs[mask]
+            xi_b = ObservableSet.correlation_length_fft(subset, L, lattice_spacing)
+            xi_jack.append(xi_b)
+
+        xi_arr = np.array(xi_jack)
+        xi_mean = xi_arr.mean()
+        # Jackknife error formula: sqrt((n-1)/n * Σ(xi_b - xi_mean)²)
+        xi_err = np.sqrt((n_blocks - 1) / n_blocks * np.sum((xi_arr - xi_mean)**2))
+
+        return float(xi_mean), float(xi_err)
