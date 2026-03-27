@@ -149,15 +149,11 @@ class ObservableSet:
         L: int,
         lattice_spacing: float = 1.0,
     ) -> float:
-        """Extract correlation length using the second-moment method.
+        """Extract correlation length using the second-moment method (1D).
 
-        This is the standard estimator used in lattice field theory.
-        It uses the Fourier transform of G(r) at k=0 and k_min = 2π/L:
-
-            ξ = (1 / 2sin(π/L)) * sqrt( G̃(0)/G̃(k_min) - 1 )
-
-        This is far more robust than the log-slope method because it
-        uses all configuration data and doesn't require fitting.
+        Uses the 1D Fourier transform of the angle-averaged correlator.
+        For small lattices this is adequate, but for precise finite-size
+        scaling use correlation_length_fft() which uses the full 2D FFT.
 
         Args:
             G_r: Two-point function from two_point_function(), shape (L//2+1,).
@@ -165,24 +161,18 @@ class ObservableSet:
             lattice_spacing: Physical lattice spacing.
 
         Returns:
-            Correlation length xi in lattice units. Returns 0.0 if
-            the ratio is invalid (negative or NaN).
+            Correlation length xi in lattice units.
         """
         max_r = len(G_r)  # L//2 + 1
-
-        # Compute G̃(k) = Σ_r G(r) * cos(k*r) for k=0 and k_min
-        # For a periodic lattice, we symmetrize: G(r) = G(L-r),
-        # so the full DFT is 2*Σ_{r=1}^{L/2-1} G(r)cos(kr) + G(0) + G(L/2)cos(k*L/2)
         k_min = 2.0 * np.pi / L
 
-        # G̃(0) = G(0) + 2*Σ_{r=1}^{L/2-1} G(r) + G(L/2)  [if L even]
+        # Reconstruct full 1D DFT using symmetry G(r) = G(L-r)
         G_tilde_0 = G_r[0].item()
         for r in range(1, max_r - 1):
             G_tilde_0 += 2.0 * G_r[r].item()
         if max_r > 1:
-            G_tilde_0 += G_r[max_r - 1].item()  # G(L/2) appears once
+            G_tilde_0 += G_r[max_r - 1].item()
 
-        # G̃(k_min) = G(0) + 2*Σ_{r=1}^{L/2-1} G(r)*cos(k_min*r) + G(L/2)*cos(k_min*L/2)
         G_tilde_k = G_r[0].item()
         for r in range(1, max_r - 1):
             G_tilde_k += 2.0 * G_r[r].item() * np.cos(k_min * r)
@@ -197,8 +187,66 @@ class ObservableSet:
             return 0.0
 
         xi = lattice_spacing / (2.0 * np.sin(np.pi / L)) * np.sqrt(ratio)
+        return float(xi) if np.isfinite(xi) else 0.0
 
-        if not np.isfinite(xi):
+    @staticmethod
+    def correlation_length_fft(
+        phi_configs: torch.Tensor,
+        L: int,
+        lattice_spacing: float = 1.0,
+    ) -> float:
+        """Extract correlation length using the full 2D FFT method.
+
+        This is the correct implementation for finite-size scaling.
+        It uses the power spectrum of the field configurations:
+
+            G̃(k) = <|φ̃(k)|²> / V
+
+        and then:
+            ξ = (1 / 2sin(π/L)) × sqrt( G̃(0,0)/G̃(k_min,0) - 1 )
+
+        where k_min = (2π/L, 0). This uses ALL spatial correlations
+        (not just on-axis), giving correct results for all lattice sizes.
+
+        The FFT approach is also faster than computing G(r) in real space.
+
+        Args:
+            phi_configs: Field configurations, shape (n_configs, n_sites).
+            L: Linear lattice size (assumes square L×L lattice).
+            lattice_spacing: Physical lattice spacing.
+
+        Returns:
+            Correlation length xi in lattice units.
+        """
+        n_configs = phi_configs.shape[0]
+
+        # Reshape to 2D grid and compute ensemble-averaged power spectrum
+        phi_grids = phi_configs.reshape(n_configs, L, L)
+
+        # Subtract per-config mean to get connected correlator
+        # (equivalent to setting k=0 mode to zero, but we need G̃(0) from
+        #  the ensemble, not per-config, so we subtract ensemble mean)
+        ensemble_mean = phi_grids.mean().item()
+        phi_centered = phi_grids - ensemble_mean
+
+        # 2D FFT of each config, then average |φ̃(k)|²
+        phi_fft = torch.fft.fft2(phi_centered)  # (n_configs, L, L) complex
+        power_spectrum = (phi_fft.real**2 + phi_fft.imag**2).mean(dim=0)  # (L, L)
+        power_spectrum /= (L * L)  # Normalize: G̃(k) = <|φ̃(k)|²> / V
+
+        # G̃(0,0): zero-momentum mode (susceptibility)
+        G_tilde_0 = power_spectrum[0, 0].item()
+
+        # G̃(k_min, 0): smallest non-zero momentum along x
+        # k_min = 2π/L corresponds to FFT index 1
+        G_tilde_k = power_spectrum[1, 0].item()
+
+        if G_tilde_k <= 0 or G_tilde_0 <= 0:
             return 0.0
 
-        return float(xi)
+        ratio = G_tilde_0 / G_tilde_k - 1.0
+        if ratio <= 0:
+            return 0.0
+
+        xi = lattice_spacing / (2.0 * np.sin(np.pi / L)) * np.sqrt(ratio)
+        return float(xi) if np.isfinite(xi) else 0.0
