@@ -10,7 +10,7 @@ from qft_graph.config import ModelConfig
 from qft_graph.graphs.edge_types import ADJACENT
 from qft_graph.models.encoders.spacetime import EdgeEncoder, FieldEncoder, SpacetimeEncoder
 from qft_graph.models.heads.correlator import CorrelatorHead
-from qft_graph.models.heads.energy import EnergyHead
+from qft_graph.models.heads.action import ActionHead
 from qft_graph.models.message_passing.stage import ThreeStageBlock
 
 
@@ -52,9 +52,11 @@ class HeteroGNN(nn.Module):
         h = config.hidden_dim
 
         # --- Encoders ---
-        # Spacetime: input = coordinates (lattice_dim) + lattice_spacing (1)
+        # Spacetime: input = coordinates only (lattice_dim) if a is in edges,
+        # otherwise coordinates + lattice_spacing (lattice_dim + 1)
+        st_input_dim = lattice_dim if config.a_in_edges else lattice_dim + 1
         self.st_encoder = SpacetimeEncoder(
-            input_dim=lattice_dim + 1,
+            input_dim=st_input_dim,
             hidden_dim=h,
             n_layers=config.encoder_layers,
             activation=config.activation,
@@ -96,14 +98,15 @@ class HeteroGNN(nn.Module):
         )
 
         # --- Readout Heads ---
-        self.energy_head = None
+        self.action_head = None
         self.correlator_head = None
 
         if config.readout in ("energy", "both"):
-            self.energy_head = EnergyHead(
+            self.action_head = ActionHead(
                 st_dim=h,
                 field_dims=field_dims,
                 hidden_dim=h,
+                volume_scaling=config.volume_scaling,
             )
 
         if config.readout in ("correlator", "both"):
@@ -173,10 +176,10 @@ class HeteroGNN(nn.Module):
 
         batch = data["spacetime"].get("batch", None)
 
-        if self.energy_head is not None:
+        if self.action_head is not None:
             h_st = data["spacetime"].x
             h_fields = {fname: data[fname].x for fname in self._field_type_names}
-            total_e, local_e = self.energy_head(
+            total_e, local_e = self.action_head(
                 h_st, h_fields, self.lattice_spacing, self.lattice_dim, batch
             )
             output["energy"] = total_e

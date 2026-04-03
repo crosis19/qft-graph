@@ -274,7 +274,7 @@ HeteroGraphBuilder:        HeteroGraphBuilder:          HeteroGraphBuilder:
 | `HeteroGraphBuilder` | Pass more `Field` objects in list | `build()` method unchanged |
 | `HeteroGNN` | `field_types={"scalar":1, "gauge":18}` | Dynamic encoder creation |
 | `ThreeStageBlock` | `field_dims={"scalar":H, "gauge":H}` | Same 3-stage structure |
-| `EnergyHead` | Concatenates all field embeddings | Same MLP readout |
+| `ActionHead` | Concatenates all field embeddings | Same MLP readout |
 
 ---
 
