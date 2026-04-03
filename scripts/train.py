@@ -60,7 +60,7 @@ def main() -> None:
     # Setup lattice and graph builder
     lattice = HypercubicLattice(config.lattice)
     scalar_field = ScalarField()
-    builder = HeteroGraphBuilder(lattice, [scalar_field])
+    builder = HeteroGraphBuilder(lattice, [scalar_field], a_in_edges=config.model.a_in_edges)
 
     # Build graph dataset
     logger.info("Building graph dataset from %d configurations...", len(configurations))

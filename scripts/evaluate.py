@@ -40,7 +40,7 @@ def main() -> None:
     # Setup
     lattice = HypercubicLattice(config.lattice)
     scalar_field = ScalarField()
-    builder = HeteroGraphBuilder(lattice, [scalar_field])
+    builder = HeteroGraphBuilder(lattice, [scalar_field], a_in_edges=config.model.a_in_edges)
     obs = ObservableSet(lattice)
 
     # Build test graphs

@@ -48,6 +48,8 @@ class ModelConfig:
     dropout: float = 0.0
     activation: str = "gelu"  # "relu" | "gelu" | "silu"
     readout: str = "energy"  # "energy" | "correlator" | "both"
+    a_in_edges: bool = True  # put lattice spacing in edge displacements instead of nodes
+    volume_scaling: bool = True  # multiply per-site energy by a^d
 
 
 @dataclass

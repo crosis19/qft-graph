@@ -45,8 +45,102 @@ from qft_graph.mc.observables import ObservableSet
 from qft_graph.mc.analysis import jackknife_mean_error
 
 
+def fig_graph_structure():
+    """Figure 1: 3D heterogeneous bipartite graph schematic."""
+    print("Generating: graph_structure.pdf")
+    from mpl_toolkits.mplot3d import Axes3D
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+    L = 4  # 4x4 lattice
+    # Node positions on an L x L grid
+    coords = np.array([(x, y) for y in range(L) for x in range(L)])
+    n_nodes = len(coords)
+
+    # 3D positions: spacetime at z=0, field nodes at z=-2
+    st_xyz = np.column_stack([coords, np.zeros(n_nodes)])
+    f_xyz = np.column_stack([coords, np.full(n_nodes, -2.0)])
+
+    # Adjacency edges (nearest-neighbor, skip periodic wrap-around)
+    adj_edges = []
+    for i, (x1, y1) in enumerate(coords):
+        for j, (x2, y2) in enumerate(coords):
+            if i < j and abs(x1 - x2) + abs(y1 - y2) == 1:
+                adj_edges.append((i, j))
+
+    fig = plt.figure(figsize=(4.5, 4.0))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Semi-transparent planes for layer depth cue
+    pad = 0.5
+    verts_st = [
+        [(-pad, -pad, 0), (L - 1 + pad, -pad, 0),
+         (L - 1 + pad, L - 1 + pad, 0), (-pad, L - 1 + pad, 0)]
+    ]
+    verts_f = [
+        [(-pad, -pad, -2), (L - 1 + pad, -pad, -2),
+         (L - 1 + pad, L - 1 + pad, -2), (-pad, L - 1 + pad, -2)]
+    ]
+    ax.add_collection3d(Poly3DCollection(
+        verts_st, alpha=0.06, facecolor='#4488ff', edgecolor='#4488ff', linewidths=0.5))
+    ax.add_collection3d(Poly3DCollection(
+        verts_f, alpha=0.06, facecolor='#ee6644', edgecolor='#ee6644', linewidths=0.5))
+
+    # Adjacency edges (solid blue)
+    for i, j in adj_edges:
+        ax.plot(*zip(st_xyz[i], st_xyz[j]), color='#4488ff', linewidth=1.0, alpha=0.6)
+
+    # Inhabits edges (dashed orange)
+    for i in range(n_nodes):
+        ax.plot(*zip(f_xyz[i], st_xyz[i]),
+                color='#ee6644', linewidth=0.8, alpha=0.5, linestyle='--')
+
+    # Spacetime nodes (blue)
+    ax.scatter(*st_xyz.T, s=30, c='#4488ff', edgecolors='white',
+               linewidths=0.5, zorder=5, label='Spacetime nodes')
+
+    # Field nodes (orange-red)
+    ax.scatter(*f_xyz.T, s=30, c='#ee6644', edgecolors='white',
+               linewidths=0.5, zorder=5, label='Scalar field nodes')
+
+    # Layer labels
+    ax.text2D(0.82, 0.62, 'Spacetime\n($x_1, x_2$)',
+              fontsize=7, color='#2266cc', ha='left', transform=ax.transAxes)
+    ax.text2D(0.82, 0.28, 'Scalar Field\n($\\phi_i$)',
+              fontsize=7, color='#cc4422', ha='left', transform=ax.transAxes)
+
+    # Camera angle and axis formatting
+    ax.view_init(elev=25, azim=-55)
+    ax.set_xlim(-0.5, L - 1 + 0.5)
+    ax.set_ylim(-0.5, L - 1 + 0.5)
+    ax.set_zlim(-2.8, 0.8)
+    ax.set_xlabel('$x_1$', fontsize=9, labelpad=2)
+    ax.set_ylabel('$x_2$', fontsize=9, labelpad=2)
+    ax.set_zlabel('Layer', fontsize=9, labelpad=2)
+    ax.set_xticks(range(L))
+    ax.set_yticks(range(L))
+    ax.set_zticks([0, -2])
+    ax.set_zticklabels(['ST', 'Field'], fontsize=7)
+    ax.tick_params(axis='both', labelsize=7, pad=1)
+
+    # Clean up panes
+    ax.xaxis.pane.fill = False
+    ax.yaxis.pane.fill = False
+    ax.zaxis.pane.fill = False
+    ax.xaxis.pane.set_edgecolor('lightgray')
+    ax.yaxis.pane.set_edgecolor('lightgray')
+    ax.zaxis.pane.set_edgecolor('lightgray')
+    ax.grid(True, alpha=0.2)
+
+    ax.legend(loc='upper left', fontsize=7, frameon=False,
+              bbox_to_anchor=(0.0, 0.95))
+
+    fig.savefig(FIGURES_DIR / 'graph_structure.pdf', bbox_inches='tight', dpi=300)
+    plt.close()
+    print("  Done.")
+
+
 def fig_free_field():
-    """Figure 1: Free field Gaussian validation."""
+    """Figure 2: Free field Gaussian validation."""
     print("Generating: free_field.pdf")
     lattice = HypercubicLattice(LatticeConfig(dimensions=(16, 16)))
     action = Phi4Action(lattice, ScalarFieldConfig(mass_squared=1.0, coupling=0.0))
@@ -102,7 +196,8 @@ def fig_energy_prediction():
         L = dims[0]
         lattice = HypercubicLattice(LatticeConfig(dimensions=dims))
         scalar_field = ScalarField()
-        builder = HeteroGraphBuilder(lattice, [scalar_field])
+        # Note: existing checkpoint was trained with a_in_edges=False
+        builder = HeteroGraphBuilder(lattice, [scalar_field], a_in_edges=False)
 
         n_total = len(configurations)
         n_train = int(0.8 * n_total)
@@ -114,8 +209,8 @@ def fig_energy_prediction():
             actions=val_actions,
         )
 
-        # Load model
-        model_config = ModelConfig()
+        # Load model (checkpoint trained with a_in_edges=False)
+        model_config = ModelConfig(a_in_edges=False)
         model = HeteroGNN(model_config, lattice_dim=2,
                           field_types={'scalar': 1}, lattice_spacing=1.0)
 
@@ -297,11 +392,96 @@ def fig_scaling_collapse():
     print(f"  Done. m2_c = {m2c:.3f}, nu = {best_nu:.2f}")
 
 
+def fig_baseline_comparison():
+    """Figure: Bar chart comparing baseline architectures."""
+    print("Generating: baseline_comparison.pdf")
+
+    import json
+    results_path = PROJECT_ROOT / 'experiments' / 'baseline_results.json'
+    if not results_path.exists():
+        print("  SKIPPED: baseline_results.json not found. Run train_baselines.py first.")
+        return
+
+    with open(results_path) as f:
+        results = json.load(f)
+
+    models = [r['model'] for r in results]
+    pearson_r = [r['pearson_r'] for r in results]
+    params = [r['n_params'] for r in results]
+
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.8))
+
+    colors = ['#cc4444', '#4488ff', '#44bb88', '#cc44ff']
+
+    # Left: Pearson r
+    bars = axes[0].bar(models, pearson_r, color=colors[:len(models)], alpha=0.8)
+    axes[0].set_ylabel('Pearson $r$')
+    axes[0].set_title('Energy Prediction Accuracy', fontsize=10)
+    axes[0].set_ylim(min(pearson_r) - 0.01, 1.001)
+
+    # Right: Parameter count
+    axes[1].bar(models, [p/1000 for p in params], color=colors[:len(models)], alpha=0.8)
+    axes[1].set_ylabel('Parameters (thousands)')
+    axes[1].set_title('Model Size', fontsize=10)
+
+    for ax in axes:
+        ax.tick_params(direction='in')
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=15, ha='right')
+
+    plt.tight_layout()
+    fig.savefig(FIGURES_DIR / 'baseline_comparison.pdf', bbox_inches='tight', dpi=300)
+    plt.close()
+    print("  Done.")
+
+
+def fig_generalization():
+    """Figure: Generalization across coupling values."""
+    print("Generating: generalization.pdf")
+
+    import json
+    results_path = PROJECT_ROOT / 'experiments' / 'generalization_results.json'
+    if not results_path.exists():
+        print("  SKIPPED: generalization_results.json not found. Run evaluate_generalization.py first.")
+        return
+
+    with open(results_path) as f:
+        results = json.load(f)
+
+    m2_vals = [r['m2'] for r in results]
+    pearson_r = [r['pearson_r'] for r in results]
+    is_train = [r.get('is_training_point', False) for r in results]
+
+    fig, ax = plt.subplots(figsize=(3.4, 2.8))
+
+    # Plot all points
+    colors = ['#cc4444' if t else '#4488ff' for t in is_train]
+    ax.scatter(m2_vals, pearson_r, c=colors, s=40, zorder=5)
+    ax.plot(m2_vals, pearson_r, '--', color='#888888', alpha=0.5, linewidth=1)
+
+    # Mark training point
+    for m2, r, t in zip(m2_vals, pearson_r, is_train):
+        if t:
+            ax.annotate('training\npoint', (m2, r), textcoords='offset points',
+                       xytext=(15, -10), fontsize=7, color='#cc4444',
+                       arrowprops=dict(arrowstyle='->', color='#cc4444', lw=0.8))
+
+    ax.set_xlabel(r'$m^2$')
+    ax.set_ylabel('Pearson $r$')
+    ax.set_title('Coupling Generalization', fontsize=10)
+    ax.set_ylim(min(pearson_r) - 0.05, 1.01)
+    ax.tick_params(direction='in')
+    plt.tight_layout()
+    fig.savefig(FIGURES_DIR / 'generalization.pdf', bbox_inches='tight', dpi=300)
+    plt.close()
+    print("  Done.")
+
+
 if __name__ == '__main__':
     print("=" * 60)
     print("Generating paper figures")
     print("=" * 60)
 
+    fig_graph_structure()
     fig_free_field()
     fig_energy_prediction()
 
@@ -311,5 +491,9 @@ if __name__ == '__main__':
         fig_scaling_collapse()
     else:
         print("Skipping FSS figures (--quick mode)")
+
+    # Baseline comparison figures (need results from experiments)
+    fig_baseline_comparison()
+    fig_generalization()
 
     print("\nAll figures saved to:", FIGURES_DIR)

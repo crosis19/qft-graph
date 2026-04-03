@@ -31,15 +31,19 @@ class HeteroGraphBuilder:
         fields: List of Field instances to include in the graph.
     """
 
-    def __init__(self, lattice: Lattice, fields: list[Field]) -> None:
+    def __init__(self, lattice: Lattice, fields: list[Field], a_in_edges: bool = False) -> None:
         self.lattice = lattice
         self.fields = fields
         self._nsites = lattice.num_sites()
+        self._a_in_edges = a_in_edges
 
         # Precompute lattice topology (fixed across configurations)
         self._coords = lattice.site_coordinates()
         self._adj_src, self._adj_dst = lattice.neighbor_pairs()
         self._edge_dirs = lattice.edge_directions()
+
+        if a_in_edges:
+            self._edge_dirs = self._edge_dirs * lattice.lattice_spacing()
 
         # Bipartite edges: each field node i connects to spacetime node i
         self._bipartite_idx = torch.arange(self._nsites)
@@ -57,9 +61,13 @@ class HeteroGraphBuilder:
         data = HeteroData()
 
         # --- Spacetime nodes ---
-        # Features: [coordinates, lattice_spacing]
-        spacing = torch.full((self._nsites, 1), self.lattice.lattice_spacing())
-        st_features = torch.cat([self._coords, spacing], dim=-1)
+        if self._a_in_edges:
+            # Lattice spacing encoded in edge displacements; nodes get coordinates only
+            st_features = self._coords
+        else:
+            # Features: [coordinates, lattice_spacing]
+            spacing = torch.full((self._nsites, 1), self.lattice.lattice_spacing())
+            st_features = torch.cat([self._coords, spacing], dim=-1)
         data["spacetime"].x = st_features
         data["spacetime"].num_nodes = self._nsites
 
