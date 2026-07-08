@@ -29,9 +29,13 @@ class HeteroGraphBuilder:
     Args:
         lattice: Lattice instance providing geometry.
         fields: List of Field instances to include in the graph.
+        a_in_edges: If True (default, matching ModelConfig.a_in_edges),
+            lattice spacing scales the adjacency edge displacement vectors
+            and spacetime nodes carry coordinates only. If False, spacing
+            is appended as a spacetime node feature instead.
     """
 
-    def __init__(self, lattice: Lattice, fields: list[Field], a_in_edges: bool = False) -> None:
+    def __init__(self, lattice: Lattice, fields: list[Field], a_in_edges: bool = True) -> None:
         self.lattice = lattice
         self.fields = fields
         self._nsites = lattice.num_sites()

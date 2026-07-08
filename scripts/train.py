@@ -19,6 +19,7 @@ from qft_graph.config import (
     ModelConfig,
     TrainingConfig,
     load_config,
+    resolve_device,
 )
 from qft_graph.fields.scalar import ScalarField
 from qft_graph.graphs.builder import HeteroGraphBuilder
@@ -46,10 +47,9 @@ def main() -> None:
     config = load_config(args.config, overrides)
     set_seed(config.training.seed)
 
-    device = config.device
-    if device == "cuda" and not torch.cuda.is_available():
-        device = "cpu"
-        logger.warning("CUDA not available, falling back to CPU")
+    device = resolve_device(config.device)
+    if device != config.device:
+        logger.info("Resolved device '%s' -> '%s'", config.device, device)
 
     # Load MC data
     logger.info("Loading MC data from %s", args.data)

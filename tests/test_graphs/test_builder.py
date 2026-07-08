@@ -14,7 +14,13 @@ class TestHeteroGraphBuilder:
 
     def test_spacetime_features_shape(self, graph_builder, sample_config, small_lattice):
         data = graph_builder.build({"scalar": sample_config})
-        # Features: [x1, x2, lattice_spacing]
+        # Default a_in_edges=True: features are coordinates only [x1, x2]
+        assert data["spacetime"].x.shape == (small_lattice.num_sites(), 2)
+
+    def test_spacetime_features_a_in_nodes(self, small_lattice, scalar_field, sample_config):
+        builder = HeteroGraphBuilder(small_lattice, [scalar_field], a_in_edges=False)
+        data = builder.build({"scalar": sample_config})
+        # a_in_edges=False: features are [x1, x2, lattice_spacing]
         assert data["spacetime"].x.shape == (small_lattice.num_sites(), 3)
 
     def test_scalar_features_shape(self, graph_builder, sample_config, small_lattice):

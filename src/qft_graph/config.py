@@ -75,8 +75,23 @@ class ExperimentConfig:
     mc: MCConfig = dataclass_field(default_factory=MCConfig)
     model: ModelConfig = dataclass_field(default_factory=ModelConfig)
     training: TrainingConfig = dataclass_field(default_factory=TrainingConfig)
-    device: str = "cuda"
+    device: str = "auto"  # "auto" | "cuda" | "cpu"; resolve via resolve_device()
     experiment_name: str = "default"
+
+
+def resolve_device(device: str) -> str:
+    """Resolve a device string, auto-detecting CUDA availability.
+
+    "auto" (and "cuda" when CUDA is unavailable) resolve to the best
+    available device, so configs never hard-require a GPU.
+    """
+    import torch
+
+    if device == "auto":
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    if device == "cuda" and not torch.cuda.is_available():
+        return "cpu"
+    return device
 
 
 def load_config(
