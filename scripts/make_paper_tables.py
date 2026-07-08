@@ -1,0 +1,173 @@
+"""Generate LaTeX table bodies for the paper from results/ JSONs.
+
+Writes paper/tables/*.tex fragments that main.tex \\input's, so no table
+number is ever hand-typed (plan ground rule 4). Skips any table whose
+results JSON is missing or incomplete, and says so.
+
+Usage:
+    python scripts/make_paper_tables.py
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+RESULTS = PROJECT_ROOT / "results"
+OUT = PROJECT_ROOT / "paper" / "tables"
+
+MODEL_LABELS = {
+    "HeteroGNN": r"\textbf{HeteroGNN (ours)}",
+    "HomogeneousGNN": "Homogeneous GNN",
+    "LatticeCNN": "Lattice CNN",
+    "LatticeCNN-matched": "Lattice CNN (matched)",
+    "MLP": "MLP",
+}
+
+
+def fmt_pm(mean: float, std: float, digits: int = 5) -> str:
+    return rf"${mean:.{digits}f} \pm {std:.{digits}f}$"
+
+
+def fmt_pct_pm(mean: float, std: float) -> str:
+    return rf"${100 * mean:.2f} \pm {100 * std:.2f}\%$"
+
+
+def load(name: str) -> dict | None:
+    path = RESULTS / f"{name}.json"
+    if not path.exists():
+        print(f"  {name}.json missing — skipped")
+        return None
+    with open(path) as f:
+        return json.load(f)
+
+
+def complete(data: dict, expected_seeds: int = 5) -> bool:
+    """Every model must have all expected seeds (incremental saves mean a
+    file can exist mid-run with a partial last seed)."""
+    runs = data.get("per_seed", data.get("per_run", []))
+    models = {r["model"] for r in runs if "model" in r}
+    if not models:
+        seeds = {r["seed"] for r in runs}
+        return len(seeds) >= expected_seeds
+    return all(
+        len({r["seed"] for r in runs if r.get("model") == m}) >= expected_seeds
+        for m in models
+    )
+
+
+def table1_action() -> bool:
+    """Table I: action prediction across lattice sizes (HeteroGNN rows)."""
+    rows = []
+    for name, size, n_sites in [
+        ("baseline_results_v2", "16x16", 256),
+        ("baseline_64x64_v2", "64x64", 4096),
+    ]:
+        data = load(name)
+        if data is None or not complete(data):
+            print(f"  table1: {name} incomplete — skipped")
+            return False
+        s = next(x for x in data["summary"] if x["model"] == "HeteroGNN")
+        size_label = size.replace("x", r" \times ")
+        rows.append(
+            rf"${size_label}$ & {n_sites} & "
+            + fmt_pm(s["r_mean"], s["r_std"])
+            + " & "
+            + fmt_pct_pm(s["rel_err_mean"], s["rel_err_std"])
+            + r" \\"
+        )
+    _write("table1_body.tex", rows)
+    return True
+
+
+def table2_baselines() -> bool:
+    """Table II: architecture comparison at L=16, mean +/- std over seeds."""
+    data = load("baseline_results_v2")
+    if data is None or not complete(data):
+        print("  table2: baseline_results_v2 incomplete — skipped")
+        return False
+    order = ["HeteroGNN", "HomogeneousGNN", "LatticeCNN", "LatticeCNN-matched", "MLP"]
+    rows = []
+    for model in order:
+        s = next((x for x in data["summary"] if x["model"] == model), None)
+        if s is None:
+            continue
+        bold = model == "HeteroGNN"
+        r_str = fmt_pm(s["r_mean"], s["r_std"])
+        e_str = fmt_pct_pm(s["rel_err_mean"], s["rel_err_std"])
+        if bold:
+            r_str = rf"\textbf{{{s['r_mean']:.5f}}} $\pm$ {s['r_std']:.5f}"
+        rows.append(
+            rf"{MODEL_LABELS[model]} & {s['n_params']:,} & {r_str} & {e_str} \\"
+        )
+    _write("table2_body.tex", rows)
+    return True
+
+
+def table3_prime() -> bool:
+    """Table III': multi-coupling generalization, mean +/- std over seeds."""
+    data = load("table3prime")
+    if data is None:
+        return False
+    if len(data.get("protocol", {}).get("seeds", [])) < 5:
+        print("  table3': fewer than 5 seeds — skipped")
+        return False
+    mark = {"train": r"$^\dagger$", "interpolation": "", "extrapolation": r"$^\ast$"}
+    rows = []
+    for row in data["table"]:
+        rows.append(
+            rf"${row['m2']:g}${mark[row['role']]} & "
+            + fmt_pm(row["r_mean"], row["r_std"], digits=4)
+            + " & "
+            + fmt_pct_pm(row["rel_err_mean"], row["rel_err_std"])
+            + r" \\"
+        )
+    _write("table3prime_body.tex", rows)
+    return True
+
+
+def table_size_transfer() -> bool:
+    """Size-transfer table (P1-6): variant x eval size."""
+    data = load("size_transfer")
+    if data is None:
+        return False
+    seeds = {r["seed"] for r in data["per_run"]}
+    if len(seeds) < 3:
+        print("  size_transfer: fewer than 3 seeds — skipped")
+        return False
+    rows = []
+    for variant, label in [("coords", "Coordinates"), ("constant", "Coordinate-free")]:
+        variant_rows = sorted(
+            (x for x in data["summary"] if x["variant"] == variant),
+            key=lambda x: x["eval_L"],
+        )
+        for i, s in enumerate(variant_rows):
+            vlabel = label if i == 0 else ""
+            train_mark = r"$^\dagger$" if s["eval_L"] == 16 else ""
+            rows.append(
+                rf"{vlabel} & ${s['eval_L']} \times {s['eval_L']}${train_mark} & "
+                + fmt_pm(s["r_mean"], s["r_std"], digits=4)
+                + " & "
+                + fmt_pct_pm(s["rel_err_mean"], s["rel_err_std"])
+                + r" \\"
+            )
+    _write("table_size_transfer_body.tex", rows)
+    return True
+
+
+def _write(name: str, rows: list[str]) -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / name
+    with open(path, "w") as f:
+        f.write("% AUTO-GENERATED by scripts/make_paper_tables.py — do not edit\n")
+        f.write("\n".join(rows) + "\n")
+    print(f"  wrote {path.relative_to(PROJECT_ROOT)} ({len(rows)} rows)")
+
+
+if __name__ == "__main__":
+    print("Generating paper table bodies from results/:")
+    table1_action()
+    table2_baselines()
+    table3_prime()
+    table_size_transfer()

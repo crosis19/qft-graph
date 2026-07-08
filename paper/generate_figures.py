@@ -456,6 +456,67 @@ def fig_scaling_collapse():
     print(f"  Done. m2_c = {m2c:.3f}, nu = {best_nu:.2f}")
 
 
+def fig_depth_ablation():
+    """Figure: Pearson r vs message-passing depth for the three variants (P1-5).
+
+    Left: r vs B on a linear scale (shows any collapse of the no-skip
+    homogeneous variant explicitly). Right: 1 - r on a log scale to
+    resolve the differences among the well-performing variants near r = 1.
+    """
+    print("Generating: depth_ablation.pdf")
+
+    import json
+    results_path = PROJECT_ROOT / 'results' / 'depth_ablation.json'
+    if not results_path.exists():
+        print("  SKIPPED: results/depth_ablation.json not found.")
+        return
+
+    with open(results_path) as f:
+        data = json.load(f)
+    summary = data['summary']
+
+    styles = {
+        'homogeneous_no_skip': ('#cc4444', 'o', 'Homogeneous (no skip)'),
+        'homogeneous_skip': ('#44bb88', 's', 'Homogeneous (skip)'),
+        'hetero': ('#4488ff', '^', 'HeteroGNN (ours)'),
+    }
+
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.8))
+    for variant, (color, marker, label) in styles.items():
+        rows = sorted((s for s in summary if s['variant'] == variant),
+                      key=lambda s: s['depth'])
+        if not rows:
+            continue
+        depths = [s['depth'] for s in rows]
+        r_mean = np.array([s['r_mean'] for s in rows])
+        r_std = np.array([s['r_std'] for s in rows])
+
+        axes[0].errorbar(depths, r_mean, yerr=r_std, color=color, marker=marker,
+                         label=label, markersize=4, linewidth=1, capsize=2)
+        axes[1].errorbar(depths, np.clip(1 - r_mean, 1e-6, None), yerr=r_std,
+                         color=color, marker=marker, label=label,
+                         markersize=4, linewidth=1, capsize=2)
+
+    axes[0].set_xlabel('Message-passing blocks $B$')
+    axes[0].set_ylabel('Pearson $r$')
+    axes[0].set_ylim(-0.1, 1.05)
+    axes[0].axhline(0.05, color='gray', ls=':', lw=0.8)
+    axes[0].legend(frameon=False, fontsize=7)
+
+    axes[1].set_xlabel('Message-passing blocks $B$')
+    axes[1].set_ylabel('$1 - r$')
+    axes[1].set_yscale('log')
+    axes[1].legend(frameon=False, fontsize=7)
+
+    for ax in axes:
+        ax.tick_params(direction='in')
+
+    plt.tight_layout()
+    fig.savefig(FIGURES_DIR / 'depth_ablation.pdf', bbox_inches='tight', dpi=300)
+    plt.close()
+    print("  Done.")
+
+
 def fig_baseline_comparison():
     """Figure: Bar chart comparing baseline architectures."""
     print("Generating: baseline_comparison.pdf")
@@ -559,5 +620,6 @@ if __name__ == '__main__':
     # Baseline comparison figures (need results from experiments)
     fig_baseline_comparison()
     fig_generalization()
+    fig_depth_ablation()
 
     print("\nAll figures saved to:", FIGURES_DIR)
