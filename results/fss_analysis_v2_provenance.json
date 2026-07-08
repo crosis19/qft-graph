@@ -1,0 +1,52 @@
+{
+  "run_id": "fss_analysis_v2_provenance",
+  "timestamp": "2026-07-08T21:59:35.569668+00:00",
+  "git_commit": "f68c6b97db891e5083a97d3435eb8176ed9dafa4",
+  "config_hash": "eb0d657afa24",
+  "config": {
+    "sweep_dir": "data\\sweep_results_v2",
+    "sizes": [
+      16,
+      32,
+      64
+    ],
+    "coupling": 0.5,
+    "n_boot": 1000,
+    "seed": 0
+  },
+  "metrics": {
+    "m2_c_abs": {
+      "value": -2.7449124640379314,
+      "err": 0.3221895082181813
+    },
+    "m2_c_var": {
+      "value": -2.7449124640379314,
+      "err": 0.23532271503079624
+    },
+    "m2_c_2mom": {
+      "value": -2.2194693884339545,
+      "err": 0.24231978716922378
+    },
+    "gamma_over_nu": {
+      "value": 1.5692786427419314,
+      "err": 0.11528284617340341,
+      "exact_2d_ising": 1.75
+    },
+    "nu": {
+      "value": 1.103030303030303,
+      "err": 0.42479109508563967,
+      "exact_2d_ising": 1.0,
+      "estimator": "2mom",
+      "window": 0.6,
+      "n_boot": 60
+    },
+    "convention_sensitivity": {
+      "m2_c_shift": 0.0,
+      "combined_err": 0.3989772667901504,
+      "shift_outside_error": false
+    }
+  },
+  "extra": {
+    "analysis_json": "results\\fss_analysis_v2.json"
+  }
+}

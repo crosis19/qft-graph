@@ -369,36 +369,53 @@ def fig_scaling_collapse():
         return
 
     m2_values = np.array(sweep_data['16']['m2_values'])
-    xi16 = np.array(sweep_data['16']['xi_over_L'])
-    xi32 = np.array(sweep_data['32']['xi_over_L'])
 
-    # Find crossing of L=16 and L=32
-    diff = xi16 - xi32
-    m2c = -2.45  # default
-    for i in range(len(diff) - 1):
-        if diff[i] * diff[i+1] < 0:
-            f = diff[i] / (diff[i] - diff[i+1])
-            m2c = m2_values[i] + f * (m2_values[i+1] - m2_values[i])
-            break
+    # Use m2_c and nu from the committed FSS analysis when available so the
+    # figure and the quoted numbers cannot drift apart; otherwise fall back
+    # to the inline crossing + collapse fit.
+    import json
+    analysis_path = PROJECT_ROOT / 'results' / 'fss_analysis_v2.json'
+    m2c = best_nu = None
+    if analysis_path.exists():
+        with open(analysis_path) as f:
+            analysis = json.load(f)
+        for key in ('m2_c_2mom', 'm2_c_abs'):
+            if key in analysis:
+                m2c = analysis[key]['value']
+                break
+        if 'nu' in analysis:
+            best_nu = analysis['nu']['value']
+        print(f"  Using analysis values: m2_c={m2c:.3f}, nu={best_nu:.3f}")
 
-    # Fit nu from collapse (grid search)
-    best_nu = 1.0
-    best_cost = float('inf')
-    for nu_try in np.linspace(0.5, 2.0, 150):
-        cost = 0
-        for L1_str, L2_str in [('16', '32'), ('32', '64')]:
-            L1, L2 = int(L1_str), int(L2_str)
-            x1 = (m2_values - m2c) * L1**(1/nu_try)
-            x2 = (m2_values - m2c) * L2**(1/nu_try)
-            y1 = np.array(sweep_data[L1_str]['xi_over_L'])
-            y2 = np.array(sweep_data[L2_str]['xi_over_L'])
-            y2_interp = np.interp(x1, x2, y2, left=np.nan, right=np.nan)
-            mask = np.isfinite(y2_interp)
-            if mask.sum() > 3:
-                cost += np.nanmean((y1[mask] - y2_interp[mask])**2)
-        if cost < best_cost:
-            best_cost = cost
-            best_nu = nu_try
+    if m2c is None:
+        xi16 = np.array(sweep_data['16']['xi_over_L'])
+        xi32 = np.array(sweep_data['32']['xi_over_L'])
+        diff = xi16 - xi32
+        m2c = -2.45  # default
+        for i in range(len(diff) - 1):
+            if diff[i] * diff[i+1] < 0:
+                f = diff[i] / (diff[i] - diff[i+1])
+                m2c = m2_values[i] + f * (m2_values[i+1] - m2_values[i])
+                break
+
+    if best_nu is None:
+        best_nu = 1.0
+        best_cost = float('inf')
+        for nu_try in np.linspace(0.5, 2.0, 150):
+            cost = 0
+            for L1_str, L2_str in [('16', '32'), ('32', '64')]:
+                L1, L2 = int(L1_str), int(L2_str)
+                x1 = (m2_values - m2c) * L1**(1/nu_try)
+                x2 = (m2_values - m2c) * L2**(1/nu_try)
+                y1 = np.array(sweep_data[L1_str]['xi_over_L'])
+                y2 = np.array(sweep_data[L2_str]['xi_over_L'])
+                y2_interp = np.interp(x1, x2, y2, left=np.nan, right=np.nan)
+                mask = np.isfinite(y2_interp)
+                if mask.sum() > 3:
+                    cost += np.nanmean((y1[mask] - y2_interp[mask])**2)
+            if cost < best_cost:
+                best_cost = cost
+                best_nu = nu_try
 
     colors = {'16': '#4488ff', '32': '#44bb88', '64': '#cc44ff'}
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.0))

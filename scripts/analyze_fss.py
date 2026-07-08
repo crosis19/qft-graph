@@ -80,17 +80,29 @@ def main() -> None:
                 n_boot=args.n_boot,
                 seed=args.seed,
             )
+            # A crossing within one grid step of the scan boundary is an
+            # edge artifact (noise-level curves touching at the end of the
+            # grid), not a resolved crossing — exclude it from m2_c.
+            step = abs(m2[1] - m2[0])
+            edge = np.isfinite(center) and (
+                center < m2.min() + step or center > m2.max() - step
+            )
             crossings[conv].append(
-                {"pair": [L1, L2], "m2_c": center, "m2_c_err": err}
+                {"pair": [L1, L2], "m2_c": center, "m2_c_err": err,
+                 "edge_artifact": bool(edge)}
             )
             logger.info(
-                "crossing (%s) L=%d/%d: m2_c = %.4f +/- %.4f", conv, L1, L2, center, err
+                "crossing (%s) L=%d/%d: m2_c = %.4f +/- %.4f%s",
+                conv, L1, L2, center, err, "  [EDGE ARTIFACT — excluded]" if edge else "",
             )
     report["crossings"] = crossings
 
-    # Combined m2_c per convention (error-weighted mean over pairs)
+    # Combined m2_c per convention (error-weighted mean over resolved pairs)
     for conv in crossings:
-        vals = [c for c in crossings[conv] if np.isfinite(c["m2_c"])]
+        vals = [
+            c for c in crossings[conv]
+            if np.isfinite(c["m2_c"]) and not c["edge_artifact"]
+        ]
         if vals:
             w = np.array([1.0 / max(c["m2_c_err"], 1e-6) ** 2 for c in vals])
             m2c = float(np.sum(w * [c["m2_c"] for c in vals]) / w.sum())
@@ -156,12 +168,43 @@ def main() -> None:
             for L in args.sizes
         }
         if all(len(v) >= 4 for v in xi_over_L_data.values()):
-            nu, nu_err = extract_nu(args.sizes, xi_over_L_data, m2c)
+            nu, _ = extract_nu(args.sizes, xi_over_L_data, m2c)
+            # Honest error: parametric bootstrap over the xi/L point errors
+            # AND the m2_c uncertainty (the collapse-quality width badly
+            # underestimates it). Points with err > value are dropped inside
+            # the resample as unmeasured.
+            rng = np.random.default_rng(args.seed)
+            err_lookup = {
+                (L, p["m2"]): p[f"{key_for_nu}_err"]
+                for L in args.sizes for p in sweeps[L]
+            }
+            m2c_err = report[m2c_key]["err"]
+            boots = []
+            for _ in range(60):
+                m2c_b = m2c + rng.normal(0.0, m2c_err)
+                resampled = {}
+                ok = True
+                for L in args.sizes:
+                    pts = []
+                    for m2v, y in xi_over_L_data[L]:
+                        e = err_lookup[(L, m2v)]
+                        yb = y + rng.normal(0.0, e)
+                        if yb > 0 and e < max(y, 1e-9):
+                            pts.append((m2v, yb))
+                    if len(pts) < 4:
+                        ok = False
+                        break
+                    resampled[L] = pts
+                if ok:
+                    nb, _ = extract_nu(args.sizes, resampled, m2c_b)
+                    boots.append(nb)
+            nu_err = float(np.std(boots)) if len(boots) > 5 else float("inf")
             report["nu"] = {
                 "value": nu, "err": nu_err, "exact_2d_ising": 1.0,
                 "estimator": conv_for_nu, "window": window,
+                "n_boot": len(boots),
             }
-            logger.info("nu = %.3f +/- %.3f (exact: 1, estimator: %s)",
+            logger.info("nu = %.3f +/- %.3f (exact: 1, estimator: %s, bootstrap)",
                         nu, nu_err, conv_for_nu)
         else:
             logger.warning("Too few usable xi points for the nu collapse")

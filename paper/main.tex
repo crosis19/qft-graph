@@ -278,11 +278,23 @@ of the field configurations:
 \tilde{G}(k_\text{min}) &= \langle|\tilde\phi(k_\text{min}, 0)|^2\rangle / V,
 \end{align}
 which uses all spatial correlations and avoids the systematic underestimation of
-one-dimensional angle-averaged approaches. The $k=0$ mode uses the same
-$\langle|M|\rangle$-subtracted susceptibility as defined above (the $k \neq 0$
-modes need no subtraction since $\langle\tilde\phi(k \neq 0)\rangle = 0$); in
-the broken phase the alternative $V\,\text{Var}(M)$ form is contaminated by
-rare tunneling events between the two ordered vacua.
+one-dimensional angle-averaged approaches. The $k \neq 0$ modes need no
+subtraction since $\langle\tilde\phi(k \neq 0)\rangle = 0$, but the $k = 0$ mode
+is subtraction-dependent: the $\langle|M|\rangle$-subtracted form degenerates in
+the symmetric phase (for Gaussian $M$, $\langle|M|\rangle^2 = (2/\pi)\langle
+M^2\rangle$, driving the ratio in Eq.~\eqref{eq:xi-second-moment} negative),
+while the alternative $V\,\text{Var}(M)$ form is contaminated at finite volume
+by rare tunneling between the two ordered vacua in the broken phase. The $\xiL$
+crossings and scaling collapse therefore use a two-momentum variant built
+entirely from $k \neq 0$ modes,
+\begin{equation}
+\xi^{-2} = \frac{\hat{k}_2^2\,\tilde{G}(k_2) - \hat{k}_1^2\,\tilde{G}(k_1)}
+{\tilde{G}(k_1) - \tilde{G}(k_2)}, \qquad \hat{k}^2 = \sum_\mu 4\sin^2(k_\mu/2),
+\label{eq:xi-two-momentum}
+\end{equation}
+with $k_1 = (2\pi/L)(1,0)$ (averaged with $(0,1)$) and $k_2 = (2\pi/L)(1,1)$,
+validated against the exact free-field propagator. The susceptibility $\chi$
+itself is always the $\langle|M|\rangle$-subtracted form defined above.
 
 \subsection{Monte Carlo Data Generation}
 \label{sec:mc}
@@ -456,36 +468,55 @@ Order parameter $|M|$ showing progressive sharpening of the phase transition
 with increasing $L$. \textbf{Center:} Susceptibility $\chi$ with peaks growing
 as $\chi_\text{max} \sim L^{\gamma/\nu}$ and converging toward $\msqc$.
 \textbf{Right:} Correlation length ratio $\xiL$ with crossing of the $L = 16$
-and $L = 32$ curves near $\msqc \approx -2.35$.}
+and $L = 32$ curves at $\msqc = -2.22 \pm 0.24$. Error bars are binned
+jackknife errors with bin sizes set by the measured $\tau_\text{int}$.}
 \label{fig:fss}
 \end{figure}
 
 Figure~\ref{fig:fss} shows the three canonical finite-size scaling observables.
-The order parameter exhibits the expected S-curve behavior, with the transition
-sharpening progressively from $L = 16$ to $L = 64$. The susceptibility peaks
-grow with volume---$\chi_\text{max} \approx 10, 25, 125$ for $L = 16, 32, 64$
-respectively---consistent with the scaling $\chi_\text{max} \sim L^{\gamma/\nu}$
-with $\gamma/\nu \approx 1.75$ (the exact two-dimensional Ising value).
+All error bars are binned jackknife errors with bin sizes set by the measured
+integrated autocorrelation time (Wolff automatic windowing~\cite{Wolff2004}):
+$\tau_\text{int}$ is 1--3 stored configurations over most of the scan but rises
+to $\approx 17$, $30$, and $100$ at the pseudocritical points of $L = 16, 32,
+64$ respectively (configurations separated by $10$, $20$, $40$ Metropolis
+sweeps), quantifying the critical slowing down of the local update.
 
-The $\xiL$ ratio shows a crossing of the $L = 16$ and $L = 32$ curves near
-$\msqc \approx -2.35$, with the $L = 32$ and $L = 64$ curves approaching
-intersection at $\msq \approx -2.5$. The drift of the crossing point with $L$
-has two sources: corrections to scaling (the leading irrelevant operator
-shifts pairwise crossings by $O(L^{-\omega})$, so the $L=16/32$ crossing need
-not coincide with the asymptotic $\msqc$), and critical slowing down of the
-local Metropolis algorithm, whose autocorrelation times grow as $\tau \sim
-\xi^z$ with dynamic exponent $z \approx 2$, degrading the effective statistics
-near the critical point for the largest lattice.
+The order parameter exhibits the expected S-curve behavior, with the transition
+sharpening progressively from $L = 16$ to $L = 64$. The susceptibility peaks,
+located by quadratic fits around the maxima, grow with volume:
+$\chi_\text{max} = 9.1(6),\ 27.0(1.4),\ 113(106)$ at
+$\msq = -2.094(25),\ -2.139(4),\ -2.204(20)$ for $L = 16, 32, 64$. A weighted
+fit of $\ln\chi_\text{max}$ vs $\ln L$ gives
+\begin{equation}
+\gamma/\nu = 1.57 \pm 0.12,
+\end{equation}
+within $1.6\sigma$ of the exact two-dimensional Ising value $\gamma/\nu = 1.75$;
+the $L = 64$ peak height carries a large uncertainty precisely because
+$\tau_\text{int} \approx 100$ there leaves only $\sim 20$ effectively
+independent configurations.
+
+The $\xiL$ ratio shows a crossing of the $L = 16$ and $L = 32$ curves at
+$\msqc = -2.22 \pm 0.24$ (parametric bootstrap over the jackknife errors); at
+the present statistics the $L = 32$/$L = 64$ crossing is not resolved within
+errors. Any residual drift of pairwise crossings with $L$ has two sources:
+corrections to scaling (the leading irrelevant operator shifts pairwise
+crossings by $O(L^{-\omega})$, so the $L=16/32$ crossing need not coincide with
+the asymptotic $\msqc$), and critical slowing down of the local Metropolis
+algorithm, whose autocorrelation times grow as $\tau \sim \xi^z$ with dynamic
+exponent $z \approx 2$, degrading the effective statistics near the critical
+point for the largest lattice.
 
 \subsection{Critical Exponent Extraction}
 \label{sec:nu}
 
-From the $\xiL$ crossing and data collapse analysis, we obtain:
+From the $\xiL$ crossing and data collapse analysis (parametric bootstrap over
+the binned jackknife errors of every $\xiL$ point and the crossing
+uncertainty), we obtain:
 \begin{equation}
-\nu = 1.1 \pm 0.8 \qquad (\text{exact: } \nu = 1),
+\nu = 1.10 \pm 0.43 \qquad (\text{exact: } \nu = 1),
 \end{equation}
 \begin{equation}
-\msqc = -2.45 \pm 0.10 \qquad (\lambda = 0.5).
+\msqc = -2.22 \pm 0.24 \qquad (\lambda = 0.5).
 \end{equation}
 
 We emphasize that this serves as a \emph{consistency check} rather than a
