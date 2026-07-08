@@ -1,0 +1,164 @@
+{
+  "run_id": "u1_heatbath_data",
+  "timestamp": "2026-07-08T20:51:01.888648+00:00",
+  "git_commit": "0848daee7f23420837519ed0722cefb9bb2c1632",
+  "config_hash": "2c7069d40d7c",
+  "config": {
+    "betas": [
+      0.5,
+      1.0,
+      2.0,
+      3.0,
+      4.0
+    ],
+    "sizes": [
+      8,
+      16,
+      32
+    ],
+    "n_configs": 4000,
+    "n_thermalization": 1000,
+    "n_sweeps_between": 5,
+    "seed": 42,
+    "output": "data/u1_configs"
+  },
+  "metrics": {
+    "tau_int_table": [
+      {
+        "L": 8,
+        "beta": 0.5,
+        "tau_int": 0.5279050260635222,
+        "tau_int_err": 0.03722421129241055,
+        "mean_plaquette": 0.24375294148921967,
+        "exact_mean_plaquette": 0.24249961258080197,
+        "deviation": 0.0012533289084177002
+      },
+      {
+        "L": 8,
+        "beta": 1.0,
+        "tau_int": 0.545936071600183,
+        "tau_int_err": 0.038425771300663006,
+        "mean_plaquette": 0.4460242986679077,
+        "exact_mean_plaquette": 0.4463899658965345,
+        "deviation": -0.0003656672286267981
+      },
+      {
+        "L": 8,
+        "beta": 2.0,
+        "tau_int": 0.5495532327764349,
+        "tau_int_err": 0.03866624197029829,
+        "mean_plaquette": 0.6982293128967285,
+        "exact_mean_plaquette": 0.6977746580108376,
+        "deviation": 0.00045465488589091496
+      },
+      {
+        "L": 8,
+        "beta": 3.0,
+        "tau_int": 0.5861740356567866,
+        "tau_int_err": 0.04109003044209642,
+        "mean_plaquette": 0.8103023767471313,
+        "exact_mean_plaquette": 0.8099855474118453,
+        "deviation": 0.00031682933528609514
+      },
+      {
+        "L": 8,
+        "beta": 4.0,
+        "tau_int": 0.5329505198439365,
+        "tau_int_err": 0.037560912405052826,
+        "mean_plaquette": 0.8645449876785278,
+        "exact_mean_plaquette": 0.863530042512331,
+        "deviation": 0.0010149451661968234
+      },
+      {
+        "L": 16,
+        "beta": 0.5,
+        "tau_int": 0.5197892691199765,
+        "tau_int_err": 0.032792939101867404,
+        "mean_plaquette": 0.24229814112186432,
+        "exact_mean_plaquette": 0.24249961258080197,
+        "deviation": -0.0002014714589376465
+      },
+      {
+        "L": 16,
+        "beta": 1.0,
+        "tau_int": 0.5245290268067601,
+        "tau_int_err": 0.033072255918467915,
+        "mean_plaquette": 0.4464077055454254,
+        "exact_mean_plaquette": 0.4463899658965345,
+        "deviation": 1.773964889090207e-05
+      },
+      {
+        "L": 16,
+        "beta": 2.0,
+        "tau_int": 0.5864930132317304,
+        "tau_int_err": 0.041111055938699875,
+        "mean_plaquette": 0.6972162127494812,
+        "exact_mean_plaquette": 0.697774657964008,
+        "deviation": -0.0005584452145267482
+      },
+      {
+        "L": 16,
+        "beta": 3.0,
+        "tau_int": 0.5,
+        "tau_int_err": 0.022360679774997897,
+        "mean_plaquette": 0.8103832602500916,
+        "exact_mean_plaquette": 0.8099852939565044,
+        "deviation": 0.00039796629358712643
+      },
+      {
+        "L": 16,
+        "beta": 4.0,
+        "tau_int": 0.5,
+        "tau_int_err": 0.015811388300841896,
+        "mean_plaquette": 0.8639837503433228,
+        "exact_mean_plaquette": 0.8635226110245504,
+        "deviation": 0.00046113931877234116
+      },
+      {
+        "L": 32,
+        "beta": 0.5,
+        "tau_int": 0.5,
+        "tau_int_err": 0.015811388300841896,
+        "mean_plaquette": 0.2424146831035614,
+        "exact_mean_plaquette": 0.24249961258080197,
+        "deviation": -8.492947724056399e-05
+      },
+      {
+        "L": 32,
+        "beta": 1.0,
+        "tau_int": 0.5,
+        "tau_int_err": 0.022360679774997897,
+        "mean_plaquette": 0.4464470148086548,
+        "exact_mean_plaquette": 0.4463899658965345,
+        "deviation": 5.704891212027219e-05
+      },
+      {
+        "L": 32,
+        "beta": 2.0,
+        "tau_int": 0.5,
+        "tau_int_err": 0.015811388300841896,
+        "mean_plaquette": 0.697818398475647,
+        "exact_mean_plaquette": 0.697774657964008,
+        "deviation": 4.374051163902326e-05
+      },
+      {
+        "L": 32,
+        "beta": 3.0,
+        "tau_int": 0.5,
+        "tau_int_err": 0.015811388300841896,
+        "mean_plaquette": 0.8098713159561157,
+        "exact_mean_plaquette": 0.8099852939565044,
+        "deviation": -0.00011397800038870365
+      },
+      {
+        "L": 32,
+        "beta": 4.0,
+        "tau_int": 0.5200540767552543,
+        "tau_int_err": 0.03280855407889836,
+        "mean_plaquette": 0.8634302616119385,
+        "exact_mean_plaquette": 0.8635226110245504,
+        "deviation": -9.234941261193619e-05
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "run_id": "fss_sweep_v2_64x64",
+  "timestamp": "2026-07-08T19:32:48.124583+00:00",
+  "git_commit": "574b37db6524909c7ffdbde3c54fe983799934a6",
+  "config_hash": "8682352a70ac",
+  "config": {
+    "dimensions": [
+      64,
+      64
+    ],
+    "coupling": 0.5,
+    "m2_min": -1.5,
+    "m2_max": -2.8,
+    "m2_steps": 25,
+    "n_configs": 2000,
+    "n_thermalization": 1500,
+    "n_sweeps_between": 40,
+    "warm_start": true,
+    "seed": 42
+  },
+  "metrics": {
+    "tau_int_max": 100.38957700961784,
+    "acceptance_min": 0.41029797973632814
+  },
+  "extra": {
+    "output_json": "data\\sweep_results_v2\\sweep_64x64_lam=0.5.json"
+  }
+}

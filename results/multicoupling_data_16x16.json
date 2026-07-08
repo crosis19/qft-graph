@@ -1,0 +1,130 @@
+{
+  "run_id": "multicoupling_data_16x16",
+  "timestamp": "2026-07-08T20:19:00.055183+00:00",
+  "git_commit": "0848daee7f23420837519ed0722cefb9bb2c1632",
+  "config_hash": "32795768a6df",
+  "config": {
+    "lattice_size": 16,
+    "coupling": 0.5,
+    "m2_min": -2.9,
+    "m2_max": -0.3,
+    "m2_steps": 13,
+    "n_configs": 3000,
+    "n_thermalization": 2000,
+    "base_separation": 10,
+    "pilot_configs": 300,
+    "data_dir": "data/mc_configs",
+    "seed": 42
+  },
+  "metrics": {
+    "n_points": 13
+  },
+  "extra": {
+    "points": [
+      {
+        "m2": -2.9,
+        "separation": 10,
+        "pilot_tau_int": 0.8586041690926083,
+        "final_tau_int": 0.7875735659410754,
+        "acceptance": 0.40412447916666666,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-2.9_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -2.6833,
+        "separation": 16,
+        "pilot_tau_int": 1.507006329423407,
+        "final_tau_int": 0.9254131997446743,
+        "acceptance": 0.41801839192708334,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-2.6833_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -2.4667,
+        "separation": 16,
+        "pilot_tau_int": 1.570689532462305,
+        "final_tau_int": 2.1506981324901147,
+        "acceptance": 0.43574031575520833,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-2.4667_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -2.25,
+        "separation": 34,
+        "pilot_tau_int": 3.3762956011125027,
+        "final_tau_int": 4.475223052097679,
+        "acceptance": 0.4589615119485294,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-2.25_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -2.0333,
+        "separation": 64,
+        "pilot_tau_int": 6.30552624195467,
+        "final_tau_int": 1.981187080991414,
+        "acceptance": 0.48287662760416666,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-2.0333_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -1.8167,
+        "separation": 72,
+        "pilot_tau_int": 7.10125968487332,
+        "final_tau_int": 0.7561661205060634,
+        "acceptance": 0.49187333622685186,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-1.8167_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -1.6,
+        "separation": 16,
+        "pilot_tau_int": 1.5273144999542059,
+        "final_tau_int": 1.8194142432522693,
+        "acceptance": 0.49339908854166664,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-1.6_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -1.3833,
+        "separation": 10,
+        "pilot_tau_int": 0.9976319823257277,
+        "final_tau_int": 1.516270267176812,
+        "acceptance": 0.492453125,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-1.3833_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -1.1667,
+        "separation": 13,
+        "pilot_tau_int": 1.2587940265808795,
+        "final_tau_int": 0.8913998318927671,
+        "acceptance": 0.48930989583333334,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-1.1667_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -0.95,
+        "separation": 10,
+        "pilot_tau_int": 0.8996073748761805,
+        "final_tau_int": 0.8443987179601764,
+        "acceptance": 0.4855286458333333,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-0.95_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -0.7333,
+        "separation": 10,
+        "pilot_tau_int": 0.7778901867493317,
+        "final_tau_int": 0.979456447334233,
+        "acceptance": 0.48094010416666666,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-0.7333_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -0.5167,
+        "separation": 10,
+        "pilot_tau_int": 0.7768052734976728,
+        "final_tau_int": 0.7128221393996838,
+        "acceptance": 0.476393359375,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-0.5167_lam=0.5\\mc_data.pt"
+      },
+      {
+        "m2": -0.3,
+        "separation": 10,
+        "pilot_tau_int": 0.5881390490473889,
+        "final_tau_int": 0.7699035057147654,
+        "acceptance": 0.47155950520833334,
+        "path": "data\\mc_configs\\phi4_16x16_m2=-0.3_lam=0.5\\mc_data.pt"
+      }
+    ]
+  }
+}

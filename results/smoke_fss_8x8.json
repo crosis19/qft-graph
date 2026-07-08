@@ -1,0 +1,28 @@
+{
+  "run_id": "smoke_fss_8x8",
+  "timestamp": "2026-07-08T18:06:22.568374+00:00",
+  "git_commit": "837376ba53c569a013dfdf6a8d689bf03f9c4bcf",
+  "config_hash": "e8cdbf65a4b3",
+  "config": {
+    "dimensions": [
+      8,
+      8
+    ],
+    "coupling": 0.5,
+    "m2_min": -1.8,
+    "m2_max": -2.6,
+    "m2_steps": 3,
+    "n_configs": 400,
+    "n_thermalization": 300,
+    "n_sweeps_between": 5,
+    "warm_start": true,
+    "seed": 42
+  },
+  "metrics": {
+    "tau_int_max": 9.277031075400558,
+    "acceptance_min": 0.4228359375
+  },
+  "extra": {
+    "output_json": "C:\\Users\\joshu\\AppData\\Local\\Temp\\claude\\C--Users-joshu-My-Drive--joshua-paul-brehm-gmail-com--qft-graph\\8ffedc61-72af-4d5c-b94b-6802d4285afd\\scratchpad\\sweep_smoke\\sweep_8x8_lam=0.5.json"
+  }
+}

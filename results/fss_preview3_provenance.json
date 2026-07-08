@@ -1,0 +1,47 @@
+{
+  "run_id": "fss_preview3_provenance",
+  "timestamp": "2026-07-08T19:33:21.197779+00:00",
+  "git_commit": "574b37db6524909c7ffdbde3c54fe983799934a6",
+  "config_hash": "eb0d657afa24",
+  "config": {
+    "sweep_dir": "data\\sweep_results_v2",
+    "sizes": [
+      16,
+      32,
+      64
+    ],
+    "coupling": 0.5,
+    "n_boot": 1000,
+    "seed": 0
+  },
+  "metrics": {
+    "m2_c_abs": {
+      "value": -2.7960327940749083,
+      "err": 0.08646236137489001
+    },
+    "m2_c_var": {
+      "value": -2.7931377902298404,
+      "err": 0.08305564816411062
+    },
+    "gamma_over_nu": {
+      "value": 1.5692786427419314,
+      "err": 0.11528284617340341,
+      "exact_2d_ising": 1.75
+    },
+    "nu": {
+      "value": 0.5,
+      "err": 0.012024048096192397,
+      "exact_2d_ising": 1.0,
+      "estimator": "abs",
+      "window": 0.6
+    },
+    "convention_sensitivity": {
+      "m2_c_shift": 0.0028950038450679116,
+      "combined_err": 0.11989153692601744,
+      "shift_outside_error": false
+    }
+  },
+  "extra": {
+    "analysis_json": "C:\\Users\\joshu\\AppData\\Local\\Temp\\claude\\C--Users-joshu-My-Drive--joshua-paul-brehm-gmail-com--qft-graph\\8ffedc61-72af-4d5c-b94b-6802d4285afd\\scratchpad\\fss_preview3.json"
+  }
+}
