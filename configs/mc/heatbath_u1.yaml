@@ -1,0 +1,9 @@
+# U(1) heatbath data-generation protocol (task A-1, plan §3).
+# Consumed by scripts/generate_u1_data.py (CLI flags override).
+betas: [0.5, 1.0, 2.0, 3.0, 4.0]
+sizes: [8, 16, 32]
+n_configs: 4000
+n_thermalization: 1000
+n_sweeps_between: 5 # heatbath decorrelates fast; tau_int recorded per run
+seed: 42
+output: data/u1_configs
