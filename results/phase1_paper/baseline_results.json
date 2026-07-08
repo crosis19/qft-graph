@@ -1,0 +1,30 @@
+[
+  {
+    "model": "HeteroGNN (ours)",
+    "n_params": 150337,
+    "pearson_r": 0.999983,
+    "relative_error": 0.000411,
+    "train_time_s": 663.2
+  },
+  {
+    "model": "HomogeneousGNN",
+    "n_params": 67073,
+    "pearson_r": 0.999854,
+    "relative_error": 0.001204,
+    "train_time_s": 348.3
+  },
+  {
+    "model": "LatticeCNN",
+    "n_params": 29153,
+    "pearson_r": 0.998545,
+    "relative_error": 0.00387,
+    "train_time_s": 245.5
+  },
+  {
+    "model": "MLP",
+    "n_params": 197633,
+    "pearson_r": 0.346188,
+    "relative_error": 0.073513,
+    "train_time_s": 188.3
+  }
+]

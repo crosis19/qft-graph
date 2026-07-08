@@ -35,6 +35,19 @@ def save_checkpoint(
     )
 
 
+def remap_legacy_state_dict(state_dict: dict) -> dict:
+    """Rename pre-terminology-fix state-dict keys to current module names.
+
+    Checkpoints saved before the energy->action head rename use
+    'energy_head.energy_mlp.*'; current models expect
+    'action_head.action_mlp.*'. Safe to apply unconditionally.
+    """
+    return {
+        k.replace("energy_head.", "action_head.").replace("energy_mlp.", "action_mlp."): v
+        for k, v in state_dict.items()
+    }
+
+
 def load_checkpoint(
     path: str | Path,
     model: torch.nn.Module,
@@ -47,7 +60,7 @@ def load_checkpoint(
         Dict with 'epoch', 'config', 'metrics' keys.
     """
     ckpt = torch.load(path, map_location=device, weights_only=False)
-    model.load_state_dict(ckpt["model_state_dict"])
+    model.load_state_dict(remap_legacy_state_dict(ckpt["model_state_dict"]))
     if optimizer is not None:
         optimizer.load_state_dict(ckpt["optimizer_state_dict"])
     torch.random.set_rng_state(ckpt["rng_state_torch"])

@@ -214,11 +214,13 @@ def fig_energy_prediction():
         model = HeteroGNN(model_config, lattice_dim=2,
                           field_types={'scalar': 1}, lattice_spacing=1.0)
 
+        from qft_graph.utils.checkpointing import remap_legacy_state_dict
+
         checkpoint = torch.load(ckpt_path, map_location='cpu', weights_only=False)
         if 'model_state_dict' in checkpoint:
-            model.load_state_dict(checkpoint['model_state_dict'])
+            model.load_state_dict(remap_legacy_state_dict(checkpoint['model_state_dict']))
         else:
-            model.load_state_dict(checkpoint)
+            model.load_state_dict(remap_legacy_state_dict(checkpoint))
         model.eval()
 
         # Run predictions

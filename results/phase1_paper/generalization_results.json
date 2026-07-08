@@ -1,0 +1,50 @@
+[
+  {
+    "m2": -0.3,
+    "lambda": 0.5,
+    "pearson_r": 0.999251,
+    "relative_error": 0.060913,
+    "n_configs": 2000,
+    "is_training_point": false
+  },
+  {
+    "m2": -0.5,
+    "lambda": 0.5,
+    "pearson_r": 0.999988,
+    "relative_error": 0.00035,
+    "n_configs": 2000,
+    "is_training_point": true
+  },
+  {
+    "m2": -0.7,
+    "lambda": 0.5,
+    "pearson_r": 0.998956,
+    "relative_error": 0.071305,
+    "n_configs": 2000,
+    "is_training_point": false
+  },
+  {
+    "m2": -1.0,
+    "lambda": 0.5,
+    "pearson_r": 0.991486,
+    "relative_error": 0.205537,
+    "n_configs": 2000,
+    "is_training_point": false
+  },
+  {
+    "m2": -1.5,
+    "lambda": 0.5,
+    "pearson_r": 0.932393,
+    "relative_error": 0.579893,
+    "n_configs": 2000,
+    "is_training_point": false
+  },
+  {
+    "m2": -2.0,
+    "lambda": 0.5,
+    "pearson_r": 0.584618,
+    "relative_error": 2.114852,
+    "n_configs": 2000,
+    "is_training_point": false
+  }
+]

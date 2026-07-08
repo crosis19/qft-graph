@@ -31,7 +31,7 @@ class ScalarFieldConfig:
 class MCConfig:
     """Monte Carlo sampler configuration."""
 
-    n_configs: int = 10000
+    n_configs: int = 5000
     n_thermalization: int = 1000
     n_sweeps_between: int = 10
     step_size: float = 1.0  # Metropolis proposal width
@@ -56,7 +56,7 @@ class ModelConfig:
 class TrainingConfig:
     """Training loop configuration."""
 
-    epochs: int = 200
+    epochs: int = 150
     batch_size: int = 32
     lr: float = 1e-3
     weight_decay: float = 1e-5

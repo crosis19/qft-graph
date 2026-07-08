@@ -26,9 +26,10 @@ from qft_graph.config import LatticeConfig, MCConfig, ScalarFieldConfig, load_co
 from qft_graph.fields.scalar import ScalarField
 from qft_graph.graphs.builder import HeteroGraphBuilder
 from qft_graph.lattice.hypercubic import HypercubicLattice
-from qft_graph.mc.metropolis import MetropolisSampler
+from qft_graph.mc.metropolis import create_sampler
 from qft_graph.models.hetero_gnn import HeteroGNN
 from qft_graph.training.metrics import energy_correlation, relative_error
+from qft_graph.utils.checkpointing import remap_legacy_state_dict
 from qft_graph.utils.logging import setup_logging
 from qft_graph.utils.reproducibility import set_seed
 
@@ -58,8 +59,7 @@ def generate_or_load_data(
     lattice_config = LatticeConfig(dimensions=(lattice_size, lattice_size))
     lattice = HypercubicLattice(lattice_config)
     field_config = ScalarFieldConfig(mass_squared=m2, coupling=lam)
-    action = Phi4Action(field_config, lattice)
-    field = ScalarField(field_config)
+    action = Phi4Action(lattice, field_config)
 
     mc_config = MCConfig(
         n_configs=n_configs,
@@ -68,12 +68,20 @@ def generate_or_load_data(
         seed=42,
     )
 
-    sampler = MetropolisSampler(action, lattice, field, mc_config)
-    configs, actions_list = sampler.sample()
+    sampler = create_sampler(action, mc_config)
+    result = sampler.generate(n_configs)
+    configs, actions_list = result.configurations, result.actions
 
-    # Save for reuse
+    # Save for reuse (same layout as scripts/generate_mc_data.py)
     data_path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"configurations": configs, "actions": actions_list}, data_path)
+    torch.save(
+        {
+            "configurations": configs,
+            "actions": actions_list,
+            "acceptance_rate": result.acceptance_rate,
+        },
+        data_path,
+    )
 
     return configs[:n_configs], actions_list[:n_configs]
 
@@ -111,7 +119,7 @@ def main() -> None:
     )
 
     ckpt = torch.load(args.checkpoint, weights_only=False)
-    model.load_state_dict(ckpt["model_state_dict"])
+    model.load_state_dict(remap_legacy_state_dict(ckpt["model_state_dict"]))
     model.eval()
     logger.info("Loaded checkpoint from %s", args.checkpoint)
 

@@ -19,6 +19,7 @@ from qft_graph.lattice.hypercubic import HypercubicLattice
 from qft_graph.mc.observables import ObservableSet
 from qft_graph.models.hetero_gnn import HeteroGNN
 from qft_graph.training.metrics import energy_correlation, relative_error
+from qft_graph.utils.checkpointing import remap_legacy_state_dict
 from qft_graph.utils.logging import setup_logging
 
 
@@ -58,7 +59,7 @@ def main() -> None:
     )
 
     ckpt = torch.load(args.checkpoint, weights_only=False)
-    model.load_state_dict(ckpt["model_state_dict"])
+    model.load_state_dict(remap_legacy_state_dict(ckpt["model_state_dict"]))
     model.eval()
 
     # Evaluate energy prediction
