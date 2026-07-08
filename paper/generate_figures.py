@@ -259,18 +259,58 @@ def fig_energy_prediction():
     print("  SKIPPED: No MC data + model checkpoint found.")
 
 
+def load_sweep_data():
+    """Load FSS sweep results, preferring the v2 per-L files with errors.
+
+    Returns a dict L_str -> {m2_values, mags(+_err), chis(+_err),
+    xi_over_L(+_err)} or None. Falls back to the legacy colab_run JSON
+    (errors set to zero) so old data still plots.
+    """
+    import json
+
+    for base in (
+        PROJECT_ROOT / 'results' / 'phase1_v2',
+        PROJECT_ROOT / 'data' / 'sweep_results_v2',
+    ):
+        files = {L: base / f'sweep_{L}x{L}_lam=0.5.json' for L in (16, 32, 64)}
+        if all(p.exists() for p in files.values()):
+            out = {}
+            for L, p in files.items():
+                with open(p) as f:
+                    pts = sorted(json.load(f), key=lambda q: q['m2'])
+                out[str(L)] = {
+                    'm2_values': [q['m2'] for q in pts],
+                    'mags': [q['magnetization'] for q in pts],
+                    'mags_err': [q['magnetization_err'] for q in pts],
+                    'chis': [q['susceptibility'] for q in pts],
+                    'chis_err': [q['susceptibility_err'] for q in pts],
+                    'xi_over_L': [q['xi_over_L'] for q in pts],
+                    'xi_over_L_err': [q['xi_over_L_err'] for q in pts],
+                }
+            print(f"  Using v2 sweep data from {base}")
+            return out
+
+    sweep_path = PROJECT_ROOT / 'experiments' / 'runs' / 'colab_run' / 'sweep_results.json'
+    if sweep_path.exists():
+        with open(sweep_path) as f:
+            data = json.load(f)
+        for d in data.values():
+            n = len(d['m2_values'])
+            for key in ('mags_err', 'chis_err', 'xi_over_L_err'):
+                d.setdefault(key, [0.0] * n)
+        print(f"  Using legacy sweep data from {sweep_path} (no error bars)")
+        return data
+    return None
+
+
 def fig_finite_size_scaling():
     """Figure: Three-panel finite-size scaling from saved sweep results."""
     print("Generating: finite_size_scaling.pdf")
 
-    import json
-    sweep_path = PROJECT_ROOT / 'experiments' / 'runs' / 'colab_run' / 'sweep_results.json'
-    if not sweep_path.exists():
-        print("  SKIPPED: sweep_results.json not found.")
+    sweep_data = load_sweep_data()
+    if sweep_data is None:
+        print("  SKIPPED: no sweep results found.")
         return
-
-    with open(sweep_path) as f:
-        sweep_data = json.load(f)
 
     colors = {'16': '#4488ff', '32': '#44bb88', '64': '#cc44ff'}
     fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.5))
@@ -280,12 +320,15 @@ def fig_finite_size_scaling():
         m2 = np.array(data['m2_values'])
         c = colors[L_str]
 
-        axes[0].plot(m2, data['mags'], 'o-', color=c, label=f'$L={L_str}$',
-                     markersize=3, linewidth=1)
-        axes[1].plot(m2, data['chis'], 's-', color=c, label=f'$L={L_str}$',
-                     markersize=3, linewidth=1)
-        axes[2].plot(m2, data['xi_over_L'], '^-', color=c, label=f'$L={L_str}$',
-                     markersize=3, linewidth=1)
+        axes[0].errorbar(m2, data['mags'], yerr=data['mags_err'], fmt='o-',
+                         color=c, label=f'$L={L_str}$', markersize=3,
+                         linewidth=1, capsize=1.5, elinewidth=0.7)
+        axes[1].errorbar(m2, data['chis'], yerr=data['chis_err'], fmt='s-',
+                         color=c, label=f'$L={L_str}$', markersize=3,
+                         linewidth=1, capsize=1.5, elinewidth=0.7)
+        axes[2].errorbar(m2, data['xi_over_L'], yerr=data['xi_over_L_err'],
+                         fmt='^-', color=c, label=f'$L={L_str}$', markersize=3,
+                         linewidth=1, capsize=1.5, elinewidth=0.7)
 
     axes[0].set_xlabel(r'$m^2$')
     axes[0].set_ylabel(r'$|\langle\phi\rangle|$')
@@ -315,14 +358,10 @@ def fig_scaling_collapse():
     """Figure: ξ/L crossing + data collapse from saved sweep results."""
     print("Generating: scaling_collapse.pdf")
 
-    import json
-    sweep_path = PROJECT_ROOT / 'experiments' / 'runs' / 'colab_run' / 'sweep_results.json'
-    if not sweep_path.exists():
-        print("  SKIPPED: sweep_results.json not found.")
+    sweep_data = load_sweep_data()
+    if sweep_data is None:
+        print("  SKIPPED: no sweep results found.")
         return
-
-    with open(sweep_path) as f:
-        sweep_data = json.load(f)
 
     m2_values = np.array(sweep_data['16']['m2_values'])
     xi16 = np.array(sweep_data['16']['xi_over_L'])
@@ -363,8 +402,9 @@ def fig_scaling_collapse():
     for L_str in ['16', '32', '64']:
         data = sweep_data[L_str]
         c = colors[L_str]
-        axes[0].plot(m2_values, data['xi_over_L'], 'o-', color=c,
-                     label=f'$L={L_str}$', markersize=3, linewidth=1)
+        axes[0].errorbar(m2_values, data['xi_over_L'], yerr=data['xi_over_L_err'],
+                         fmt='o-', color=c, label=f'$L={L_str}$', markersize=3,
+                         linewidth=1, capsize=1.5, elinewidth=0.7)
     axes[0].axvline(m2c, color='gray', ls='--', alpha=0.5,
                     label=rf'$m^2_c = {m2c:.2f}$')
     axes[0].set_xlabel(r'$m^2$')

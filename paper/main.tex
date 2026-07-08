@@ -274,11 +274,15 @@ $k_\text{min} = 2\pi/L$.
 We implement the correlation length estimator using the full two-dimensional FFT
 of the field configurations:
 \begin{align}
-\tilde{G}(0) &= \chi = V\,\text{Var}(M), \\
+\tilde{G}(0) &= \chi = V\left(\langle M^2\rangle - \langle|M|\rangle^2\right), \\
 \tilde{G}(k_\text{min}) &= \langle|\tilde\phi(k_\text{min}, 0)|^2\rangle / V,
 \end{align}
 which uses all spatial correlations and avoids the systematic underestimation of
-one-dimensional angle-averaged approaches.
+one-dimensional angle-averaged approaches. The $k=0$ mode uses the same
+$\langle|M|\rangle$-subtracted susceptibility as defined above (the $k \neq 0$
+modes need no subtraction since $\langle\tilde\phi(k \neq 0)\rangle = 0$); in
+the broken phase the alternative $V\,\text{Var}(M)$ form is contaminated by
+rare tunneling events between the two ordered vacua.
 
 \subsection{Monte Carlo Data Generation}
 \label{sec:mc}
@@ -465,11 +469,13 @@ with $\gamma/\nu \approx 1.75$ (the exact two-dimensional Ising value).
 
 The $\xiL$ ratio shows a crossing of the $L = 16$ and $L = 32$ curves near
 $\msqc \approx -2.35$, with the $L = 32$ and $L = 64$ curves approaching
-intersection at $\msq \approx -2.5$. The remaining gap at $L = 64$ is
-attributable to critical slowing down of the local Metropolis algorithm:
-autocorrelation times grow as $\tau \sim \xi^z$ with dynamic exponent $z
-\approx 2$, degrading the effective statistics near the critical point for the
-largest lattice.
+intersection at $\msq \approx -2.5$. The drift of the crossing point with $L$
+has two sources: corrections to scaling (the leading irrelevant operator
+shifts pairwise crossings by $O(L^{-\omega})$, so the $L=16/32$ crossing need
+not coincide with the asymptotic $\msqc$), and critical slowing down of the
+local Metropolis algorithm, whose autocorrelation times grow as $\tau \sim
+\xi^z$ with dynamic exponent $z \approx 2$, degrading the effective statistics
+near the critical point for the largest lattice.
 
 \subsection{Critical Exponent Extraction}
 \label{sec:nu}

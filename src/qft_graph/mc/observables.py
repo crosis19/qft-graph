@@ -33,13 +33,52 @@ class ObservableSet:
         return abs(phi.mean().item())
 
     def magnetization_squared(self, phi: torch.Tensor) -> float:
-        """<phi>^2 for susceptibility computation."""
+        """M^2 for a single configuration, M = (1/V) sum_x phi(x)."""
         m = phi.mean().item()
         return m * m
 
     def susceptibility_term(self, phi: torch.Tensor) -> float:
-        """V * <phi^2> contribution. Combine with <phi>^2 for chi = V*(<phi^2> - <phi>^2)."""
+        """Site-averaged phi^2 = (1/V) sum_x phi(x)^2 for one configuration.
+
+        NOTE: this is NOT an ingredient of the magnetic susceptibility
+        (it differs from M^2 by the x != y correlations). For chi use
+        ObservableSet.susceptibility, which implements the frozen
+        convention chi = V * (<M^2> - <|M|>^2).
+        """
         return (phi**2).mean().item()
+
+    @staticmethod
+    def susceptibility(
+        phi_configs: torch.Tensor,
+        convention: str = "abs",
+    ) -> float:
+        """Ensemble magnetic susceptibility chi.
+
+        Frozen convention (implementation plan, task P1-2):
+
+            chi = V * ( <M^2> - <|M|>^2 ),   M = (1/V) sum_x phi(x)
+
+        The |M| subtraction removes the spontaneous-magnetization
+        contribution in the broken phase, where the Var(M) form is
+        contaminated by rare tunneling events.
+
+        Args:
+            phi_configs: Field configurations, shape (n_configs, n_sites).
+            convention: "abs" (frozen, default) uses <|M|>^2;
+                "var" uses <M>^2 (V*Var(M)) — sensitivity checks only.
+
+        Returns:
+            Susceptibility chi.
+        """
+        n_sites = phi_configs.shape[1]
+        M = phi_configs.mean(dim=1)
+        if convention == "abs":
+            sub = M.abs().mean().pow(2)
+        elif convention == "var":
+            sub = M.mean().pow(2)
+        else:
+            raise ValueError(f"Unknown chi convention: {convention!r}")
+        return float(n_sites * (M.pow(2).mean() - sub))
 
     def two_point_function(
         self, phi: torch.Tensor, connected: bool = True
@@ -194,28 +233,29 @@ class ObservableSet:
         phi_configs: torch.Tensor,
         L: int,
         lattice_spacing: float = 1.0,
+        chi_convention: str = "abs",
     ) -> float:
         """Extract correlation length using the full 2D FFT method.
 
         Uses the standard second-moment estimator in momentum space:
 
-            ξ = (1 / 2sin(π/L)) × sqrt( χ/F - 1 )
+            ξ = (1 / 2sin(π/L)) × sqrt( G̃(0)/G̃(k_min) - 1 )
 
-        where:
-            χ = V · Var(M) = V · (<M²> - <M>²)  (connected susceptibility)
-            F = <|φ̃(k_min)|²> / V               (propagator at k_min)
+        with the frozen convention (plan task P1-2):
 
-        The key is that χ is computed from magnetization fluctuations
-        (not from the k=0 FFT mode), while F comes from the k≠0 FFT modes
-        which are unaffected by the mean subtraction.
+            G̃(0)     = χ = V · (<M²> - <|M|>²)
+            G̃(k_min) = <|φ̃(k_min, 0)|²> / V     (propagator at k_min)
 
-        This correctly handles the connected correlator for all lattice
-        sizes without the systematic suppression of naive approaches.
+        χ is computed from magnetization fluctuations (not from the k=0
+        FFT mode), while G̃(k_min) comes from the k≠0 FFT modes which are
+        unaffected by any mean subtraction.
 
         Args:
             phi_configs: Field configurations, shape (n_configs, n_sites).
             L: Linear lattice size (assumes square L×L lattice).
             lattice_spacing: Physical lattice spacing.
+            chi_convention: "abs" (frozen, default) or "var" — passed to
+                ObservableSet.susceptibility; "var" for sensitivity checks.
 
         Returns:
             Correlation length xi in lattice units.
@@ -226,10 +266,11 @@ class ObservableSet:
         # Reshape to 2D grids
         phi_grids = phi_configs.reshape(n_configs, L, L)
 
-        # --- Connected susceptibility from magnetization fluctuations ---
-        # M_i = (1/V) Σ_x φ_i(x) for each config
+        # --- Susceptibility from magnetization fluctuations ---
         M = phi_grids.mean(dim=(1, 2))  # (n_configs,)
-        chi = V * (M.pow(2).mean() - M.mean().pow(2)).item()
+        chi = ObservableSet.susceptibility(
+            phi_configs.reshape(n_configs, -1), convention=chi_convention
+        )
 
         # --- Propagator at k_min from FFT ---
         # Subtract per-config spatial mean so k=0 mode is zero.
@@ -258,18 +299,22 @@ class ObservableSet:
         L: int,
         n_blocks: int = 20,
         lattice_spacing: float = 1.0,
+        chi_convention: str = "abs",
     ) -> tuple[float, float]:
-        """Extract ξ with jackknife error estimate.
+        """Extract ξ with binned jackknife error estimate.
 
         Splits configurations into n_blocks jackknife blocks, computes ξ
         from each leave-one-block-out subset, and returns the mean and
-        standard error.
+        standard error. Choose n_blocks so the block size exceeds
+        2·tau_int of the configuration series.
 
         Args:
             phi_configs: Field configurations, shape (n_configs, n_sites).
             L: Linear lattice size.
             n_blocks: Number of jackknife blocks.
             lattice_spacing: Physical lattice spacing.
+            chi_convention: "abs" (frozen) or "var", forwarded to
+                correlation_length_fft.
 
         Returns:
             (xi_mean, xi_err) tuple.
@@ -286,7 +331,9 @@ class ObservableSet:
             mask = torch.ones(n_use, dtype=torch.bool)
             mask[b * block_size : (b + 1) * block_size] = False
             subset = configs[mask]
-            xi_b = ObservableSet.correlation_length_fft(subset, L, lattice_spacing)
+            xi_b = ObservableSet.correlation_length_fft(
+                subset, L, lattice_spacing, chi_convention=chi_convention
+            )
             xi_jack.append(xi_b)
 
         xi_arr = np.array(xi_jack)

@@ -41,3 +41,49 @@ class TestObservables:
         G_r = torch.tensor([1.0, 0.5, 0.25, 0.125])
         xi = ObservableSet.correlation_length(G_r)
         assert xi > 0
+
+
+class TestSusceptibility:
+    """Frozen convention (plan P1-2): chi = V * (<M^2> - <|M|>^2)."""
+
+    def test_symmetric_two_state_exact(self):
+        # Ensemble {+c, -c} uniform: <M^2> = c^2, <|M|> = c -> chi_abs = 0,
+        # while the Var(M) form gives V*c^2 (contaminated by tunneling).
+        V, c = 16, 0.7
+        configs = torch.stack([torch.full((V,), c), torch.full((V,), -c)])
+        chi_abs = ObservableSet.susceptibility(configs, convention="abs")
+        chi_var = ObservableSet.susceptibility(configs, convention="var")
+        assert abs(chi_abs) < 1e-6
+        assert abs(chi_var - V * c**2) < 1e-5
+
+    def test_iid_gaussian_analytic(self):
+        # phi ~ N(0, sigma^2) iid: M ~ N(0, sigma^2/V), so
+        # chi_var -> sigma^2 and chi_abs -> sigma^2 * (1 - 2/pi).
+        import math
+
+        torch.manual_seed(0)
+        sigma, V, n = 2.0, 64, 40_000
+        configs = sigma * torch.randn(n, V)
+        chi_abs = ObservableSet.susceptibility(configs, convention="abs")
+        chi_var = ObservableSet.susceptibility(configs, convention="var")
+        assert abs(chi_var - sigma**2) / sigma**2 < 0.05
+        expected_abs = sigma**2 * (1 - 2 / math.pi)
+        assert abs(chi_abs - expected_abs) / expected_abs < 0.05
+
+    def test_unknown_convention_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError):
+            ObservableSet.susceptibility(torch.randn(10, 4), convention="bogus")
+
+    def test_correlation_length_fft_conventions_differ_in_broken_phase(self):
+        # Broken-phase mock: configs fluctuate around +/- v -> the Var(M)
+        # chi is inflated by the two-state structure, the frozen form is not.
+        torch.manual_seed(1)
+        L, n = 8, 400
+        v = 1.0
+        signs = torch.where(torch.rand(n, 1) > 0.5, 1.0, -1.0)
+        configs = signs * v + 0.05 * torch.randn(n, L * L)
+        chi_abs = ObservableSet.susceptibility(configs, convention="abs")
+        chi_var = ObservableSet.susceptibility(configs, convention="var")
+        assert chi_var > 10 * max(chi_abs, 1e-9)
