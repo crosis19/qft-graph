@@ -372,7 +372,9 @@ coordinates on a single node type; same message-passing depth ($B=3$) and
 hidden dimension ($H=64$), with a skip connection from the initial encoding
 to the readout to prevent over-smoothing of the field signal.
 \item \textbf{Lattice CNN:} Periodic-padded 2D convolutions treating $\phi(x)$
-as a single-channel image (4 layers, 32 channels).
+as a single-channel image (4 layers, 32 channels), plus a
+\emph{parameter-matched} variant (4 layers, 72 channels, 146k parameters
+$\approx$ the HeteroGNN's 150k) to control for model capacity.
 \item \textbf{MLP:} Flattened field configuration fed through a 3-layer
 feedforward network ($H=256$).
 \end{itemize}
@@ -380,18 +382,10 @@ feedforward network ($H=256$).
 \begin{table}[t]
 \centering
 \caption{Architecture comparison on $16 \times 16$ lattice ($\msq=-0.5$,
-$\lambda=0.5$). All models trained for 150 epochs on the same data split.}
+$\lambda=0.5$). All models trained for 150 epochs on the same data split;
+entries are mean $\pm$ std over 5 seeds.}
 \label{tab:baselines}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Model & Params & Pearson $r$ & Rel.\ Error \\
-\midrule
-\textbf{HeteroGNN (ours)} & 150,337 & \textbf{0.99998} & \textbf{0.04\%} \\
-Homogeneous GNN & 67,073 & 0.99985 & 0.12\% \\
-Lattice CNN & 29,153 & 0.99855 & 0.39\% \\
-MLP & 197,633 & 0.346 & 7.4\% \\
-\bottomrule
-\end{tabular}
+\input{tables/table2_body}
 \end{table}
 
 Table~\ref{tab:baselines} shows the results. The most significant finding is
@@ -409,11 +403,19 @@ connection bypasses message passing entirely to rescue a signal that would
 otherwise be destroyed.
 
 Beyond architectural stability, all spatially structured models achieve
-$r > 0.998$, confirming that the $\phifour$ action is learnable as a local
-functional. The HeteroGNN achieves the lowest relative error (0.04\%),
-a 3$\times$ improvement over the homogeneous GNN with its skip connection
-(0.12\%). The MLP baseline fails without any spatial structure ($r = 0.35$),
-confirming that the lattice topology is essential.
+$r > 0.99$, confirming that the $\phifour$ action is learnable as a local
+functional. The HeteroGNN achieves the lowest relative error
+($0.05\%$), roughly half that of the homogeneous GNN with its skip
+connection ($0.11\%$). Matching the CNN's parameter count to the
+HeteroGNN's (146k vs.\ 150k) narrows but does not close the gap: the
+matched CNN reaches $r = 0.9995$ and $0.22\%$ relative error, a
+$4\times$ larger error than the HeteroGNN at equal capacity, indicating
+the advantage is architectural rather than a parameter-budget artifact.
+The MLP baseline fails without any spatial structure ($r = 0.34$),
+confirming that the lattice topology is essential. Seed-to-seed
+variation is negligible for the graph models ($\sigma_r \lesssim 3
+\times 10^{-5}$) and modest for the CNNs, so the ordering in
+Table~\ref{tab:baselines} is stable.
 
 \subsection{Coupling Generalization}
 \label{sec:generalization}

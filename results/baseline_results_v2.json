@@ -1,0 +1,289 @@
+{
+  "summary": [
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "n_seeds": 5,
+      "r_mean": 0.9999758,
+      "r_std": 4.995998398734382e-06,
+      "rel_err_mean": 0.0004646,
+      "rel_err_std": 4.403453190395011e-05
+    },
+    {
+      "model": "HomogeneousGNN",
+      "n_params": 67073,
+      "n_seeds": 5,
+      "r_mean": 0.9998610000000001,
+      "r_std": 3.3184333653104764e-05,
+      "rel_err_mean": 0.0011293999999999998,
+      "rel_err_std": 0.00014338842352156606
+    },
+    {
+      "model": "LatticeCNN",
+      "n_params": 29153,
+      "n_seeds": 5,
+      "r_mean": 0.9950098,
+      "r_std": 0.002758577125983617,
+      "rel_err_mean": 0.0067117999999999995,
+      "rel_err_std": 0.002469400121486998
+    },
+    {
+      "model": "LatticeCNN-matched",
+      "n_params": 146233,
+      "n_seeds": 5,
+      "r_mean": 0.9995255999999999,
+      "r_std": 0.00021566140127524182,
+      "rel_err_mean": 0.0021617999999999997,
+      "rel_err_std": 0.0004913896213800206
+    },
+    {
+      "model": "MLP",
+      "n_params": 197633,
+      "n_seeds": 5,
+      "r_mean": 0.3422656,
+      "r_std": 0.009339509378977038,
+      "rel_err_mean": 0.0737006,
+      "rel_err_std": 0.0003353372034236608
+    }
+  ],
+  "per_seed": [
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "pearson_r": 0.999982,
+      "relative_error": 0.000414,
+      "best_pearson_r": 0.999982,
+      "train_time_s": 688.1,
+      "seed": 0
+    },
+    {
+      "model": "HomogeneousGNN",
+      "n_params": 67073,
+      "pearson_r": 0.99985,
+      "relative_error": 0.0012,
+      "best_pearson_r": 0.99985,
+      "train_time_s": 356.8,
+      "seed": 0
+    },
+    {
+      "model": "LatticeCNN",
+      "n_params": 29153,
+      "pearson_r": 0.992243,
+      "relative_error": 0.008963,
+      "best_pearson_r": 0.992243,
+      "train_time_s": 237.2,
+      "seed": 0
+    },
+    {
+      "model": "LatticeCNN-matched",
+      "n_params": 146233,
+      "pearson_r": 0.999595,
+      "relative_error": 0.002065,
+      "best_pearson_r": 0.999596,
+      "train_time_s": 234.1,
+      "seed": 0
+    },
+    {
+      "model": "MLP",
+      "n_params": 197633,
+      "pearson_r": 0.341958,
+      "relative_error": 0.073776,
+      "best_pearson_r": 0.394344,
+      "train_time_s": 187.4,
+      "seed": 0
+    },
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "pearson_r": 0.999973,
+      "relative_error": 0.0005,
+      "best_pearson_r": 0.999974,
+      "train_time_s": 712.8,
+      "seed": 1
+    },
+    {
+      "model": "HomogeneousGNN",
+      "n_params": 67073,
+      "pearson_r": 0.999924,
+      "relative_error": 0.000869,
+      "best_pearson_r": 0.999924,
+      "train_time_s": 369.8,
+      "seed": 1
+    },
+    {
+      "model": "LatticeCNN",
+      "n_params": 29153,
+      "pearson_r": 0.996988,
+      "relative_error": 0.005617,
+      "best_pearson_r": 0.996988,
+      "train_time_s": 236.6,
+      "seed": 1
+    },
+    {
+      "model": "LatticeCNN-matched",
+      "n_params": 146233,
+      "pearson_r": 0.999736,
+      "relative_error": 0.001638,
+      "best_pearson_r": 0.999736,
+      "train_time_s": 234.8,
+      "seed": 1
+    },
+    {
+      "model": "MLP",
+      "n_params": 197633,
+      "pearson_r": 0.336019,
+      "relative_error": 0.073836,
+      "best_pearson_r": 0.405015,
+      "train_time_s": 187.5,
+      "seed": 1
+    },
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "pearson_r": 0.999976,
+      "relative_error": 0.000448,
+      "best_pearson_r": 0.999976,
+      "train_time_s": 712.9,
+      "seed": 2
+    },
+    {
+      "model": "HomogeneousGNN",
+      "n_params": 67073,
+      "pearson_r": 0.999859,
+      "relative_error": 0.001088,
+      "best_pearson_r": 0.999859,
+      "train_time_s": 370.0,
+      "seed": 2
+    },
+    {
+      "model": "LatticeCNN",
+      "n_params": 29153,
+      "pearson_r": 0.993356,
+      "relative_error": 0.008159,
+      "best_pearson_r": 0.993356,
+      "train_time_s": 237.0,
+      "seed": 2
+    },
+    {
+      "model": "LatticeCNN-matched",
+      "n_params": 146233,
+      "pearson_r": 0.999153,
+      "relative_error": 0.003004,
+      "best_pearson_r": 0.999153,
+      "train_time_s": 234.5,
+      "seed": 2
+    },
+    {
+      "model": "MLP",
+      "n_params": 197633,
+      "pearson_r": 0.359626,
+      "relative_error": 0.073124,
+      "best_pearson_r": 0.402968,
+      "train_time_s": 187.4,
+      "seed": 2
+    },
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "pearson_r": 0.99998,
+      "relative_error": 0.00043,
+      "best_pearson_r": 0.999981,
+      "train_time_s": 722.1,
+      "seed": 3
+    },
+    {
+      "model": "HomogeneousGNN",
+      "n_params": 67073,
+      "pearson_r": 0.999845,
+      "relative_error": 0.001217,
+      "best_pearson_r": 0.999845,
+      "train_time_s": 379.6,
+      "seed": 3
+    },
+    {
+      "model": "LatticeCNN",
+      "n_params": 29153,
+      "pearson_r": 0.999453,
+      "relative_error": 0.002349,
+      "best_pearson_r": 0.999454,
+      "train_time_s": 240.5,
+      "seed": 3
+    },
+    {
+      "model": "LatticeCNN-matched",
+      "n_params": 146233,
+      "pearson_r": 0.999714,
+      "relative_error": 0.001743,
+      "best_pearson_r": 0.999714,
+      "train_time_s": 236.9,
+      "seed": 3
+    },
+    {
+      "model": "MLP",
+      "n_params": 197633,
+      "pearson_r": 0.341178,
+      "relative_error": 0.074147,
+      "best_pearson_r": 0.392955,
+      "train_time_s": 188.1,
+      "seed": 3
+    },
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "pearson_r": 0.999968,
+      "relative_error": 0.000531,
+      "best_pearson_r": 0.999968,
+      "train_time_s": 716.0,
+      "seed": 4
+    },
+    {
+      "model": "HomogeneousGNN",
+      "n_params": 67073,
+      "pearson_r": 0.999827,
+      "relative_error": 0.001273,
+      "best_pearson_r": 0.999827,
+      "train_time_s": 372.1,
+      "seed": 4
+    },
+    {
+      "model": "LatticeCNN",
+      "n_params": 29153,
+      "pearson_r": 0.993009,
+      "relative_error": 0.008471,
+      "best_pearson_r": 0.993009,
+      "train_time_s": 237.3,
+      "seed": 4
+    },
+    {
+      "model": "LatticeCNN-matched",
+      "n_params": 146233,
+      "pearson_r": 0.99943,
+      "relative_error": 0.002359,
+      "best_pearson_r": 0.99943,
+      "train_time_s": 235.0,
+      "seed": 4
+    },
+    {
+      "model": "MLP",
+      "n_params": 197633,
+      "pearson_r": 0.332547,
+      "relative_error": 0.07362,
+      "best_pearson_r": 0.379726,
+      "train_time_s": 187.8,
+      "seed": 4
+    }
+  ],
+  "protocol": {
+    "epochs": 150,
+    "batch_size": 32,
+    "lr": 0.001,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "data": "data/mc_configs/phi4_16x16_m2=-0.5_lam=0.5/mc_data.pt"
+  }
+}
