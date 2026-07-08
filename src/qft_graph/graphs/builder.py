@@ -106,6 +106,14 @@ class HeteroGraphBuilder:
                 [self._bipartite_idx, self._bipartite_idx]
             )
 
+        # --- Graph-level coupling constants (task P1-3) ---
+        # Concatenated over fields; PyG batching stacks these to (batch, k)
+        globals_list = [
+            g for g in (f.global_features() for f in self.fields) if g is not None
+        ]
+        if globals_list:
+            data.globals = torch.cat(globals_list, dim=-1)  # (1, k)
+
         return data
 
     def build_dataset(

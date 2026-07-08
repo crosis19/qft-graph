@@ -21,6 +21,9 @@ class ActionHead(nn.Module):
         st_dim: Spacetime node embedding dimension.
         field_dims: Dict mapping field type names to their embedding dimensions.
         hidden_dim: Internal MLP hidden dimension.
+        volume_scaling: Multiply per-site density by a^d.
+        global_dim: Dimension of graph-level coupling features appended to
+            every site's readout input (0 disables; task P1-3).
     """
 
     def __init__(
@@ -29,10 +32,12 @@ class ActionHead(nn.Module):
         field_dims: dict[str, int],
         hidden_dim: int,
         volume_scaling: bool = True,
+        global_dim: int = 0,
     ) -> None:
         super().__init__()
         self._volume_scaling = volume_scaling
-        total_input = st_dim + sum(field_dims.values())
+        self._global_dim = global_dim
+        total_input = st_dim + sum(field_dims.values()) + global_dim
         self.action_mlp = nn.Sequential(
             nn.Linear(total_input, hidden_dim),
             nn.GELU(),
@@ -49,6 +54,7 @@ class ActionHead(nn.Module):
         lattice_spacing: float,
         lattice_dim: int,
         batch: torch.Tensor | None = None,
+        globals_: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute total and per-site action.
 
@@ -58,6 +64,8 @@ class ActionHead(nn.Module):
             lattice_spacing: Physical lattice spacing a.
             lattice_dim: Spatial dimension d.
             batch: Optional batch assignment tensor for batched graphs.
+            globals_: Graph-level couplings (batch_size, global_dim),
+                required iff global_dim > 0; broadcast to each site.
 
         Returns:
             (total_action, per_site_action) where total_action has shape
@@ -65,6 +73,14 @@ class ActionHead(nn.Module):
         """
         # Concatenate spacetime + all field embeddings at each site
         features = [h_st] + [h_fields[ft] for ft in self._field_types]
+        if self._global_dim > 0:
+            if globals_ is None:
+                raise ValueError("ActionHead built with global_dim > 0 but no globals given")
+            if batch is not None:
+                per_site_globals = globals_[batch]
+            else:
+                per_site_globals = globals_.expand(h_st.shape[0], -1)
+            features.append(per_site_globals)
         combined = torch.cat(features, dim=-1)
 
         # Per-site action density

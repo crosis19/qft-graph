@@ -32,9 +32,12 @@ class HeteroGNN(nn.Module):
     Args:
         config: ModelConfig with architecture hyperparameters.
         lattice_dim: Spatial dimension of the lattice (2 for Phase 1).
-        field_types: Dict mapping field type names to their raw input dimensions.
-            E.g., {"scalar": 1} for Phase 1, {"scalar": 1, "fermion": 4} for Phase 2.
+        field_types: Dict mapping field type names to their raw input dimensions
+            (Field.node_feature_dim()). E.g., {"scalar": 1}, or {"scalar": 3}
+            when coupling constants ride on the field nodes (task P1-3).
         lattice_spacing: Physical lattice spacing for energy head scaling.
+        global_dim: Dimension of graph-level coupling features (data.globals)
+            appended to the readout input; 0 disables.
     """
 
     def __init__(
@@ -43,11 +46,13 @@ class HeteroGNN(nn.Module):
         lattice_dim: int,
         field_types: dict[str, int],
         lattice_spacing: float = 1.0,
+        global_dim: int = 0,
     ) -> None:
         super().__init__()
         self.config = config
         self.lattice_dim = lattice_dim
         self.lattice_spacing = lattice_spacing
+        self.global_dim = global_dim
         self._field_type_names = list(field_types.keys())
         h = config.hidden_dim
 
@@ -107,6 +112,7 @@ class HeteroGNN(nn.Module):
                 field_dims=field_dims,
                 hidden_dim=h,
                 volume_scaling=config.volume_scaling,
+                global_dim=global_dim,
             )
 
         if config.readout in ("correlator", "both"):
@@ -179,8 +185,10 @@ class HeteroGNN(nn.Module):
         if self.action_head is not None:
             h_st = data["spacetime"].x
             h_fields = {fname: data[fname].x for fname in self._field_type_names}
+            globals_ = data.globals if self.global_dim > 0 else None
             total_e, local_e = self.action_head(
-                h_st, h_fields, self.lattice_spacing, self.lattice_dim, batch
+                h_st, h_fields, self.lattice_spacing, self.lattice_dim, batch,
+                globals_=globals_,
             )
             output["energy"] = total_e
             output["local_energy"] = local_e

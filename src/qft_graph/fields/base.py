@@ -59,3 +59,20 @@ class Field(ABC):
         Returns:
             Raw configuration tensor.
         """
+
+    def node_feature_dim(self) -> int:
+        """Feature dimension produced by node_features.
+
+        Defaults to dof_per_site; fields that append coupling constants
+        (task P1-3) override this.
+        """
+        return self.dof_per_site()
+
+    def global_features(self) -> torch.Tensor | None:
+        """Graph-level physics scalars (coupling constants) or None.
+
+        When not None, the graph builder attaches them to the HeteroData
+        (shape (1, k)) and the readout head conditions on them — so a
+        single model can be trained jointly across coupling values.
+        """
+        return None
