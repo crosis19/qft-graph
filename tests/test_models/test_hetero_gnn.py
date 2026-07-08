@@ -88,3 +88,42 @@ class TestHeteroGNN:
         n_params = sum(p.numel() for p in model.parameters())
         assert n_params > 0
         assert n_params < 1_000_000  # Sanity: shouldn't be enormous for small model
+
+
+class TestSpacetimeFeatureVariants:
+    def test_constant_variant_forward(self, small_lattice, scalar_field, sample_config, model_config):
+        """Coordinate-free variant (P1-6): constant spacetime features."""
+        from qft_graph.graphs.builder import HeteroGraphBuilder
+
+        model_config.spacetime_features = "constant"
+        builder = HeteroGraphBuilder(
+            small_lattice, [scalar_field], spacetime_features="constant"
+        )
+        data = builder.build({"scalar": sample_config})
+        model = HeteroGNN(
+            config=model_config,
+            lattice_dim=small_lattice.dimension(),
+            field_types={"scalar": 1},
+        )
+        model.eval()
+        with torch.no_grad():
+            out = model(data)
+        assert "energy" in out
+
+
+class TestHomogeneousSkipVariants:
+    def test_no_skip_forward(self, small_lattice, scalar_field, sample_config):
+        """No-skip homogeneous variant (P1-5) runs and differs in head size."""
+        from qft_graph.graphs.builder import HeteroGraphBuilder
+        from qft_graph.models.baselines import HomogeneousGNN
+
+        builder = HeteroGraphBuilder(small_lattice, [scalar_field], a_in_edges=False)
+        data = builder.build({"scalar": sample_config})
+        with_skip = HomogeneousGNN(hidden_dim=16, n_mp_blocks=2, skip_connection=True)
+        no_skip = HomogeneousGNN(hidden_dim=16, n_mp_blocks=2, skip_connection=False)
+        n_with = sum(p.numel() for p in with_skip.parameters())
+        n_without = sum(p.numel() for p in no_skip.parameters())
+        assert n_without < n_with
+        with torch.no_grad():
+            out = no_skip(data)
+        assert "energy" in out

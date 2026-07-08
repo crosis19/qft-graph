@@ -50,6 +50,10 @@ class ModelConfig:
     readout: str = "energy"  # "energy" | "correlator" | "both"
     a_in_edges: bool = True  # put lattice spacing in edge displacements instead of nodes
     volume_scaling: bool = True  # multiply per-site energy by a^d
+    # "coords" | "constant": constant replaces coordinates with a single 1.0
+    # feature (geometry via displacement edges only) — translation-invariant,
+    # transfers across lattice sizes (task P1-6)
+    spacetime_features: str = "coords"
     # Feed (m2, lambda) to the model: field nodes get [phi, m2, lambda] and the
     # readout is conditioned on them (task P1-3). False preserves the original
     # paper architecture, which cannot condition on couplings.

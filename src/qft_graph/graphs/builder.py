@@ -33,13 +33,26 @@ class HeteroGraphBuilder:
             lattice spacing scales the adjacency edge displacement vectors
             and spacetime nodes carry coordinates only. If False, spacing
             is appended as a spacetime node feature instead.
+        spacetime_features: "coords" (default) or "constant". The constant
+            variant replaces coordinates with a single 1.0 feature so all
+            geometry is carried by displacement edge features — restoring
+            translation invariance and enabling size transfer (task P1-6).
     """
 
-    def __init__(self, lattice: Lattice, fields: list[Field], a_in_edges: bool = True) -> None:
+    def __init__(
+        self,
+        lattice: Lattice,
+        fields: list[Field],
+        a_in_edges: bool = True,
+        spacetime_features: str = "coords",
+    ) -> None:
+        if spacetime_features not in ("coords", "constant"):
+            raise ValueError(f"Unknown spacetime_features: {spacetime_features!r}")
         self.lattice = lattice
         self.fields = fields
         self._nsites = lattice.num_sites()
         self._a_in_edges = a_in_edges
+        self._spacetime_features = spacetime_features
 
         # Precompute lattice topology (fixed across configurations)
         self._coords = lattice.site_coordinates()
@@ -65,7 +78,10 @@ class HeteroGraphBuilder:
         data = HeteroData()
 
         # --- Spacetime nodes ---
-        if self._a_in_edges:
+        if self._spacetime_features == "constant":
+            # Coordinate-free: geometry carried entirely by edge displacements
+            st_features = torch.ones(self._nsites, 1)
+        elif self._a_in_edges:
             # Lattice spacing encoded in edge displacements; nodes get coordinates only
             st_features = self._coords
         else:

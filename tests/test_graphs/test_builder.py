@@ -67,3 +67,16 @@ class TestHeteroGraphBuilder:
 
         assert len(dataset) == n
         assert dataset[0].y.shape == (1,)
+
+    def test_spacetime_features_constant_variant(self, small_lattice, scalar_field, sample_config):
+        builder = HeteroGraphBuilder(
+            small_lattice, [scalar_field], spacetime_features="constant"
+        )
+        data = builder.build({"scalar": sample_config})
+        # Coordinate-free: single constant feature per spacetime node
+        assert data["spacetime"].x.shape == (small_lattice.num_sites(), 1)
+        assert torch.all(data["spacetime"].x == 1.0)
+
+    def test_unknown_spacetime_features_raises(self, small_lattice, scalar_field):
+        with __import__("pytest").raises(ValueError):
+            HeteroGraphBuilder(small_lattice, [scalar_field], spacetime_features="bogus")

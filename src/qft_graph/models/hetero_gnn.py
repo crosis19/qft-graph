@@ -57,9 +57,13 @@ class HeteroGNN(nn.Module):
         h = config.hidden_dim
 
         # --- Encoders ---
-        # Spacetime: input = coordinates only (lattice_dim) if a is in edges,
-        # otherwise coordinates + lattice_spacing (lattice_dim + 1)
-        st_input_dim = lattice_dim if config.a_in_edges else lattice_dim + 1
+        # Spacetime input: constant variant = 1 feature (coordinate-free,
+        # P1-6); otherwise coordinates (lattice_dim), plus lattice_spacing
+        # when it is not carried on the edges.
+        if getattr(config, "spacetime_features", "coords") == "constant":
+            st_input_dim = 1
+        else:
+            st_input_dim = lattice_dim if config.a_in_edges else lattice_dim + 1
         self.st_encoder = SpacetimeEncoder(
             input_dim=st_input_dim,
             hidden_dim=h,

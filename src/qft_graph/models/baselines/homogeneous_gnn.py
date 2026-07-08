@@ -23,7 +23,9 @@ class HomogeneousGNN(nn.Module):
 
     Includes a skip connection from the initial encoding to the readout
     (standard JK-Net / DeepGCN practice) to prevent the phi signal from
-    being destroyed by over-smoothing during message passing.
+    being destroyed by over-smoothing during message passing. The
+    skip_connection flag disables it for the depth-ablation study (P1-5),
+    isolating the structural failure mode the paper describes.
 
     Args:
         lattice_dim: Spatial dimension (2 for 2D lattice).
@@ -31,6 +33,10 @@ class HomogeneousGNN(nn.Module):
         n_mp_blocks: Number of message-passing blocks.
         n_encoder_layers: Number of layers in the encoder MLP.
         lattice_spacing: Physical lattice spacing.
+        skip_connection: Concatenate the initial encoding into the readout.
+        st_feature_dim: Spacetime feature dim of the input graphs
+            (lattice_dim+1 when built with a_in_edges=False — the paper
+            protocol — or lattice_dim with a_in_edges=True).
     """
 
     def __init__(
@@ -40,13 +46,18 @@ class HomogeneousGNN(nn.Module):
         n_mp_blocks: int = 3,
         n_encoder_layers: int = 2,
         lattice_spacing: float = 1.0,
+        skip_connection: bool = True,
+        st_feature_dim: int | None = None,
     ) -> None:
         super().__init__()
         self.lattice_dim = lattice_dim
         self.lattice_spacing = lattice_spacing
+        self.skip_connection = skip_connection
 
-        # Input: coordinates (lattice_dim) + spacing (1) + phi (1)
-        input_dim = lattice_dim + 1 + 1
+        # Input: spacetime features + phi (1)
+        if st_feature_dim is None:
+            st_feature_dim = lattice_dim + 1  # paper protocol: [x1, x2, a]
+        input_dim = st_feature_dim + 1
 
         # Node encoder
         enc_layers = []
@@ -70,11 +81,13 @@ class HomogeneousGNN(nn.Module):
                 HomogeneousMPBlock(hidden_dim=hidden_dim)
             )
 
-        # Action readout head — takes BOTH initial encoding (skip) and
-        # final MP'd representation, analogous to how the HeteroGNN's
-        # action head sees h_st || h_field.
+        # Action readout head — with skip_connection it takes BOTH the
+        # initial encoding and the final MP'd representation, analogous to
+        # how the HeteroGNN's action head sees h_st || h_field; without it,
+        # only the final representation (ablation variant).
+        head_input = 2 * hidden_dim if skip_connection else hidden_dim
         self.action_head = nn.Sequential(
-            nn.Linear(2 * hidden_dim, hidden_dim),
+            nn.Linear(head_input, hidden_dim),
             nn.GELU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.GELU(),
@@ -103,8 +116,8 @@ class HomogeneousGNN(nn.Module):
         for block in self.mp_blocks:
             h = block(h, adj_edge_index, e)
 
-        # Energy readout with skip connection: [initial_encoding || mp_output]
-        h_combined = torch.cat([h0, h], dim=-1)
+        # Energy readout, with or without the [initial_encoding || mp_output] skip
+        h_combined = torch.cat([h0, h], dim=-1) if self.skip_connection else h
         per_site = self.action_head(h_combined) * (self.lattice_spacing ** self.lattice_dim)
 
         batch = data["spacetime"].get("batch", None)
