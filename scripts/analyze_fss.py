@@ -55,12 +55,16 @@ def main() -> None:
 
     report: dict = {"sizes": args.sizes, "coupling": args.coupling}
 
-    # --- xi/L crossings with errors, both conventions ---
-    crossings: dict[str, list[dict]] = {"abs": [], "var": []}
-    for conv, key, ekey in [
+    # --- xi/L crossings with errors: frozen convention, Var(M) sensitivity
+    # check, and the proposed k!=0-only estimator (docs/xi_estimator_issue.md)
+    estimators = [
         ("abs", "xi_over_L", "xi_over_L_err"),
         ("var", "xi_var_over_L", "xi_var_over_L_err"),
-    ]:
+    ]
+    if all("xi_2mom_over_L" in p for pts in sweeps.values() for p in pts):
+        estimators.append(("2mom", "xi_2mom_over_L", "xi_2mom_over_L_err"))
+    crossings = {conv: [] for conv, _, _ in estimators}
+    for conv, key, ekey in estimators:
         for L1, L2 in zip(sorted(args.sizes)[:-1], sorted(args.sizes)[1:]):
             p1, p2 = sweeps[L1], sweeps[L2]
             m2 = np.array([p["m2"] for p in p1])
@@ -85,7 +89,7 @@ def main() -> None:
     report["crossings"] = crossings
 
     # Combined m2_c per convention (error-weighted mean over pairs)
-    for conv in ("abs", "var"):
+    for conv in crossings:
         vals = [c for c in crossings[conv] if np.isfinite(c["m2_c"])]
         if vals:
             w = np.array([1.0 / max(c["m2_c_err"], 1e-6) ** 2 for c in vals])
@@ -133,14 +137,34 @@ def main() -> None:
     report["gamma_over_nu"] = {"value": gamma_nu, "err": gamma_nu_err, "exact_2d_ising": 1.75}
     logger.info("gamma/nu = %.3f +/- %.3f (exact: 1.75)", gamma_nu, gamma_nu_err)
 
-    # --- nu from scaling collapse (frozen convention, using m2_c_abs) ---
-    if "m2_c_abs" in report:
+    # --- nu from scaling collapse ---
+    # Prefer the k!=0 estimator (defined in both phases); restrict to a
+    # window around m2_c and to points where xi was measurable, otherwise
+    # the collapse metric is dominated by degenerate xi = 0 entries.
+    conv_for_nu = "2mom" if "m2_c_2mom" in report else "abs"
+    key_for_nu = {"2mom": "xi_2mom_over_L", "abs": "xi_over_L"}[conv_for_nu]
+    m2c_key = f"m2_c_{conv_for_nu}"
+    if m2c_key in report:
+        m2c = report[m2c_key]["value"]
+        window = 0.6  # |m2 - m2_c| window for the collapse fit
         xi_over_L_data = {
-            L: [(p["m2"], p["xi_over_L"]) for p in sweeps[L]] for L in args.sizes
+            L: [
+                (p["m2"], p[key_for_nu])
+                for p in sweeps[L]
+                if p[key_for_nu] > 0 and abs(p["m2"] - m2c) < window
+            ]
+            for L in args.sizes
         }
-        nu, nu_err = extract_nu(args.sizes, xi_over_L_data, report["m2_c_abs"]["value"])
-        report["nu"] = {"value": nu, "err": nu_err, "exact_2d_ising": 1.0}
-        logger.info("nu = %.3f +/- %.3f (exact: 1)", nu, nu_err)
+        if all(len(v) >= 4 for v in xi_over_L_data.values()):
+            nu, nu_err = extract_nu(args.sizes, xi_over_L_data, m2c)
+            report["nu"] = {
+                "value": nu, "err": nu_err, "exact_2d_ising": 1.0,
+                "estimator": conv_for_nu, "window": window,
+            }
+            logger.info("nu = %.3f +/- %.3f (exact: 1, estimator: %s)",
+                        nu, nu_err, conv_for_nu)
+        else:
+            logger.warning("Too few usable xi points for the nu collapse")
 
     # --- tau_int summary ---
     tau_table = {}
@@ -179,7 +203,8 @@ def main() -> None:
         },
         metrics={
             k: report[k]
-            for k in ("m2_c_abs", "m2_c_var", "gamma_over_nu", "nu", "convention_sensitivity")
+            for k in ("m2_c_abs", "m2_c_var", "m2_c_2mom", "gamma_over_nu",
+                      "nu", "convention_sensitivity")
             if k in report
         },
         extra={"analysis_json": str(out_path)},

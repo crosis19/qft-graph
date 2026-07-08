@@ -294,6 +294,71 @@ class ObservableSet:
         return float(xi) if np.isfinite(xi) else 0.0
 
     @staticmethod
+    def momentum_correlators(
+        phi_configs: torch.Tensor, L: int
+    ) -> dict[str, torch.Tensor]:
+        """Per-config |phi_tilde(k)|^2 / V at the smallest momenta.
+
+        Returns per-config series (length n_configs) for
+        k in {(1,0), (0,1), (1,1), (2,0), (0,2)} (units of 2pi/L), plus the
+        per-config magnetization M. These are sufficient statistics for
+        every susceptibility/correlation-length estimator considered in
+        P1-2, so estimator choices become offline post-processing.
+        """
+        n_configs = phi_configs.shape[0]
+        V = L * L
+        phi_grids = phi_configs.reshape(n_configs, L, L)
+        fft = torch.fft.fft2(phi_grids)
+        out = {"M": phi_grids.mean(dim=(1, 2))}
+        for kx, ky in [(1, 0), (0, 1), (1, 1), (2, 0), (0, 2)]:
+            mode = fft[:, kx, ky]
+            out[f"F_{kx}_{ky}"] = (mode.real**2 + mode.imag**2) / V
+        return out
+
+    @staticmethod
+    def correlation_length_two_momentum(
+        phi_configs: torch.Tensor,
+        L: int,
+        lattice_spacing: float = 1.0,
+    ) -> float:
+        """xi from the two smallest nonzero momenta — k=0 mode never used.
+
+        PROPOSED alternative to the frozen k=0-based recipe (flagged in
+        docs/xi_estimator_issue.md): with G(k) = A / (khat^2 + xi^-2),
+        khat = 2 sin(k/2), two momentum shells give
+
+            xi^-2 = (khat2^2 G2 - khat1^2 G1) / (G1 - G2)
+
+        with G1 averaged over (1,0),(0,1) and G2 over (1,1). Because only
+        k != 0 modes enter, the estimator is immune to both failure modes
+        of the k=0 recipes: the <|M|> subtraction (which drives the frozen
+        form negative in the symmetric phase) and the finite-volume
+        tunneling contamination of Var(M) in the broken phase.
+
+        Validated against the exact free-field propagator in
+        tests/test_mc/test_observables.py (exact-value oracle).
+
+        Args:
+            phi_configs: Field configurations, shape (n_configs, n_sites).
+            L: Linear lattice size.
+            lattice_spacing: Physical lattice spacing.
+
+        Returns:
+            Correlation length xi in lattice units (0.0 if ill-defined).
+        """
+        mom = ObservableSet.momentum_correlators(phi_configs, L)
+        g1 = float((mom["F_1_0"].mean() + mom["F_0_1"].mean()) / 2.0)
+        g2 = float(mom["F_1_1"].mean())
+        k1_sq = (2.0 * np.sin(np.pi / L)) ** 2
+        k2_sq = 2.0 * k1_sq  # (1,1): khat^2 = khat_x^2 + khat_y^2
+        if g1 <= g2 or g1 <= 0 or g2 <= 0:
+            return 0.0
+        m_sq = (k2_sq * g2 - k1_sq * g1) / (g1 - g2)
+        if m_sq <= 0:
+            return 0.0
+        return float(lattice_spacing / np.sqrt(m_sq))
+
+    @staticmethod
     def correlation_length_fft_jackknife(
         phi_configs: torch.Tensor,
         L: int,

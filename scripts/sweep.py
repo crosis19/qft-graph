@@ -80,6 +80,11 @@ def measure_point(
         lambda s: ObservableSet.correlation_length_fft(s, L, chi_convention="var"),
         n_bins=n_bins,
     )
+    xi_2mom, xi_2mom_err = binned_jackknife(
+        configs,
+        lambda s: ObservableSet.correlation_length_two_momentum(s, L),
+        n_bins=n_bins,
+    )
 
     return {
         "magnetization": mag,
@@ -96,6 +101,10 @@ def measure_point(
         "xi_var_err": xi_var_err,
         "xi_var_over_L": xi_var / L,
         "xi_var_over_L_err": xi_var_err / L,
+        "xi_2mom": xi_2mom,
+        "xi_2mom_err": xi_2mom_err,
+        "xi_2mom_over_L": xi_2mom / L,
+        "xi_2mom_over_L_err": xi_2mom_err / L,
         "tau_int": tau,
         "tau_int_err": tau_err,
         "tau_int_window": window,
@@ -115,6 +124,9 @@ def main() -> None:
     parser.add_argument("--n_sweeps_between", type=int, default=10)
     parser.add_argument("--warm_start", action="store_true",
                         help="Seed each m^2 point with the last config of the previous one")
+    parser.add_argument("--store_series", action="store_true",
+                        help="Dump per-config M and |phi_tilde(k)|^2 series to .npz "
+                             "so any chi/xi estimator can be recomputed offline")
     parser.add_argument("--output", type=str, default="data/sweep_results")
     parser.add_argument("--run_id", type=str, default=None,
                         help="results/<run_id>.json provenance record name")
@@ -152,6 +164,18 @@ def main() -> None:
             warm_phi = mc_result.configurations[-1].clone()
 
         point = measure_point(mc_result.configurations, L)
+
+        if args.store_series:
+            series = ObservableSet.momentum_correlators(mc_result.configurations, L)
+            series_dir = Path(args.output) / "series"
+            series_dir.mkdir(parents=True, exist_ok=True)
+            dims_str = "x".join(str(d) for d in dims)
+            np.savez_compressed(
+                series_dir / f"series_{dims_str}_m2={m2:.4f}.npz",
+                **{k: v.numpy() for k, v in series.items()},
+                m2=m2, L=L, seed=point_seed,
+            )
+
         point.update({
             "m2": float(m2),
             "lambda": args.coupling,

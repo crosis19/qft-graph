@@ -278,14 +278,19 @@ def load_sweep_data():
             for L, p in files.items():
                 with open(p) as f:
                     pts = sorted(json.load(f), key=lambda q: q['m2'])
+                # xi panel: prefer the k!=0 two-momentum estimator when the
+                # sweep recorded it (see docs/xi_estimator_issue.md), else
+                # the frozen-convention xi.
+                xi_key = 'xi_2mom_over_L' if 'xi_2mom_over_L' in pts[0] else 'xi_over_L'
                 out[str(L)] = {
                     'm2_values': [q['m2'] for q in pts],
                     'mags': [q['magnetization'] for q in pts],
                     'mags_err': [q['magnetization_err'] for q in pts],
                     'chis': [q['susceptibility'] for q in pts],
                     'chis_err': [q['susceptibility_err'] for q in pts],
-                    'xi_over_L': [q['xi_over_L'] for q in pts],
-                    'xi_over_L_err': [q['xi_over_L_err'] for q in pts],
+                    'xi_over_L': [q[xi_key] for q in pts],
+                    'xi_over_L_err': [q[xi_key + '_err'] for q in pts],
+                    'xi_estimator': xi_key,
                 }
             print(f"  Using v2 sweep data from {base}")
             return out

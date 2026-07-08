@@ -87,3 +87,54 @@ class TestSusceptibility:
         chi_abs = ObservableSet.susceptibility(configs, convention="abs")
         chi_var = ObservableSet.susceptibility(configs, convention="var")
         assert chi_var > 10 * max(chi_abs, 1e-9)
+
+
+class TestTwoMomentumXi:
+    """Exact-value oracle: free lattice field has G(k) = 1/(khat^2 + m^2),
+    so the two-momentum estimator must return xi = 1/m exactly (up to
+    statistical error). Configs are drawn exactly in momentum space."""
+
+    @staticmethod
+    def free_field_configs(n, L, m_sq, seed=0):
+        import numpy as np
+
+        rng = np.random.default_rng(seed)
+        kx = 2 * np.pi * np.fft.fftfreq(L)
+        khat_sq = (
+            (2 * np.sin(kx / 2)) ** 2)[:, None] + ((2 * np.sin(kx / 2)) ** 2)[None, :]
+        eta = rng.normal(size=(n, L, L))
+        eta_k = np.fft.fft2(eta)
+        phi_k = eta_k / np.sqrt(khat_sq + m_sq)
+        phi = np.fft.ifft2(phi_k).real
+        return torch.from_numpy(phi.reshape(n, L * L)).float()
+
+    def test_free_field_exact_xi(self):
+        m_sq, L = 0.5, 16
+        configs = self.free_field_configs(8000, L, m_sq, seed=1)
+        xi = ObservableSet.correlation_length_two_momentum(configs, L)
+        xi_true = 1.0 / m_sq**0.5
+        assert abs(xi - xi_true) / xi_true < 0.03
+
+    def test_free_field_second_mass(self):
+        m_sq, L = 2.0, 16
+        configs = self.free_field_configs(8000, L, m_sq, seed=2)
+        xi = ObservableSet.correlation_length_two_momentum(configs, L)
+        assert abs(xi - 1.0 / m_sq**0.5) / (1.0 / m_sq**0.5) < 0.03
+
+    def test_immune_to_constant_shift(self):
+        """k=0 mode never enters: adding <M> != 0 changes nothing."""
+        configs = self.free_field_configs(2000, 16, 1.0, seed=3)
+        xi0 = ObservableSet.correlation_length_two_momentum(configs, 16)
+        xi_shift = ObservableSet.correlation_length_two_momentum(configs + 5.0, 16)
+        assert abs(xi0 - xi_shift) < 1e-5
+
+    def test_momentum_correlators_match_free_propagator(self):
+        import numpy as np
+
+        m_sq, L = 1.0, 16
+        configs = self.free_field_configs(8000, L, m_sq, seed=4)
+        mom = ObservableSet.momentum_correlators(configs, L)
+        k1_sq = (2 * np.sin(np.pi / L)) ** 2
+        expected = 1.0 / (k1_sq + m_sq)
+        measured = float((mom["F_1_0"].mean() + mom["F_0_1"].mean()) / 2)
+        assert abs(measured - expected) / expected < 0.05
