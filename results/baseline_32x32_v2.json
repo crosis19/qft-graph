@@ -1,0 +1,73 @@
+{
+  "summary": [
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "n_seeds": 5,
+      "r_mean": 0.9998806,
+      "r_std": 1.666853322883144e-05,
+      "rel_err_mean": 0.00044879999999999996,
+      "rel_err_std": 3.6934536683164166e-05
+    }
+  ],
+  "per_seed": [
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "pearson_r": 0.99986,
+      "relative_error": 0.000478,
+      "best_pearson_r": 0.99986,
+      "train_time_s": 758.1,
+      "seed": 0
+    },
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "pearson_r": 0.999866,
+      "relative_error": 0.000486,
+      "best_pearson_r": 0.999866,
+      "train_time_s": 759.1,
+      "seed": 1
+    },
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "pearson_r": 0.999905,
+      "relative_error": 0.0004,
+      "best_pearson_r": 0.999905,
+      "train_time_s": 758.2,
+      "seed": 2
+    },
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "pearson_r": 0.999879,
+      "relative_error": 0.000472,
+      "best_pearson_r": 0.999879,
+      "train_time_s": 761.3,
+      "seed": 3
+    },
+    {
+      "model": "HeteroGNN",
+      "n_params": 150337,
+      "pearson_r": 0.999893,
+      "relative_error": 0.000408,
+      "best_pearson_r": 0.999893,
+      "train_time_s": 761.7,
+      "seed": 4
+    }
+  ],
+  "protocol": {
+    "epochs": 150,
+    "batch_size": 32,
+    "lr": 0.001,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "data": "data/mc_configs/phi4_32x32_m2=-0.5_lam=0.5/mc_data.pt"
+  }
+}
