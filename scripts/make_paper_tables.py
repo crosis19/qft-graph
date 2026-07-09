@@ -64,16 +64,25 @@ def complete(data: dict, expected_seeds: int = 5) -> bool:
 
 
 def table1_action() -> bool:
-    """Table I: action prediction across lattice sizes (HeteroGNN rows)."""
+    """Table I: action prediction across lattice sizes (HeteroGNN rows).
+
+    Emits every size whose 5-seed result file is complete; requires at
+    least the published 16x16 and 64x64 rows before writing anything.
+    """
+    sources = [
+        ("baseline_8x8_v2", "8x8", 64, False),
+        ("baseline_results_v2", "16x16", 256, True),
+        ("baseline_32x32_v2", "32x32", 1024, False),
+        ("baseline_64x64_v2", "64x64", 4096, True),
+    ]
     rows = []
-    for name, size, n_sites in [
-        ("baseline_results_v2", "16x16", 256),
-        ("baseline_64x64_v2", "64x64", 4096),
-    ]:
+    for name, size, n_sites, required in sources:
         data = load(name)
         if data is None or not complete(data):
-            print(f"  table1: {name} incomplete — skipped")
-            return False
+            if required:
+                print(f"  table1: required {name} incomplete — skipped")
+                return False
+            continue
         s = next(x for x in data["summary"] if x["model"] == "HeteroGNN")
         size_label = size.replace("x", r" \times ")
         rows.append(
