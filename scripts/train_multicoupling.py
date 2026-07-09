@@ -62,12 +62,14 @@ def evaluate(model, graphs, batch_size=64):
     from torch_geometric.loader import DataLoader
 
     model.eval()
+    device = next(model.parameters()).device
     preds, trues = [], []
     with torch.no_grad():
         for batch in DataLoader(graphs, batch_size=batch_size):
+            batch = batch.to(device)
             out = model(batch)
-            preds.append(out["energy"].reshape(-1))
-            trues.append(batch.y.reshape(-1))
+            preds.append(out["energy"].reshape(-1).cpu())
+            trues.append(batch.y.reshape(-1).cpu())
     preds, trues = torch.cat(preds), torch.cat(trues)
     return energy_correlation(preds, trues), relative_error(preds, trues)
 
@@ -108,8 +110,23 @@ def main() -> None:
         for m2 in map(float, M2_GRID)
     }
 
+    # Resume: seeds already in the output JSON are skipped entirely; a seed
+    # whose training finished but whose evaluation crashed is re-evaluated
+    # from its saved checkpoint instead of retrained.
     per_seed: dict[int, dict] = {}
+    out_path = Path(args.output)
+    if out_path.exists():
+        with open(out_path) as f:
+            prev = json.load(f).get("per_seed", {})
+        per_seed = {int(k): v for k, v in prev.items()}
+        if per_seed:
+            logger.info("Resuming: seeds %s already complete", sorted(per_seed))
+
+    n_params = None
     for seed in args.seeds:
+        if seed in per_seed:
+            logger.info("Skipping seed %d (already in %s)", seed, out_path)
+            continue
         t0 = time.time()
         set_seed(seed)
 
@@ -134,17 +151,27 @@ def main() -> None:
         )
         n_params = sum(p.numel() for p in model.parameters())
 
-        training_config = TrainingConfig(
-            epochs=args.epochs, batch_size=args.batch_size, lr=args.lr, seed=seed
-        )
-        trainer = Trainer(
-            model, train_graphs, val_graphs, training_config,
-            experiment_dir=f"experiments/runs/multicoupling/seed{seed}",
-            device=device,
-        )
-        logger.info("seed %d: training on %d graphs (%d params)...",
-                    seed, len(train_graphs), n_params)
-        trainer.train()
+        experiment_dir = Path(f"experiments/runs/multicoupling/seed{seed}")
+        final_ckpt = experiment_dir / "checkpoint_final.pt"
+        if final_ckpt.exists():
+            # Training finished previously but evaluation didn't get saved:
+            # reuse the checkpoint instead of retraining.
+            logger.info("seed %d: loading finished checkpoint %s", seed, final_ckpt)
+            ckpt = torch.load(final_ckpt, map_location=device, weights_only=False)
+            model.load_state_dict(ckpt["model_state_dict"])
+            model = model.to(device)
+        else:
+            training_config = TrainingConfig(
+                epochs=args.epochs, batch_size=args.batch_size, lr=args.lr, seed=seed
+            )
+            trainer = Trainer(
+                model, train_graphs, val_graphs, training_config,
+                experiment_dir=str(experiment_dir),
+                device=device,
+            )
+            logger.info("seed %d: training on %d graphs (%d params)...",
+                        seed, len(train_graphs), n_params)
+            trainer.train()
 
         results = {}
         for m2 in map(float, M2_GRID):
