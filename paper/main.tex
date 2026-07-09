@@ -414,10 +414,10 @@ this with a depth ablation (three seeds per point): the no-skip homogeneous
 model is intact at $B = 1$ ($r = 0.9995$), becomes bimodal across seeds at
 $B = 2$--$3$ ($r = 0.43\text{--}0.46 \pm 0.4$ --- individual seeds either
 partially retain or lose the signal), and collapses completely by $B = 4$--$6$
-($r = 0.07 \pm 0.09$ and $0.009 \pm 0.013$). The skip connection is not
-physically motivated---it is an engineering patch required because field
-values and geometry features share a single node representation that is
-progressively smoothed during message passing. The bipartite architecture
+($r = 0.07 \pm 0.09$ and $0.009 \pm 0.013$). The skip connection is an
+architectural workaround, required to preserve the original field signal
+because field values and geometry features share a single node
+representation that is progressively smoothed during message passing. The bipartite architecture
 avoids this failure mode by construction: field nodes maintain a separate
 representation throughout the network, and Fig.~\ref{fig:depth} shows both
 the HeteroGNN and the skip-equipped homogeneous model holding $r > 0.999$ at
@@ -745,19 +745,14 @@ field--gauge--spacetime coupling. This phase will benchmark against the
 Schwinger model (QED in 1+1D), which has exact solutions for comparison.
 
 \textbf{Phase~III: SU(3) Yang--Mills in 4D.} The architecture extends to
-four-dimensional lattices by simply setting the lattice dimension parameter to 4.
-Gauge link encoders must respect the $\text{SU}(3)$ group structure; we plan to
-use equivariant neural network layers for this purpose. The target is to
-reproduce established lattice QCD benchmarks (string tension, glueball spectrum).
+four-dimensional lattices by setting the lattice dimension parameter to 4,
+with link encoders structured to respect the $\text{SU}(3)$ group; the target
+is to reproduce established lattice QCD benchmarks (string tension, glueball
+spectrum).
 
-\textbf{Phase~IV: Wick rotation bridge.} Using the GNN's learned representation
-of the Euclidean theory, we aim to construct a bridge to Minkowski spacetime via
-spectral function reconstruction, connecting imaginary-time lattice data to
-real-time physics.
-
-\textbf{Phase~V: Native Minkowski dynamics.} The ultimate goal is real-time
-simulation of quantum field dynamics in Minkowski spacetime, potentially using
-complex Langevin methods guided by the GNN's learned action functional.
+Beyond these concrete phases, the longer-term program---connecting the
+learned Euclidean representation to real-time Minkowski physics---is
+deliberately speculative, and we defer its discussion to future work.
 
 %=============================================================================
 \section{Conclusion}
