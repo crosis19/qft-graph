@@ -171,15 +171,66 @@ training:
 
 ## Phase 1 Results
 
+All entries are mean ± std over 5 seeds (3 seeds for ablations); every number
+traces to a committed script + `results/*.json` provenance record.
+
 | Observable | Result | Method |
 |-----------|--------|--------|
-| Energy prediction (16×16) | r = 1.0000 | GNN vs exact action on validation set |
-| Energy prediction (64×64) | r = 0.9994 | GNN scales to large lattices |
-| Critical exponent ν | 1.106 ± 0.750 | ξ/L crossing + scaling collapse (exact: ν = 1) |
-| Critical point m²_c | -2.45 (λ=0.5) | ξ/L crossing at L=16/32, susceptibility peaks |
-| Phase transition | Clear S-curve in \|M\| | Scan m²=-1.5 to -2.8, L=16/32/64 |
-| Finite-size scaling | χ_max ~ L^(γ/ν) | χ peaks: L=16→10, L=32→25, L=64→125 |
-| Correlation length | 2D FFT estimator | Power spectrum ratio with jackknife errors |
+| Action prediction (8×8 / 16×16) | r = 0.99999 / 0.99998 | GNN vs exact action, held-out sets |
+| Action prediction (64×64) | r = 0.981 ± 0.036 (4/5 seeds ≥ 0.9989) | one slow-converging seed, see paper |
+| Size transfer (train 16×16 → eval 8–64) | r = 1.0000 at all sizes | single model, no retraining |
+| Critical exponent ν | 1.10 ± 0.43 | ξ/L crossing + collapse, bootstrap errors (exact: ν = 1) |
+| Critical point m²_c | −2.22 ± 0.24 (λ=0.5) | k≠0 two-momentum ξ estimator, L=16/32 crossing |
+| Susceptibility scaling γ/ν | 1.57 ± 0.12 | weighted ln χ_max vs ln L fit (exact: 1.75) |
+| Over-smoothing ablation | no-skip homogeneous GNN collapses by B=6 | depth study, 3 variants × 5 depths |
+
+### Reproducing every figure and table
+
+```bash
+# Table I (action prediction; one 5-seed run per lattice size)
+python scripts/generate_mc_data.py --dimensions 16 16 --mass_squared -0.5 --coupling 0.5 --n_configs 5000
+python scripts/train_baselines.py --data data/mc_configs/phi4_16x16_m2=-0.5_lam=0.5/mc_data.pt \
+    --config configs/paper/phase1_train_16x16.yaml --models HeteroGNN --seeds 0 1 2 3 4 \
+    --output results/baseline_16x16_v2.json      # repeat per size with matching config
+
+# Table II (architecture comparison at 16x16, all models)
+python scripts/train_baselines.py --data data/mc_configs/phi4_16x16_m2=-0.5_lam=0.5/mc_data.pt \
+    --config configs/paper/phase1_train_16x16.yaml --seeds 0 1 2 3 4
+
+# Table III' (multi-coupling generalization)
+python scripts/generate_multicoupling_data.py
+python scripts/train_multicoupling.py --seeds 0 1 2 3 4
+
+# Fig. 2 + scaling collapse (FSS with errors; one sweep per size, then analysis)
+python scripts/sweep.py --dimensions 16 16 --n_sweeps_between 10 --warm_start --store_series --output data/sweep_results_v2
+python scripts/sweep.py --dimensions 32 32 --n_sweeps_between 20 --warm_start --store_series --output data/sweep_results_v2
+python scripts/sweep.py --dimensions 64 64 --n_sweeps_between 40 --warm_start --store_series --output data/sweep_results_v2
+python scripts/analyze_fss.py --output results/fss_analysis_v2.json
+
+# Depth ablation figure / size-transfer table
+python scripts/run_depth_ablation.py --data data/mc_configs/phi4_16x16_m2=-0.5_lam=0.5/mc_data.pt \
+    --config configs/paper/phase1_train_16x16.yaml
+python scripts/run_size_transfer.py
+
+# Assemble LaTeX table bodies + all figures, then build the PDF
+python scripts/make_paper_tables.py
+python paper/generate_figures.py
+make -C paper
+```
+
+GPU acceleration: every training script takes `--device cuda`;
+`notebooks/07_ws1_experiments_colab.ipynb` runs the full suite on Colab.
+Exact analysis-environment versions: `paper/requirements-paper.txt`.
+
+### Phase IIa (in progress)
+
+U(1) gauge ensembles + labels (heatbath validated against torus-exact
+character expansion):
+
+```bash
+python scripts/generate_u1_data.py     # 15 ensembles -> data/u1_configs/*.h5
+python scripts/label_u1_data.py        # action, Wilson loops, Q + area-law checks
+```
 
 ## Key References
 

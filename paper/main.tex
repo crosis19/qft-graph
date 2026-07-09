@@ -112,13 +112,17 @@ yield correct finite-size scaling across lattice sizes $L = 16, 32, 64$.
 \label{sec:related}
 
 Machine learning approaches to lattice field theory have developed along several
-directions. Normalizing flows learn the Boltzmann distribution for efficient
-sampling~\cite{Albergo2019,Kanwar2020,Boyda2021}. Gauge-equivariant
-convolutional neural networks enforce exact lattice symmetries in the network
-architecture~\cite{Favoni2022,Luo2021}. Graph neural networks have been applied
-to learn field-theoretic observables~\cite{Bachtis2021}, and relational
+directions (see Ref.~\cite{Cranmer2023} for a recent review). Normalizing flows
+learn the Boltzmann distribution for efficient
+sampling~\cite{Albergo2019,Kanwar2020,Boyda2021}. Gauge-equivariant and
+gauge-invariant neural networks enforce exact lattice symmetries in the network
+architecture~\cite{Favoni2022,Luo2021,Apte2024}. Graph neural networks have been
+applied to learn field-theoretic observables~\cite{Bachtis2021}, and relational
 inductive biases have proven valuable in broader physics
-contexts~\cite{Cranmer2020,Battaglia2018}.
+contexts~\cite{Cranmer2020,Battaglia2018}. In the machine-learning literature,
+heterogeneous graphs with typed nodes and relations are a well-developed
+modeling tool~\cite{Schlichtkrull2018,Hu2020}, but to our knowledge they have
+not been applied to the geometry--field decomposition of lattice field theory.
 
 These approaches share a common representation: field variables are attached
 directly to lattice sites or links, with all information embedded on a single
@@ -128,11 +132,12 @@ are mathematically distinct in continuum QFT.
 
 Our contribution is a \emph{heterogeneous bipartite graph formulation} in which
 spacetime geometry and field degrees of freedom are represented as distinct node
-types connected by typed edges. This mirrors the fiber bundle structure of
-continuum field theory: spacetime nodes play the role of the discrete base
-manifold $M$, field nodes correspond to sections of the associated fiber bundle,
-and the ``inhabits'' edges encode the projection map $\pi: E \to M$ associating
-each field value to its spacetime site. The three-stage message-passing protocol
+types connected by typed edges. This structure is loosely analogous to a fiber
+bundle: spacetime nodes play the role of the discrete base manifold $M$, each
+field node represents a point in the fiber over its site (so that a field
+configuration --- the collection of all field-node values --- is a discretized
+section), and the ``inhabits'' edges encode the projection $\pi: E \to M$
+associating each field value to its spacetime site. The three-stage message-passing protocol
 (field~$\to$~spacetime, spacetime~$\to$~spacetime, spacetime~$\to$~field) acts
 as a discrete analog of the field--geometry coupling encoded in the action
 functional. The resulting architecture naturally supports multiple field
@@ -185,7 +190,7 @@ enabling spacetime-to-field message flow.
 
 For an $L \times L$ lattice, the graph has $2L^2$ nodes and $4L^2 + 2L^2 =
 6L^2$ directed edges (for $d = 2$). The graph is implemented using PyTorch
-Geometric's \texttt{HeteroData} container.
+Geometric's~\cite{FeyLenssen2019} \texttt{HeteroData} container.
 
 \subsection{Model: HeteroGNN}
 \label{sec:model}
@@ -477,10 +482,14 @@ $\msq = -2.0$ ($r = 0.58$) coincides with the approach to the critical region
 extrapolation from the symmetric phase becomes unreliable. Training on a mixture
 of couplings would likely extend the generalization range substantially.
 
-\subsection{Phase Transition and Finite-Size Scaling}
+\subsection{Phase Transition and Finite-Size Scaling of the Training Ensembles}
 \label{sec:fss}
 
-We perform a coupling sweep over $\msq \in [-2.8, -1.5]$ at $\lambda = 0.5$
+This and the following subsection characterize the \emph{Monte Carlo
+ensembles} used throughout this work: they validate the data-generation
+pipeline against known Ising-universality results, rather than testing the
+network itself. We perform a coupling sweep over $\msq \in [-2.8, -1.5]$ at
+$\lambda = 0.5$
 for $L = 16, 32, 64$ using 2000 configurations per point with warm-starting
 between successive $\msq$ values.
 
@@ -542,6 +551,12 @@ uncertainty), we obtain:
 \begin{equation}
 \msqc = -2.22 \pm 0.24 \qquad (\lambda = 0.5).
 \end{equation}
+
+Dedicated lattice studies of two-dimensional $\phifour$ theory locate the
+critical line to much higher precision (e.g.\ Ref.~\cite{SchaichLoinaz2009});
+their coupling normalization differs from ours (continuum-limit ratios
+$f = \lambda/\mu_c^2$ rather than a fixed bare $\lambda$ at finite spacing),
+so we do not attempt a quantitative comparison here.
 
 We emphasize that this serves as a \emph{consistency check} rather than a
 precision measurement: the central value is compatible with the exact Ising
@@ -677,15 +692,19 @@ enforce discrete lattice symmetries (translations, $C_4$ rotations,
 reflections). Instead, these symmetries are learned implicitly from the data,
 which is generated with periodic boundary conditions that respect the full
 symmetry group. This is a deliberate design choice, not a limitation:
-gauge-equivariant architectures~\cite{Favoni2022,Luo2021} achieve exact
-symmetry by constraining the network weights, but this rigidity restricts them
-to regular lattices with specific boundary conditions. Our approach prioritizes
-\emph{architectural flexibility}---the same model structure handles irregular
-meshes, non-periodic boundaries, and adaptive lattice refinements without
+gauge-equivariant architectures~\cite{Favoni2022,Luo2021} --- including,
+recently, gauge-equivariant message passing on graphs~\cite{Rayat2026} ---
+achieve exact symmetry by constraining the network weights and message
+functions, but this rigidity restricts them to the symmetry group built in
+at design time. Our approach prioritizes \emph{architectural
+flexibility}---the same model structure handles irregular meshes,
+non-periodic boundaries, and adaptive lattice refinements without
 modification. For the multi-theory extensibility that motivates this work
 (gauge fields, fermions, curved spacetimes), this flexibility is essential.
-Quantifying the learned equivariance error on regular lattices is left to
-future work.
+Phase~II of this program (Sec.~\ref{sec:future}) will quantify the trade-off
+directly by measuring the \emph{learned} gauge-invariance error of the
+bipartite architecture against exactly equivariant designs such as
+Ref.~\cite{Rayat2026}.
 
 %=============================================================================
 \section{Future Directions}
