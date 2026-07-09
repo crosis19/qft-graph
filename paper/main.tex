@@ -40,11 +40,15 @@ two-dimensional scalar $\phifour$ theory in the Ising universality class ($\nu =
 1$), comparing against homogeneous GNN, convolutional, and MLP baselines. We show that
 homogeneous GNN representations suffer a structural failure mode---message
 passing destroys the field signal without ad hoc skip connections---which the
-bipartite design eliminates by construction. The model achieves near-perfect
-action prediction ($r > 0.999$) across lattice sizes from $8 \times 8$ to
-$64 \times 64$ and reproduces finite-size scaling behavior including
-susceptibility peak growth, order parameter S-curves, and correlation length
-crossing consistent with the exact critical exponent. The bipartite
+bipartite design eliminates by construction. The model achieves near-perfect action prediction across lattice sizes
+($r > 0.9999$ at $8 \times 8$ and $16 \times 16$; median $r = 0.9992$ at
+$64 \times 64$), and a single model trained at $16 \times 16$ transfers to
+lattices from $8 \times 8$ to $64 \times 64$ with $r = 1.0000$ and no
+retraining. The underlying Monte Carlo pipeline reproduces Ising-class
+finite-size scaling---susceptibility peak growth with $\gamma/\nu = 1.57(12)$,
+order-parameter S-curves, and correlation-length crossings giving
+$\nu = 1.10(43)$, consistent with the exact $\nu = 1$---validating the
+training distributions. The bipartite
 structure naturally accommodates multiple field types (scalar, gauge, fermion) at
 the same lattice site, providing a direct path to gauge theories and lattice QCD
 without architectural changes.
@@ -331,9 +335,16 @@ exact Euclidean actions:
 \end{equation}
 
 Model hyperparameters: hidden dimension $H = 64$, $B = 3$ message-passing
-blocks, GELU activation, 2-layer MLPs in encoders. Training uses AdamW
-optimization with cosine annealing over 150 epochs, batch size 32, and an
-80/20 train/validation split.
+blocks, GELU activation, 2-layer MLPs in encoders; 150{,}337 parameters at
+$16 \times 16$ (150{,}529 for the coupling-conditioned variant of
+Sec.~\ref{sec:generalization}). Training uses AdamW (learning rate
+$10^{-3}$, weight decay $10^{-5}$) with cosine annealing over 150 epochs,
+batch size 32, and an 80/20 train/validation split; seeds and all other
+settings are recorded in the committed run configurations
+(\texttt{configs/paper/}) and per-run provenance files
+(\texttt{results/}). Monte Carlo data generation runs on laptop CPU;
+training runs on a single Colab GPU (T4-class, $\sim$12 min per seed at
+$16 \times 16$, $\sim$63 min at $64 \times 64$).
 
 %=============================================================================
 \section{Results}
@@ -356,12 +367,12 @@ Table~\ref{tab:action} summarizes the action prediction results. The model
 achieves near-perfect correlation across lattice sizes, demonstrating that the
 heterogeneous bipartite architecture can faithfully represent the action
 functional of scalar $\phifour$ theory. At $64 \times 64$, four of five seeds
-reach $r \geq 0.9989$, while one converges to $r = 0.910$ within the fixed
-150-epoch budget, inflating the reported standard deviation; we report the
-unfiltered statistics and note that occasional slow convergence at the largest
-lattice is an optimization property, not an architectural one (the same seed
-protocol at $8 \times 8$ and $16 \times 16$ shows seed-to-seed spreads below
-$10^{-5}$). The mild decrease in typical accuracy with lattice size is
+reach $r \geq 0.9989$, while one converges slowly, reaching only $r = 0.910$
+within the fixed budget but $r = 0.9998$ when the epoch budget (and hence the
+cosine annealing schedule) is doubled --- slow convergence, not a failure
+mode. We report the unfiltered 150-epoch statistics, which inflate the quoted
+standard deviation; the same seed protocol at $L \leq 32$ shows seed-to-seed
+spreads of $2 \times 10^{-5}$ or less. The mild decrease in typical accuracy with lattice size is
 expected: the graph has 16$\times$ more nodes at $64 \times 64$, and the
 receptive field of $B = 3$ message-passing blocks covers a smaller fraction
 of the lattice.
@@ -757,9 +768,11 @@ We have introduced a heterogeneous bipartite graph neural network that separates
 spacetime geometry from field content---a representation inspired by the
 geometry--matter distinction fundamental to continuum QFT, and absent from
 existing lattice QFT architectures. On two-dimensional scalar $\phifour$
-theory, the model achieves near-perfect action prediction ($r > 0.999$),
-reproduces the expected Ising universality class finite-size scaling, and
-yields critical exponent estimates consistent with exact values. Comparison
+theory, the model achieves near-perfect action prediction and transfers
+across a $64\times$ range of lattice volumes without retraining; the
+underlying Monte Carlo pipeline reproduces the expected Ising-class
+finite-size scaling ($\nu = 1.10 \pm 0.43$, $\gamma/\nu = 1.57 \pm 0.12$),
+validating the ensembles the model is trained on. Comparison
 against homogeneous GNN, CNN, and MLP baselines demonstrates the viability of
 the bipartite representation for lattice field theory.
 

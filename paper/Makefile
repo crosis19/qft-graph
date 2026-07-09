@@ -19,3 +19,6 @@ distclean: clean
 	rm -f $(MAIN).pdf
 
 .PHONY: all clean distclean
+
+arxiv: $(MAIN).pdf
+	tar czf arxiv-v1.tar.gz $(MAIN).tex $(MAIN).bbl figures/*.pdf tables/*.tex

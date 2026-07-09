@@ -1,3 +1,5 @@
+> **APPROVED** by Josh, 2026-07-09 — the two-momentum estimator is adopted for xi in Fig. 2 and the nu extraction; chi stays as frozen.
+
 # FLAG for Josh: the frozen ξ recipe degenerates — proposed k≠0 estimator (P1-2)
 
 **Frozen convention change proposal — needs your sign-off before arXiv v1**

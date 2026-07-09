@@ -1,3 +1,5 @@
+> **APPROVED** by Josh, 2026-07-09 — paragraph integrated into Sec. IV.C.
+
 # Postmortem: original Table III protocol (task P1-3)
 
 **What the original eval did** (verified in `scripts/evaluate_generalization.py`

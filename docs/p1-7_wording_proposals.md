@@ -1,3 +1,5 @@
+> **APPROVED** by Josh, 2026-07-09 — items 1 and 2 applied to the manuscript verbatim; Table I presentation: Option A.
+
 # P1-7 wording proposals — NEED JOSH'S APPROVAL before commit
 
 Per the plan, all abstract/conclusion wording changes require your sign-off.
