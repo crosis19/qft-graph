@@ -131,11 +131,11 @@ def table3_prime() -> bool:
     if len(data.get("protocol", {}).get("seeds", [])) < 5:
         print("  table3': fewer than 5 seeds — skipped")
         return False
-    mark = {"train": r"$^\dagger$", "interpolation": "", "extrapolation": r"$^\ast$"}
+    mark = {"train": r"^\dagger", "interpolation": "", "extrapolation": r"^\ast"}
     rows = []
     for row in data["table"]:
         rows.append(
-            rf"${row['m2']:g}${mark[row['role']]} & "
+            rf"${row['m2']:g}{mark[row['role']]}$ & "
             + fmt_pm(row["r_mean"], row["r_std"], digits=4)
             + " & "
             + fmt_pct_pm(row["rel_err_mean"], row["rel_err_std"])

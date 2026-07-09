@@ -447,40 +447,49 @@ Table~\ref{tab:baselines} is stable.
 \subsection{Coupling Generalization}
 \label{sec:generalization}
 
-To test whether the model has learned a transferable action functional rather
-than memorizing a single action landscape, we evaluate the model trained at
-$\msq = -0.5$ on configurations generated at different $\msq$ values (same
-$\lambda = 0.5$).
+To test whether the model learns a transferable action \emph{family} rather
+than a single action landscape, the coupling constants are made model inputs:
+field-node features become $[\phi_i, \msq, \lambda]$ and the readout MLP is
+conditioned on $(\msq, \lambda)$ (adding 192 parameters). A single model is
+then trained \emph{jointly} on alternating points of a 13-point $\msq$ grid
+spanning $[-2.9, -0.3]$ at $\lambda = 0.5$ --- both phases and the critical
+region --- with 3000 configurations per point (thermalization $\geq 2000$
+sweeps; separations scaled by the measured $\tau_\text{int}$, up to 72 sweeps
+near criticality). The held-out couplings interleave the training points
+(interpolation test), and both grid endpoints are excluded from training
+(extrapolation test).
+
+In an earlier version of this experiment, a model trained at a single
+coupling with no coupling input was evaluated against target actions computed
+at each new $\msq$; since no function of $\phi$ alone can match a family of
+action functionals indexed by a hidden parameter, that protocol measured a
+partially unlearnable label shift on top of the distribution shift, and the
+apparent degradation was severe (e.g.\ $r = 0.58$ at $\msq = -2.0$).
+Table~\ref{tab:generalization} reports the corrected protocol.
 
 \begin{table}[t]
 \centering
-\caption{Generalization across coupling values. The model was trained at
-$\msq = -0.5$ (marked $\ast$) and evaluated on configurations at other
-$\msq$ values without retraining.}
+\caption{Generalization across coupling values for a single
+coupling-conditioned model trained jointly on the $\dagger$-marked $\msq$
+points and evaluated on 1000 held-out configurations per coupling
+($\ast$ = extrapolation beyond the training grid). Mean $\pm$ std over 5
+seeds. Relative error is inflated where the action distribution crosses
+zero (near $\msq \approx -2.5$); Pearson $r$ is the meaningful metric
+there.}
 \label{tab:generalization}
-\begin{tabular}{@{}lcc@{}}
-\toprule
-$\msq$ & Pearson $r$ & Rel.\ Error \\
-\midrule
-$-0.3$ & 0.9993 & 6.1\% \\
-$-0.5^\ast$ & 0.9999 & 0.04\% \\
-$-0.7$ & 0.9990 & 7.1\% \\
-$-1.0$ & 0.9915 & 20.6\% \\
-$-1.5$ & 0.9324 & 58.0\% \\
-$-2.0$ & 0.5846 & 211.5\% \\
-\bottomrule
-\end{tabular}
+\input{tables/table3prime_body}
 \end{table}
 
-Table~\ref{tab:generalization} shows that the model generalizes well to nearby
-couplings: for $|\msq - \msq_\text{train}| \leq 0.5$, the Pearson correlation
-remains above 0.999, indicating the learned action functional transfers across
-this range. Performance degrades gracefully for more distant couplings, with
-$r = 0.99$ at $\msq = -1.0$ and $r = 0.93$ at $\msq = -1.5$. The sharp drop at
-$\msq = -2.0$ ($r = 0.58$) coincides with the approach to the critical region
-($\msqc \approx -2.45$), where the field distribution changes qualitatively and
-extrapolation from the symmetric phase becomes unreliable. Training on a mixture
-of couplings would likely extend the generalization range substantially.
+Table~\ref{tab:generalization} shows that with the couplings as inputs, the
+single model interpolates essentially perfectly: every held-out interpolation
+coupling reaches $r \geq 0.9999$, \emph{including} $\msq = -2.47$ in the
+critical region where the old protocol appeared to fail. Extrapolation
+beyond the training grid degrades only at the deep broken-phase endpoint
+($\msq = -2.9$: $r = 0.9972 \pm 0.0012$), while the symmetric-phase endpoint
+remains at $r = 0.9999$. Because the action is a strictly local functional
+of the field, its prediction does not suffer near criticality once the label
+family is identified --- long-range physics enters the ensemble
+\emph{distribution}, not the action's functional form.
 
 \subsection{Phase Transition and Finite-Size Scaling of the Training Ensembles}
 \label{sec:fss}
@@ -675,17 +684,20 @@ $\nu$. This is a sampling limitation, not an architectural one.
 receptive field spans $\ell = Ba = 3a$, defining a finite \emph{locality scale}
 for the learned operator. This is sufficient for the $\phifour$ action, which
 is a strictly local functional of the field and its nearest-neighbor
-differences. However, near the critical point where $\xi \gg \ell$, the model
-cannot capture the long-range correlations that dominate critical behavior.
-The observed performance degradation at criticality
-(Sec.~\ref{sec:generalization}) is therefore not merely a limitation but
-\emph{expected physical behavior}: it confirms that the network has learned a
-genuinely local operator rather than memorizing global patterns. Increasing $B$
+differences --- and indeed action prediction remains accurate even at
+couplings near criticality once the couplings are model inputs
+(Sec.~\ref{sec:generalization}): the diverging correlation length changes the
+ensemble \emph{distribution}, not the action's local functional form. The
+locality scale becomes a genuine restriction for observables that are
+themselves nonlocal --- correlators at separations $\gg \ell$, Wilson loops
+of large area, or spectral quantities --- which the network cannot represent
+regardless of coupling. Increasing $B$
 enlarges the locality scale but risks over-smoothing, where distinct node
-representations collapse toward a common value. For theories requiring larger
-locality scales, possible mitigations include multi-scale pooling layers, skip
-connections across non-adjacent blocks, or attention mechanisms that allow
-selective long-range communication.
+representations collapse toward a common value (measured directly in
+Fig.~\ref{fig:depth} for the homogeneous baseline). For theories requiring
+larger locality scales, possible mitigations include multi-scale pooling
+layers, skip connections across non-adjacent blocks, or attention mechanisms
+that allow selective long-range communication.
 
 \textbf{Lattice symmetries.} The current architecture does not explicitly
 enforce discrete lattice symmetries (translations, $C_4$ rotations,
