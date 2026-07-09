@@ -481,27 +481,33 @@ def fig_depth_ablation():
         data = json.load(f)
     summary = data['summary']
 
+    # (color, marker, label, x-dodge, linestyle, open_marker) — the skip and
+    # hetero curves overlap at r ~ 1 on the linear panel, so dodge their x
+    # positions and contrast open vs filled markers + line styles
     styles = {
-        'homogeneous_no_skip': ('#cc4444', 'o', 'Homogeneous (no skip)'),
-        'homogeneous_skip': ('#44bb88', 's', 'Homogeneous (skip)'),
-        'hetero': ('#4488ff', '^', 'HeteroGNN (ours)'),
+        'homogeneous_no_skip': ('#cc4444', 'o', 'Homogeneous (no skip)', 0.0, '-', False),
+        'homogeneous_skip': ('#44bb88', 's', 'Homogeneous (skip)', -0.09, '--', True),
+        'hetero': ('#4488ff', '^', 'HeteroGNN (ours)', 0.09, '-', False),
     }
 
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.8))
-    for variant, (color, marker, label) in styles.items():
+    for variant, (color, marker, label, dodge, ls, open_marker) in styles.items():
         rows = sorted((s for s in summary if s['variant'] == variant),
                       key=lambda s: s['depth'])
         if not rows:
             continue
-        depths = [s['depth'] for s in rows]
+        depths = np.array([s['depth'] for s in rows], dtype=float) + dodge
         r_mean = np.array([s['r_mean'] for s in rows])
         r_std = np.array([s['r_std'] for s in rows])
+        mfc = 'white' if open_marker else color
 
         axes[0].errorbar(depths, r_mean, yerr=r_std, color=color, marker=marker,
-                         label=label, markersize=4, linewidth=1, capsize=2)
+                         markerfacecolor=mfc, linestyle=ls,
+                         label=label, markersize=4.5, linewidth=1.1, capsize=2)
         axes[1].errorbar(depths, np.clip(1 - r_mean, 1e-6, None), yerr=r_std,
-                         color=color, marker=marker, label=label,
-                         markersize=4, linewidth=1, capsize=2)
+                         color=color, marker=marker, markerfacecolor=mfc,
+                         linestyle=ls, label=label,
+                         markersize=4.5, linewidth=1.1, capsize=2)
 
     axes[0].set_xlabel('Message-passing blocks $B$')
     axes[0].set_ylabel('Pearson $r$')
@@ -519,6 +525,7 @@ def fig_depth_ablation():
 
     plt.tight_layout()
     fig.savefig(FIGURES_DIR / 'depth_ablation.pdf', bbox_inches='tight', dpi=300)
+    fig.savefig(FIGURES_DIR / 'depth_ablation_preview.png', bbox_inches='tight', dpi=200)
     plt.close()
     print("  Done.")
 
