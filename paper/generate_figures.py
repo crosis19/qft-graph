@@ -102,11 +102,16 @@ def fig_graph_structure():
     ax.scatter(*f_xyz.T, s=30, c='#ee6644', edgecolors='white',
                linewidths=0.5, zorder=5, label='Scalar field nodes')
 
-    # Layer labels
-    ax.text2D(0.82, 0.62, 'Spacetime\n($x_1, x_2$)',
-              fontsize=7, color='#2266cc', ha='left', transform=ax.transAxes)
-    ax.text2D(0.82, 0.28, 'Scalar Field\n($\\phi_i$)',
-              fontsize=7, color='#cc4422', ha='left', transform=ax.transAxes)
+    # Layer labels: bold, dark, on translucent white boxes so grid lines
+    # and edges don't run through the glyphs
+    label_box = dict(facecolor='white', alpha=0.85, edgecolor='none',
+                     boxstyle='round,pad=0.3')
+    ax.text2D(0.80, 0.62, 'Spacetime\n($x_1, x_2$)',
+              fontsize=10, fontweight='bold', color='#1a4d99',
+              ha='left', transform=ax.transAxes, bbox=label_box)
+    ax.text2D(0.80, 0.26, 'Scalar Field\n($\\phi_i$)',
+              fontsize=10, fontweight='bold', color='#a33511',
+              ha='left', transform=ax.transAxes, bbox=label_box)
 
     # Camera angle and axis formatting
     ax.view_init(elev=25, azim=-55)
@@ -131,10 +136,11 @@ def fig_graph_structure():
     ax.zaxis.pane.set_edgecolor('lightgray')
     ax.grid(True, alpha=0.2)
 
-    ax.legend(loc='upper left', fontsize=7, frameon=False,
+    ax.legend(loc='upper left', fontsize=8, frameon=False,
               bbox_to_anchor=(0.0, 0.95))
 
     fig.savefig(FIGURES_DIR / 'graph_structure.pdf', bbox_inches='tight', dpi=300)
+    fig.savefig(FIGURES_DIR / 'graph_structure_preview.png', bbox_inches='tight', dpi=200)
     plt.close()
     print("  Done.")
 
