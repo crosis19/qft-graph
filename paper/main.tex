@@ -759,11 +759,14 @@ deliberately speculative, and we defer its discussion to future work.
 \label{sec:conclusion}
 %=============================================================================
 
-We have introduced a heterogeneous bipartite graph neural network that separates
-spacetime geometry from field content---a representation inspired by the
-geometry--matter distinction fundamental to continuum QFT, and absent from
-existing lattice QFT architectures. On two-dimensional scalar $\phifour$
-theory, the model achieves near-perfect action prediction and transfers
+We have introduced a representation of lattice quantum field theory that
+explicitly separates spacetime geometry from field degrees of freedom in a
+heterogeneous graph---a separation inspired by the geometry--matter
+distinction fundamental to continuum QFT and, to our knowledge, absent from
+prior lattice-QFT neural architectures. This separation eliminates a
+structural failure mode of homogeneous graph representations while
+preserving a physically interpretable local action decomposition. On
+two-dimensional scalar $\phifour$ theory, the model achieves near-perfect action prediction and transfers
 across a $64\times$ range of lattice volumes without retraining; the
 underlying Monte Carlo pipeline reproduces the expected Ising-class
 finite-size scaling ($\nu = 1.10 \pm 0.43$, $\gamma/\nu = 1.57 \pm 0.12$),
