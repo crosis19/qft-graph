@@ -308,9 +308,11 @@ simultaneously in a single vectorized operation. This preserves detailed balance
 sequential updates.
 
 We generate 5000 configurations at each lattice size ($L = 8, 16, 32, 64$)
-for training, with $\msq = -0.5$ and $\lambda = 0.5$. Configurations are
-separated by $n_\text{sweeps} = 10$ full sweeps (scaled to 40 for $L = 64$) to
-reduce autocorrelation, following 1000--1500 thermalization sweeps.
+for training, with $\msq = -0.5$ and $\lambda = 0.5$; one model is trained
+per lattice size in Table~\ref{tab:action} (Sec.~\ref{sec:size-transfer}
+tests a single model across sizes). Configurations are separated by
+$n_\text{sweeps} = 10$ full sweeps to reduce autocorrelation, following
+1000 thermalization sweeps.
 Acceptance rates are maintained near the optimal $\sim 47\%$ by tuning the
 proposal step size.
 
@@ -339,23 +341,23 @@ optimization with cosine annealing over 150 epochs, batch size 32, and an
 \begin{table}[t]
 \centering
 \caption{Action prediction accuracy across lattice sizes. Pearson correlation
-$r$ and mean relative error are computed on held-out validation sets.}
+$r$ and mean relative error are computed on held-out validation sets;
+entries are mean $\pm$ std over 5 seeds.}
 \label{tab:action}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Lattice & Sites & Pearson $r$ & Relative Error \\
-\midrule
-$16 \times 16$ & 256 & 1.0000 & $< 0.1\%$ \\
-$64 \times 64$ & 4096 & 0.9994 & $< 0.5\%$ \\
-\bottomrule
-\end{tabular}
+\input{tables/table1_body}
 \end{table}
 
 Table~\ref{tab:action} summarizes the action prediction results. The model
-achieves near-perfect correlation on both lattice sizes, demonstrating that the
+achieves near-perfect correlation across lattice sizes, demonstrating that the
 heterogeneous bipartite architecture can faithfully represent the action
-functional of scalar $\phifour$ theory. The slight decrease in accuracy at
-$64 \times 64$ is expected: the graph has 16$\times$ more nodes, and the
+functional of scalar $\phifour$ theory. At $64 \times 64$, four of five seeds
+reach $r \geq 0.9989$, while one converges to $r = 0.910$ within the fixed
+150-epoch budget, inflating the reported standard deviation; we report the
+unfiltered statistics and note that occasional slow convergence at the largest
+lattice is an optimization property, not an architectural one (the same seed
+protocol at $8 \times 8$ and $16 \times 16$ shows seed-to-seed spreads below
+$10^{-5}$). The mild decrease in typical accuracy with lattice size is
+expected: the graph has 16$\times$ more nodes at $64 \times 64$, and the
 receptive field of $B = 3$ message-passing blocks covers a smaller fraction
 of the lattice.
 
@@ -391,16 +393,36 @@ entries are mean $\pm$ std over 5 seeds.}
 Table~\ref{tab:baselines} shows the results. The most significant finding is
 a \emph{structural failure mode} in the homogeneous GNN: without an explicit
 skip connection from its initial encoding to the readout head, message passing
-destroys the field signal entirely ($r < 0.05$). This workaround is not physically motivated---it is an engineering patch
-required because field values and geometry features share a single node
-representation that is progressively smoothed during message passing. The bipartite architecture avoids this failure mode by
-construction: field nodes maintain a separate representation throughout the
-network, ensuring the field signal reaches the readout regardless of
-message-passing depth. Note that the per-stage residual connections in the
+progressively destroys the field signal. Figure~\ref{fig:depth} quantifies
+this with a depth ablation (three seeds per point): the no-skip homogeneous
+model is intact at $B = 1$ ($r = 0.9995$), becomes bimodal across seeds at
+$B = 2$--$3$ ($r = 0.43\text{--}0.46 \pm 0.4$ --- individual seeds either
+partially retain or lose the signal), and collapses completely by $B = 4$--$6$
+($r = 0.07 \pm 0.09$ and $0.009 \pm 0.013$). The skip connection is not
+physically motivated---it is an engineering patch required because field
+values and geometry features share a single node representation that is
+progressively smoothed during message passing. The bipartite architecture
+avoids this failure mode by construction: field nodes maintain a separate
+representation throughout the network, and Fig.~\ref{fig:depth} shows both
+the HeteroGNN and the skip-equipped homogeneous model holding $r > 0.999$ at
+every depth tested. Note that the per-stage residual connections in the
 HeteroGNN (Sec.~\ref{sec:model}) serve a different purpose: they stabilize
 gradient flow within each message-passing block, whereas the homogeneous skip
 connection bypasses message passing entirely to rescue a signal that would
 otherwise be destroyed.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/depth_ablation.pdf}
+\caption{Depth ablation at $16 \times 16$ (mean $\pm$ std over 3 seeds).
+\textbf{Left:} Pearson $r$ vs.\ number of message-passing blocks $B$. The
+homogeneous GNN without a readout skip connection degrades monotonically
+with depth and collapses below $r = 0.05$ (dotted line) by $B = 6$; the
+large error bars at $B = 2$--$3$ reflect bimodal seed-to-seed outcomes.
+\textbf{Right:} $1 - r$ on a log scale, resolving the persistent gap between
+the HeteroGNN and the skip-equipped homogeneous baseline at every depth.}
+\label{fig:depth}
+\end{figure}
 
 Beyond architectural stability, all spatially structured models achieve
 $r > 0.99$, confirming that the $\phifour$ action is learnable as a local
@@ -533,6 +555,40 @@ would reduce $z$ to near zero and dramatically tighten the $\nu$ estimate, but
 is beyond the scope of this initial architecture demonstration. Our purpose here
 is to show that the bipartite GNN \emph{captures} the physics of the phase
 transition, not to compete with dedicated finite-size scaling studies.
+
+\subsection{Size Transfer}
+\label{sec:size-transfer}
+
+The models above are trained one-per-lattice-size. To test whether a single
+learned action functional transfers across volumes, we train at
+$16 \times 16$ only and evaluate at $L \in \{8, 32, 64\}$ without any
+retraining, for two spacetime-feature variants: absolute coordinates (as in
+the rest of this paper) and a coordinate-free variant in which spacetime
+nodes carry a constant feature and all geometry resides in the displacement
+edge features (restoring exact translation invariance).
+
+\begin{table}[t]
+\centering
+\caption{Size transfer: a single model trained at $16 \times 16$
+($^\dagger$, validation split) evaluated at other lattice sizes without
+retraining. Mean $\pm$ std over 3 seeds.}
+\label{tab:size-transfer}
+\input{tables/table_size_transfer_body}
+\end{table}
+
+Table~\ref{tab:size-transfer} shows that the learned functional transfers
+essentially perfectly in both directions --- down to $8 \times 8$ and up to
+$64 \times 64$, a $64\times$ change in volume --- with $r = 1.0000$ at every
+size for both variants. Relative error \emph{decreases} with lattice size
+(from $0.10\%$ at $L=8$ to $0.01$--$0.02\%$ at $L=64$), consistent with an
+accurate learned per-site action density whose fluctuations average out in
+the extensive sum. The per-site readout (Eq.~\eqref{eq:action-readout}) is
+what makes this possible: the same local functional applies at any volume.
+Notably, even the absolute-coordinate variant transfers, indicating the
+model learns to ignore the physically irrelevant coordinate inputs; the
+coordinate-free variant is nevertheless preferable on principle (exact
+translation invariance) and attains slightly lower relative error at every
+size.
 
 %=============================================================================
 \section{Discussion}

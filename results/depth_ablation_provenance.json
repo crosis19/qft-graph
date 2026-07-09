@@ -1,0 +1,146 @@
+{
+  "run_id": "depth_ablation_provenance",
+  "timestamp": "2026-07-09T10:42:11.045654+00:00",
+  "git_commit": "ed2004b8aa73fa1a994de2ec25597a928906e6b4",
+  "config_hash": "392c88e286d8",
+  "config": {
+    "epochs": 150,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "depths": [
+      1,
+      2,
+      3,
+      4,
+      6
+    ],
+    "data": "data/mc_configs/phi4_16x16_m2=-0.5_lam=0.5/mc_data.pt"
+  },
+  "metrics": {
+    "summary": [
+      {
+        "variant": "homogeneous_no_skip",
+        "depth": 1,
+        "n_seeds": 3,
+        "r_mean": 0.9994853333333333,
+        "r_std": 0.0003579295399314671,
+        "rel_err_mean": 0.0021116666666666666
+      },
+      {
+        "variant": "homogeneous_skip",
+        "depth": 1,
+        "n_seeds": 3,
+        "r_mean": 0.9997536666666665,
+        "r_std": 4.036775390776364e-05,
+        "rel_err_mean": 0.001504666666666667
+      },
+      {
+        "variant": "hetero",
+        "depth": 1,
+        "n_seeds": 3,
+        "r_mean": 0.9999503333333334,
+        "r_std": 3.2998316455423913e-06,
+        "rel_err_mean": 0.000651
+      },
+      {
+        "variant": "homogeneous_no_skip",
+        "depth": 2,
+        "n_seeds": 3,
+        "r_mean": 0.4596266666666667,
+        "r_std": 0.3817701676282327,
+        "rel_err_mean": 0.05152533333333334
+      },
+      {
+        "variant": "homogeneous_skip",
+        "depth": 2,
+        "n_seeds": 3,
+        "r_mean": 0.9998633333333333,
+        "r_std": 2.95559732635555e-05,
+        "rel_err_mean": 0.0011403333333333333
+      },
+      {
+        "variant": "hetero",
+        "depth": 2,
+        "n_seeds": 3,
+        "r_mean": 0.9999686666666667,
+        "r_std": 3.771236166332025e-06,
+        "rel_err_mean": 0.000539
+      },
+      {
+        "variant": "homogeneous_no_skip",
+        "depth": 3,
+        "n_seeds": 3,
+        "r_mean": 0.42550233333333337,
+        "r_std": 0.4063666303305701,
+        "rel_err_mean": 0.051512
+      },
+      {
+        "variant": "homogeneous_skip",
+        "depth": 3,
+        "n_seeds": 3,
+        "r_mean": 0.9998776666666668,
+        "r_std": 3.296799795087658e-05,
+        "rel_err_mean": 0.0010523333333333333
+      },
+      {
+        "variant": "hetero",
+        "depth": 3,
+        "n_seeds": 3,
+        "r_mean": 0.999977,
+        "r_std": 3.7416573867925195e-06,
+        "rel_err_mean": 0.000454
+      },
+      {
+        "variant": "homogeneous_no_skip",
+        "depth": 4,
+        "n_seeds": 3,
+        "r_mean": 0.066378,
+        "r_std": 0.09031110404595882,
+        "rel_err_mean": 0.07613833333333332
+      },
+      {
+        "variant": "homogeneous_skip",
+        "depth": 4,
+        "n_seeds": 3,
+        "r_mean": 0.9998916666666666,
+        "r_std": 2.407396011366322e-05,
+        "rel_err_mean": 0.0010206666666666667
+      },
+      {
+        "variant": "hetero",
+        "depth": 4,
+        "n_seeds": 3,
+        "r_mean": 0.9999773333333334,
+        "r_std": 5.906681715569667e-06,
+        "rel_err_mean": 0.0004583333333333333
+      },
+      {
+        "variant": "homogeneous_no_skip",
+        "depth": 6,
+        "n_seeds": 3,
+        "r_mean": 0.008916333333333333,
+        "r_std": 0.012618085759029467,
+        "rel_err_mean": 0.07613366666666667
+      },
+      {
+        "variant": "homogeneous_skip",
+        "depth": 6,
+        "n_seeds": 3,
+        "r_mean": 0.999911,
+        "r_std": 1.3490737563257878e-05,
+        "rel_err_mean": 0.0009550000000000001
+      },
+      {
+        "variant": "hetero",
+        "depth": 6,
+        "n_seeds": 3,
+        "r_mean": 0.9999753333333333,
+        "r_std": 3.858612300903563e-06,
+        "rel_err_mean": 0.0004583333333333333
+      }
+    ]
+  }
+}

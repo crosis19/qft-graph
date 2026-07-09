@@ -165,9 +165,9 @@ def table_size_transfer() -> bool:
         )
         for i, s in enumerate(variant_rows):
             vlabel = label if i == 0 else ""
-            train_mark = r"$^\dagger$" if s["eval_L"] == 16 else ""
+            train_mark = r"^\dagger" if s["eval_L"] == 16 else ""
             rows.append(
-                rf"{vlabel} & ${s['eval_L']} \times {s['eval_L']}${train_mark} & "
+                rf"{vlabel} & ${s['eval_L']} \times {s['eval_L']}{train_mark}$ & "
                 + fmt_pm(s["r_mean"], s["r_std"], digits=4)
                 + " & "
                 + fmt_pct_pm(s["rel_err_mean"], s["rel_err_std"])
