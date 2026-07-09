@@ -184,9 +184,23 @@ def main() -> None:
     if args.models:
         factories = {k: v for k, v in factories.items() if k in args.models}
 
+    # Resume: keep (model, seed) runs already recorded in the output JSON so
+    # interrupted invocations (Colab disconnects, restarts) only redo the
+    # missing runs instead of everything.
     per_seed: list[dict] = []
+    out_path = Path(args.output)
+    if out_path.exists():
+        with open(out_path) as f:
+            per_seed = json.load(f).get("per_seed", [])
+        if per_seed:
+            logger.info("Resuming: %d completed runs found in %s", len(per_seed), out_path)
+    done = {(r["model"], r["seed"]) for r in per_seed}
+
     for seed in args.seeds:
         for name, factory in factories.items():
+            if (name, seed) in done:
+                logger.info("Skipping %s seed %d (already in %s)", name, seed, out_path)
+                continue
             set_seed(seed)
             logger.info("=" * 60)
             logger.info("Training %s (seed %d)", name, seed)
