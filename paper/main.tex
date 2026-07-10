@@ -71,9 +71,10 @@ real-time dynamics in Minkowski spacetime.
 
 Machine learning methods have shown promise in addressing several of these
 challenges. Normalizing flows can accelerate sampling by learning the Boltzmann
-distribution~\cite{Kanwar2020,Boyda2021}, while graph neural networks (GNNs)
-can learn lattice observables directly from field
-configurations~\cite{Favoni2022,Bachtis2021}. However, existing GNN approaches
+distribution~\cite{Kanwar2020,Boyda2021}, while neural networks can learn
+lattice observables directly from field configurations---via gauge-equivariant
+convolutional architectures~\cite{Favoni2022} or graph neural networks
+(GNNs)~\cite{Bachtis2021}. However, existing GNN approaches
 treat the lattice as a \emph{homogeneous graph}, embedding field values (scalar,
 gauge links, spinor components) as features on spacetime nodes. This conflates
 two fundamentally different objects: the geometry of spacetime and the dynamical
