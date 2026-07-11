@@ -16,6 +16,8 @@ Heads (plan §3, task A-4):
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import torch
 import torch.nn as nn
 from torch_geometric.data import HeteroData
@@ -223,3 +225,66 @@ class U1GaugeGNN(nn.Module):
             output["q"] = self.q_head(h_nodes, batches, globals_=globals_)
 
         return output
+
+
+def u1_param_count(config: ModelConfig, variant: str, **model_kwargs) -> int:
+    """Trainable-parameter count of a U1GaugeGNN with this configuration.
+
+    Counts by constructing the model, so it stays correct under any
+    future architecture change (no analytic formula to drift).
+    """
+    model = U1GaugeGNN(config, variant=variant, **model_kwargs)
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+def matched_hidden_dim(
+    target_params: int,
+    config: ModelConfig,
+    variant: str,
+    h_min: int = 4,
+    h_max: int = 256,
+    **model_kwargs,
+) -> int:
+    """Hidden dim H whose parameter count best matches target_params.
+
+    The knob for the parameter-matched A/B/C comparison (in addition to
+    the plan's fixed-H comparison): at fixed H, Variant A carries ~2.5x
+    the parameters of B/C (gauge encoder + two extra MP modules per
+    block), so matched runs pick H per variant against a common budget.
+
+    Parameter count is strictly increasing in H (every Linear/LayerNorm
+    width scales with it), so a binary search over constructed models
+    finds the bracketing pair; ties prefer the smaller H.
+
+    Args:
+        target_params: Parameter budget to match (e.g. u1_param_count of
+            the reference variant at the protocol H).
+        config: ModelConfig; hidden_dim is overridden during the search.
+        variant: Variant to size.
+        h_min, h_max: Search bounds (inclusive).
+        **model_kwargs: Forwarded to U1GaugeGNN — must match the models
+            that will be trained (wilson_loops, predict_q, global_dim all
+            change the count).
+
+    Returns:
+        The best-matching hidden dim.
+    """
+    def count(h: int) -> int:
+        return u1_param_count(replace(config, hidden_dim=h), variant, **model_kwargs)
+
+    if count(h_max) < target_params:
+        raise ValueError(
+            f"target_params={target_params} not reachable with h_max={h_max} "
+            f"({count(h_max)} params)"
+        )
+    if count(h_min) >= target_params:
+        return h_min
+
+    lo, hi = h_min, h_max  # count(lo) < target <= count(hi) invariant
+    while lo + 1 < hi:
+        mid = (lo + hi) // 2
+        if count(mid) >= target_params:
+            hi = mid
+        else:
+            lo = mid
+    return min((lo, hi), key=lambda h: (abs(count(h) - target_params), h))

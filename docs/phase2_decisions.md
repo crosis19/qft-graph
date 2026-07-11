@@ -34,6 +34,17 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
    training stability (invertible, documented, leaves r unchanged);
    -ln<W> is used only at ensemble level against the exact area law.
 
+4. **A-4 comparison runs in two arms: fixed H AND parameter-matched**
+   (Josh, 2026-07-11). At fixed H, Variant A carries ~2.5x the params of
+   B/C (296k vs 118k at the protocol H=64, full heads), so the A/B/C
+   table gets both arms. Knob: `models/u1_gnn.matched_hidden_dim(
+   target_params, config, variant, **model_kwargs)` — binary search over
+   constructed models; model_kwargs must match the trained heads. At the
+   protocol point: A@64 budget -> B/C at H=102 (+0.07%/+0.04%); B@64
+   budget -> A at H=40 (-0.79%), C at H=64 (-0.05%). Which budget anchors
+   the headline table is decided when results are in (down-matching A to
+   ~118k also keeps the laptop-scale ethos).
+
 ## Still open (do not decide silently — flag to Josh)
 
 4. N_f = 2 vs N_f = 1 framing for the Schwinger paper (plan assumes N_f = 2

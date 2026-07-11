@@ -9,7 +9,11 @@ from qft_graph.config import LatticeConfig, ModelConfig
 from qft_graph.fields.gauge import random_gauge_transform
 from qft_graph.graphs.builder import U1GaugeGraphBuilder
 from qft_graph.lattice.hypercubic import HypercubicLattice
-from qft_graph.models.u1_gnn import U1GaugeGNN
+from qft_graph.models.u1_gnn import (
+    U1GaugeGNN,
+    matched_hidden_dim,
+    u1_param_count,
+)
 from qft_graph.training.metrics import q_rounded_accuracy
 
 BETA = 2.0
@@ -228,6 +232,81 @@ class TestTraining:
     def test_variant_aliases(self, small_model_config):
         assert U1GaugeGNN(small_model_config, variant="A").variant == "link_nodes"
         assert U1GaugeGNN(small_model_config, variant="C").variant == "invariant_oracle"
+
+
+class TestParameterMatching:
+    """The H knob for parameter-matched A/B/C comparisons (Josh, 2026-07-11)."""
+
+    KWARGS = dict(wilson_loops=WILSON_LOOPS, predict_q=True)
+
+    def test_param_count_monotonic_in_h(self, small_model_config):
+        """Strict monotonicity is the precondition of the binary search."""
+        from dataclasses import replace
+
+        for variant in ALL_VARIANTS:
+            counts = [
+                u1_param_count(
+                    replace(small_model_config, hidden_dim=h), variant, **self.KWARGS
+                )
+                for h in (8, 12, 16, 24, 32)
+            ]
+            assert all(a < b for a, b in zip(counts, counts[1:])), variant
+
+    def test_matched_is_bruteforce_optimal(self, small_model_config):
+        """Binary-search result equals exhaustive scan over the H range."""
+        from dataclasses import replace
+
+        target = u1_param_count(
+            replace(small_model_config, hidden_dim=24), "link_nodes", **self.KWARGS
+        )
+        for variant in ALL_VARIANTS:
+            best = matched_hidden_dim(
+                target, small_model_config, variant, h_min=4, h_max=96, **self.KWARGS
+            )
+            counts = {
+                h: u1_param_count(
+                    replace(small_model_config, hidden_dim=h), variant, **self.KWARGS
+                )
+                for h in range(4, 97)
+            }
+            brute = min(counts, key=lambda h: (abs(counts[h] - target), h))
+            assert best == brute, variant
+
+    def test_matching_a_budget_closes_the_gap(self, small_model_config):
+        """B/C matched to A@32's budget land far closer than fixed H=32."""
+        from dataclasses import replace
+
+        cfg32 = replace(small_model_config, hidden_dim=32)
+        target = u1_param_count(cfg32, "link_nodes", **self.KWARGS)
+        for variant in ("edge_features", "invariant_oracle"):
+            fixed_gap = abs(u1_param_count(cfg32, variant, **self.KWARGS) - target)
+            h = matched_hidden_dim(target, cfg32, variant, **self.KWARGS)
+            matched_gap = abs(
+                u1_param_count(replace(cfg32, hidden_dim=h), variant, **self.KWARGS)
+                - target
+            )
+            assert h > 32, variant  # B/C are lighter per H, so matched H is larger
+            assert matched_gap < 0.05 * target, variant
+            assert matched_gap < fixed_gap, variant
+
+    def test_head_config_changes_the_match(self, small_model_config):
+        """model_kwargs must flow into the count — an action-only model
+        matches at a different H than a full-heads model."""
+        from dataclasses import replace
+
+        cfg = replace(small_model_config, hidden_dim=32)
+        target = u1_param_count(cfg, "link_nodes", **self.KWARGS)
+        h_full = matched_hidden_dim(target, cfg, "edge_features", **self.KWARGS)
+        h_bare = matched_hidden_dim(
+            target, cfg, "edge_features", wilson_loops=(), predict_q=False
+        )
+        assert h_bare > h_full  # fewer heads -> needs wider trunk to match
+
+    def test_unreachable_target_raises(self, small_model_config):
+        with pytest.raises(ValueError, match="not reachable"):
+            matched_hidden_dim(
+                10**9, small_model_config, "edge_features", h_max=64, **self.KWARGS
+            )
 
 
 class TestQMetric:
