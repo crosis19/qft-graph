@@ -35,3 +35,23 @@ def energy_std_ratio(predicted: torch.Tensor, true: torch.Tensor) -> float:
     if true_std == 0:
         return float("inf")
     return (pred_std / true_std).item()
+
+
+def q_rounded_accuracy(predicted: torch.Tensor, true: torch.Tensor) -> float:
+    """Exact-integer accuracy for topological charge regression (task A-4).
+
+    Q is an exact integer on the torus (A-1 oracle 3), so the honest
+    metric is fraction of configs where round(prediction) hits the true
+    integer. True values are rounded too — they are stored as floats
+    within 1e-10 of integers.
+    """
+    if predicted.shape != true.shape:
+        # A (B,1)-vs-(B,) mismatch would silently broadcast the == to a
+        # (B,B) matrix and return a plausible-but-wrong accuracy.
+        raise ValueError(
+            f"Shape mismatch: predicted {tuple(predicted.shape)} vs "
+            f"true {tuple(true.shape)}"
+        )
+    if predicted.numel() == 0:
+        raise ValueError("Empty tensors — accuracy undefined")
+    return (torch.round(predicted) == torch.round(true)).float().mean().item()

@@ -16,13 +16,31 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
    (results/size_transfer.json; paper Sec. IV.F). Consequence for A-3: all
    three gauge graph variants use constant spacetime node features.
 
+2. **Variant B carries beta on spacetime node features `[1, beta]`**
+   (Josh, 2026-07-11). Rationale: mirrors Variant C (plan puts beta on
+   st nodes there), so B-vs-C isolates where the gauge information
+   lives; matches the Phase I couplings-on-nodes precedent; keeps
+   adjacency edge features purely displacement + parallel transport.
+   All variants additionally expose `data.globals = [[beta]]`.
+
+3. **Wilson-loop training target is raw per-config W, uniformly across
+   all (beta, size) cells** (Josh, 2026-07-11). Evidence: A-2 label
+   scan — `-ln W` is admissible for every config only on a ragged,
+   beta- and volume-dependent subset (at L=16, frac(W<=0) reaches ~0.5
+   for large-area/small-beta cells; even 4x4 at beta=4 has 13% W<=0),
+   and d(-ln W)/dW = -1/W makes near-zero cells heavy-tailed. Raw W
+   keeps the receptive-field heatmap's r values comparable across
+   cells. Per-(beta, size) z-scoring of targets is allowed for
+   training stability (invertible, documented, leaves r unchanged);
+   -ln<W> is used only at ensemble level against the exact area law.
+
 ## Still open (do not decide silently — flag to Josh)
 
-2. N_f = 2 vs N_f = 1 framing for the Schwinger paper (plan assumes N_f = 2
+4. N_f = 2 vs N_f = 1 framing for the Schwinger paper (plan assumes N_f = 2
    for sampling; decide at WS3).
-3. Phase IIa as standalone short paper vs. first section of the Schwinger
+5. Phase IIa as standalone short paper vs. first section of the Schwinger
    paper (decide after A-5 results).
-4. Whether Phase I v2 absorbs the delayed-acceptance idea or it stays
+6. Whether Phase I v2 absorbs the delayed-acceptance idea or it stays
    exclusive to the IIb paper (plan assumes the latter).
 
 ## Status pointers (as of 2026-07-11)
