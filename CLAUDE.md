@@ -40,6 +40,13 @@ Map the two in prose/docstrings; do not mass-rename.
 All tests must pass before committing. Physics-oracle tests (exact values) are never
 weakened to make an implementation pass — fix the implementation.
 
+## Phase II decisions
+
+Read **[docs/phase2_decisions.md](docs/phase2_decisions.md)** before starting
+any A-x/B-x task — it records which of the plan's open decisions are resolved
+(e.g. coordinate-free spacetime features are adopted everywhere in Phase II)
+and which still need Josh.
+
 ## Layout for new Phase II code
 
 See the table in plan §1: statistics → `src/qft_graph/mc/analysis.py`; Wilson action →
