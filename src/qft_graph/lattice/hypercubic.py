@@ -40,6 +40,10 @@ class HypercubicLattice(Lattice):
     def lattice_spacing(self) -> float:
         return self._spacing
 
+    def boundary(self) -> str:
+        """Boundary condition name: 'periodic', 'open', or 'antiperiodic'."""
+        return self._bc.value
+
     def volume(self) -> float:
         return self._spacing**self._ndim * self._nsites
 

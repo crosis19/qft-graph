@@ -107,7 +107,8 @@ class U1GaugeField(Field):
     node index = mu * L^2 + x1 * L + x2.
     """
 
-    def __init__(self, L: int | None = None) -> None:
+    def __init__(self, L: int | tuple[int, int] | None = None) -> None:
+        """L: side length of a square lattice, or (L1, L2) for rectangular."""
         self.L = L
 
     def dof_per_site(self) -> int:
@@ -128,15 +129,22 @@ class U1GaugeField(Field):
         return torch.cat([cos_sin, onehot], dim=-1).reshape(2 * n_links, 4)
 
     def initialize(self, num_sites: int, mode: str = "hot") -> torch.Tensor:
-        """Initial link configuration of shape (2, L, L).
+        """Initial link configuration of shape (2, L1, L2).
 
-        num_sites must equal L^2 (or set L at construction).
+        num_sites must equal L1*L2 (square assumed unless L was given
+        as a tuple at construction).
         """
-        L = self.L if self.L is not None else int(round(num_sites**0.5))
+        if self.L is None:
+            side = int(round(num_sites**0.5))
+            shape = (side, side)
+        elif isinstance(self.L, int):
+            shape = (self.L, self.L)
+        else:
+            shape = tuple(self.L)
         if mode == "hot":
-            theta = np.random.uniform(-np.pi, np.pi, size=(2, L, L))
+            theta = np.random.uniform(-np.pi, np.pi, size=(2, *shape))
         elif mode == "cold":
-            theta = np.zeros((2, L, L))
+            theta = np.zeros((2, *shape))
         else:
             raise ValueError(f"Unknown initialization mode: {mode}")
         return torch.from_numpy(theta).float()

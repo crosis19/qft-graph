@@ -17,3 +17,12 @@ def inhabits_edge(field_type: str) -> tuple[str, str, str]:
 def inhabits_inv_edge(field_type: str) -> tuple[str, str, str]:
     """Create reverse inhabits edge type."""
     return ("spacetime", f"inhabits_inv_{field_type}", field_type)
+
+
+# Gauge-Spacetime: a link attaches to TWO sites (its endpoints), so gauge
+# nodes intentionally do NOT reuse inhabits_edge(), which models the
+# one-site attachment of site fields (task A-3).
+GAUGE_STARTS_AT = ("gauge", "starts_at", "spacetime")   # link -> site x
+GAUGE_ENDS_AT = ("gauge", "ends_at", "spacetime")       # link -> site x + e_mu
+ORIGIN_OF = ("spacetime", "origin_of", "gauge")         # reverse of starts_at
+TARGET_OF = ("spacetime", "target_of", "gauge")         # reverse of ends_at
