@@ -72,7 +72,21 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
   pattern). The plan's Variant A message-passing-block bullet
   (link→st, st→st, st→link) is model work — lands with **A-4**, since
   `models/message_passing/stage.py` only routes inhabits edges today.
-- Next task: **A-4** (plan §3) — heads + training + receptive-field study,
-  including the Variant A three-stage-analog MP block.
+- A-4 plumbing complete (`models/u1_gnn.py`, `graphs/u1_dataset.py`,
+  `scripts/train_u1.py`); training CLI is the Colab entry point.
+- **A-4 pilot finding (L=8, beta=2, seed 0, frozen protocol,
+  results/u1pilot_*.json):** Variant C reaches action r=0.9994,
+  Q acc 1.00, W r degrading with loop size (1x1: 0.998 -> 4x4: 0.47 —
+  the receptive-field story, visible already). Variants A and B sit at
+  exact chance (r ~ 0) on ALL targets for all 150 epochs. Probes: (i)
+  single-link/action correlations consistent with exactly zero (gauge
+  symmetry — no first-order gradient signal); (ii) a plain MLP on all
+  raw link trig features memorizes train (r=0.999) with zero test
+  generalization (r=-0.03), while the same MLP on plaquette features
+  reaches r=0.97 — representation hardness, not a GNN bug. Colab
+  protocol implications need Josh (see session notes / pilot report).
+- Next: **A-4 training runs** (Colab) — matrix to be revised in light
+  of the pilot null for A/B; A-5 augmentation question moves to the
+  critical path.
 - Training runs on Colab via `notebooks/07_ws1_experiments_colab.ipynb`
   pattern (CLI scripts + Drive sync); MC stays on laptop CPU.
