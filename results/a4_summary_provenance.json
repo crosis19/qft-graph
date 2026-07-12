@@ -1,0 +1,51 @@
+{
+  "run_id": "a4_summary_provenance",
+  "timestamp": "2026-07-12T16:48:10.019409+00:00",
+  "git_commit": "6a38b927e4ff14d3cb6594c4b5984389b3c69022",
+  "config_hash": "29014b6587a3",
+  "config": {
+    "glob": "a4*",
+    "n_groups": 34
+  },
+  "metrics": {
+    "groups": [
+      "a4C_invariant_oracle_u1_L16_beta0.5_H64_B3",
+      "a4C_invariant_oracle_u1_L16_beta1_H64_B3",
+      "a4C_invariant_oracle_u1_L16_beta2_H64_B3",
+      "a4C_invariant_oracle_u1_L16_beta3_H64_B3",
+      "a4C_invariant_oracle_u1_L16_beta4_H64_B3",
+      "a4C_invariant_oracle_u1_L32_beta1_H64_B3",
+      "a4C_invariant_oracle_u1_L32_beta2_H64_B3",
+      "a4C_invariant_oracle_u1_L32_beta4_H64_B3",
+      "a4C_invariant_oracle_u1_L8_beta0.5_H64_B3",
+      "a4C_invariant_oracle_u1_L8_beta1_H64_B3",
+      "a4C_invariant_oracle_u1_L8_beta2_H64_B3",
+      "a4C_invariant_oracle_u1_L8_beta3_H64_B3",
+      "a4C_invariant_oracle_u1_L8_beta4_H64_B3",
+      "a4hatch450ep_link_nodes_u1_L8_beta2_H64_B3",
+      "a4hatchdeep_link_nodes_u1_L8_beta2_H64_B6",
+      "a4hatchlowlr_link_nodes_u1_L8_beta2_H64_B3",
+      "a4hatchw11_link_nodes_u1_L8_beta2_H64_B3",
+      "a4match_edge_features_u1_L8_beta2_H102_B3",
+      "a4match_invariant_oracle_u1_L8_beta2_H102_B3",
+      "a4match_link_nodes_u1_L8_beta2_H40_B3",
+      "a4null_edge_features_u1_L16_beta2_H64_B3",
+      "a4null_edge_features_u1_L8_beta1_H64_B3",
+      "a4null_edge_features_u1_L8_beta2_H64_B3",
+      "a4null_link_nodes_u1_L16_beta2_H64_B3",
+      "a4null_link_nodes_u1_L8_beta1_H64_B3",
+      "a4null_link_nodes_u1_L8_beta2_H64_B3",
+      "a4rf_invariant_oracle_u1_L16_beta2_H64_B2",
+      "a4rf_invariant_oracle_u1_L16_beta2_H64_B3",
+      "a4rf_invariant_oracle_u1_L16_beta2_H64_B4",
+      "a4rf_invariant_oracle_u1_L16_beta2_H64_B6",
+      "a4rf_invariant_oracle_u1_L16_beta4_H64_B2",
+      "a4rf_invariant_oracle_u1_L16_beta4_H64_B3",
+      "a4rf_invariant_oracle_u1_L16_beta4_H64_B4",
+      "a4rf_invariant_oracle_u1_L16_beta4_H64_B6"
+    ]
+  },
+  "extra": {
+    "output_json": "results/a4_summary.json"
+  }
+}
