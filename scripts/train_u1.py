@@ -4,9 +4,11 @@ Joint multi-task training of action + Wilson loops + Q per plan §3
 Task A-4, protocol mirroring Phase I: AdamW, cosine, 150 epochs,
 batch 32, H=64. Targets follow the decision record: Wilson targets are
 raw per-config W, z-scored per (beta, size) for training stability
-(decision 3); action targets are z-scored the same way for loss-scale
-balance; Q is trained on its natural integer scale. All standardization
-stats are saved and inverted for metrics on the raw scale.
+(decision 3); action AND Q targets are z-scored the same way (protocol
+v2, decision 5 — Q's natural integer scale grows with volume and
+destabilized the joint loss at L=32 and at beta=4 with deep stacks).
+All standardization stats are saved and inverted for metrics on the
+raw scale (exact-integer Q accuracy is computed after de-scaling).
 
 Runs both comparison arms (decision 4):
   fixed H:            --hidden_dim 64
@@ -27,12 +29,15 @@ import json
 import time
 from pathlib import Path
 
-import numpy as np
 import torch
 from torch_geometric.loader import DataLoader
 
 from qft_graph.config import ModelConfig, resolve_device
-from qft_graph.graphs.u1_dataset import build_u1_dataset, standardize_wilson_targets
+from qft_graph.graphs.u1_dataset import (
+    build_u1_dataset,
+    standardize_scalar_targets,
+    standardize_wilson_targets,
+)
 from qft_graph.models.u1_gnn import (
     DEFAULT_WILSON_LOOPS,
     U1GaugeGNN,
@@ -106,21 +111,8 @@ def split_dataset(dataset: list, train_frac: float, val_frac: float):
     )
 
 
-def standardize_actions(split: list, stats: tuple[float, float] | None = None):
-    """Z-score data.y in place (train stats reused on val/test); returns stats."""
-    y = torch.cat([d.y for d in split])
-    if stats is None:
-        stats = (y.mean().item(), y.std().item())
-    mean, std = stats
-    if not (np.isfinite(std) and std > 0):
-        raise ValueError(f"Degenerate action std {std}")
-    for d in split:
-        d.y = (d.y - mean) / std
-    return stats
-
-
 @torch.no_grad()
-def evaluate(model, split, loops, a_stats, batch_size, device) -> dict:
+def evaluate(model, split, loops, a_stats, q_stats, batch_size, device) -> dict:
     """Metrics on the raw scale (standardization inverted where needed)."""
     model.eval()
     preds: dict[str, list] = {}
@@ -141,11 +133,16 @@ def evaluate(model, split, loops, a_stats, batch_size, device) -> dict:
     a_mean, a_std = a_stats
     action_pred_raw = P["action"] * a_std + a_mean
     action_true_raw = T["action"] * a_std + a_mean
+    # Exact-integer accuracy lives on the raw integer scale (protocol v2:
+    # y_q is standardized for the loss; r is scale-invariant either way)
+    q_mean, q_std = q_stats
+    q_pred_raw = P["q"] * q_std + q_mean
+    q_true_raw = T["q"] * q_std + q_mean
     metrics = {
         "action_r": energy_correlation(P["action"], T["action"]),
         "action_rel_err": relative_error(action_pred_raw, action_true_raw),
         "q_r": energy_correlation(P["q"], T["q"]),
-        "q_acc": q_rounded_accuracy(P["q"], T["q"]),
+        "q_acc": q_rounded_accuracy(q_pred_raw, q_true_raw),
     }
     for name in loops:
         metrics[f"wilson_{name}_r"] = energy_correlation(P[f"w_{name}"], T[f"w_{name}"])
@@ -162,13 +159,16 @@ def train_one_seed(args, seed, logger) -> dict:
     )
     train, val, test = split_dataset(dataset, args.train_frac, args.val_frac)
 
-    # Target standardization: train stats, reused on val/test (decision 3)
+    # Target standardization: train stats, reused on val/test (decisions 3+5)
     w_stats = standardize_wilson_targets(train)
     standardize_wilson_targets(val, stats=w_stats)
     standardize_wilson_targets(test, stats=w_stats)
-    a_stats = standardize_actions(train)
-    standardize_actions(val, stats=a_stats)
-    standardize_actions(test, stats=a_stats)
+    a_stats = standardize_scalar_targets(train, "y")
+    standardize_scalar_targets(val, "y", stats=a_stats)
+    standardize_scalar_targets(test, "y", stats=a_stats)
+    q_stats = standardize_scalar_targets(train, "y_q")
+    standardize_scalar_targets(val, "y_q", stats=q_stats)
+    standardize_scalar_targets(test, "y_q", stats=q_stats)
 
     config = ModelConfig(hidden_dim=args.hidden_dim, n_mp_blocks=args.n_mp_blocks)
     model_kwargs = dict(wilson_loops=loops, predict_q=True)
@@ -211,7 +211,7 @@ def train_one_seed(args, seed, logger) -> dict:
         sched.step()
 
         if epoch % 5 == 4 or epoch == 0 or epoch == args.epochs - 1:
-            m = evaluate(model, val, loops, a_stats, args.batch_size, device)
+            m = evaluate(model, val, loops, a_stats, q_stats, args.batch_size, device)
             m["epoch"] = epoch + 1
             m["train_loss"] = epoch_loss / max(1, len(loader))
             m["elapsed_s"] = time.time() - t0
@@ -222,7 +222,7 @@ def train_one_seed(args, seed, logger) -> dict:
                 m.get("wilson_1x1_r", float("nan")), m["q_acc"],
             )
 
-    test_metrics = evaluate(model, test, loops, a_stats, args.batch_size, device)
+    test_metrics = evaluate(model, test, loops, a_stats, q_stats, args.batch_size, device)
     run_id = (
         f"{args.run_prefix}_{args.variant}_{Path(args.data).stem}"
         f"_H{hidden_dim}_B{args.n_mp_blocks}_seed{seed}"
@@ -240,6 +240,7 @@ def train_one_seed(args, seed, logger) -> dict:
             "n_mp_blocks": args.n_mp_blocks,
             "a_stats": a_stats,
             "w_stats": w_stats,
+            "q_stats": q_stats,
             "seed": seed,
         },
         ckpt_dir / "checkpoint_final.pt",
@@ -247,12 +248,14 @@ def train_one_seed(args, seed, logger) -> dict:
 
     log_run(
         run_id,
-        config={**vars(args), "hidden_dim_resolved": hidden_dim, **arm_info},
+        config={**vars(args), "hidden_dim_resolved": hidden_dim,
+                "protocol_version": 2, **arm_info},
         metrics={"test": test_metrics, "history": history},
         extra={
             "n_params": n_params,
             "a_stats": a_stats,
             "w_stats": w_stats,
+            "q_stats": q_stats,
             "checkpoint": str(ckpt_dir / "checkpoint_final.pt"),
             "wall_time_s": time.time() - t0,
         },

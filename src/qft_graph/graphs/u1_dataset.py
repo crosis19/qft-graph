@@ -123,6 +123,34 @@ def build_u1_dataset(
     return dataset
 
 
+def standardize_scalar_targets(
+    dataset: list, attr: str, stats: tuple[float, float] | None = None
+) -> tuple[float, float]:
+    """Z-score a (1,)-shaped scalar target (y or y_q) in place; returns stats.
+
+    Protocol v2 (decision record #5): ALL targets are standardized with
+    train-split stats for loss-scale balance — Q's natural integer scale
+    grows with volume and destabilized the joint loss at L=32 and at
+    beta=4 with deep stacks (Q-head collapse dragging the shared trunk).
+    Invert via the returned stats before scale-dependent metrics
+    (q_rounded_accuracy, relative_error); Pearson r is unaffected.
+    """
+    y = torch.cat([getattr(d, attr) for d in dataset])
+    if stats is None:
+        if y.shape[0] < 2:
+            raise ValueError(
+                f"Cannot standardize {attr} from {y.shape[0]} config(s); "
+                "need >=2, or pass train-split stats"
+            )
+        stats = (y.mean().item(), y.std().item())
+    mean, std = stats
+    if not (np.isfinite(std) and std > 0):
+        raise ValueError(f"Degenerate {attr} std: {std}")
+    for d in dataset:
+        setattr(d, attr, (getattr(d, attr) - mean) / std)
+    return stats
+
+
 def standardize_wilson_targets(
     dataset: list, stats: dict[str, tuple[float, float]] | None = None,
 ) -> dict[str, tuple[float, float]]:

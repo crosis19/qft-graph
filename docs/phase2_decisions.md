@@ -45,6 +45,19 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
    the headline table is decided when results are in (down-matching A to
    ~118k also keeps the laptop-scale ethos).
 
+5. **Protocol v2: ALL A-4 targets standardized; full rerun for
+   uniformity** (Josh, 2026-07-12). Q was the only target trained on
+   its natural integer scale; its variance grows with volume and the
+   resulting loss imbalance caused Q-head collapse and seed instability
+   at L=32 (all beta) and at beta=4 with B>=4 blocks (E4). Fix:
+   `standardize_scalar_targets` in `graphs/u1_dataset.py` z-scores
+   action and Q like the Wilson targets (train stats reused on
+   val/test); exact-integer Q accuracy is computed after de-scaling.
+   Run records carry `protocol_version: 2`. All 114 v1 runs archived in
+   `results/a4_protocol_v1/` (never mix v1/v2 numbers); the full matrix
+   is rerun under v2 via notebook 08. Sanity anchor: at L<=16, B<=3 the
+   natural Q std is ~1, so v1 and v2 should agree closely there.
+
 ## Still open (do not decide silently — flag to Josh)
 
 4. N_f = 2 vs N_f = 1 framing for the Schwinger paper (plan assumes N_f = 2

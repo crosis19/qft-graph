@@ -10,6 +10,7 @@ from qft_graph.config import ModelConfig
 from qft_graph.graphs.u1_dataset import (
     build_u1_dataset,
     load_u1_ensemble,
+    standardize_scalar_targets,
     standardize_wilson_targets,
     u1_label_stats,
 )
@@ -152,5 +153,42 @@ class TestStandardize:
         """n=1 gives std=NaN, constant columns give std=0 — both would
         silently write NaN targets without the guard."""
         dataset = build_u1_dataset(h5file, "C", n_configs=1)
-        with pytest.raises(ValueError, match="Degenerate"):
+        with pytest.raises(ValueError, match="Degenerate|need >=2"):
             standardize_wilson_targets(dataset)
+
+
+class TestStandardizeScalar:
+    """Protocol v2 (decision 5): action AND Q z-scored like Wilson targets."""
+
+    @pytest.mark.parametrize("attr", ["y", "y_q"])
+    def test_zscore_and_invert(self, h5file, attr):
+        dataset = build_u1_dataset(h5file, "C")
+        raw = torch.cat([getattr(d, attr) for d in dataset]).clone()
+        stats = standardize_scalar_targets(dataset, attr)
+        z = torch.cat([getattr(d, attr) for d in dataset])
+        assert abs(z.mean().item()) < 1e-5
+        assert abs(z.std().item() - 1) < 1e-5
+        mean, std = stats
+        torch.testing.assert_close(z * std + mean, raw, atol=1e-5, rtol=1e-5)
+
+    def test_q_integers_survive_roundtrip(self, h5file):
+        """De-standardized Q must round back to the exact original integers
+        (the q_rounded_accuracy metric depends on this)."""
+        dataset = build_u1_dataset(h5file, "C")
+        raw = torch.cat([d.y_q for d in dataset]).clone()
+        mean, std = standardize_scalar_targets(dataset, "y_q")
+        z = torch.cat([d.y_q for d in dataset])
+        assert torch.equal(torch.round(z * std + mean), torch.round(raw))
+
+    def test_reuse_train_stats(self, h5file):
+        train = build_u1_dataset(h5file, "C", n_configs=6)
+        val = build_u1_dataset(h5file, "C")
+        stats = standardize_scalar_targets(train, "y_q")
+        stats_val = standardize_scalar_targets(val, "y_q", stats=stats)
+        assert stats_val == stats
+        torch.testing.assert_close(train[0].y_q, val[0].y_q)
+
+    def test_single_config_raises(self, h5file):
+        dataset = build_u1_dataset(h5file, "C", n_configs=1)
+        with pytest.raises(ValueError, match="need >=2"):
+            standardize_scalar_targets(dataset, "y_q")
