@@ -1,0 +1,68 @@
+{
+  "run_id": "a5eps_a4C_invariant_oracle_u1_L8_beta1_H64_B3_seed0",
+  "timestamp": "2026-07-13T15:12:32.694568+00:00",
+  "git_commit": "c34eb0a1dc84252f7e579c302b12c15f387f4640",
+  "config_hash": "ffdf0914c6e5",
+  "config": {
+    "source_run_id": "a4C_invariant_oracle_u1_L8_beta1_H64_B3_seed0",
+    "source_config_hash": "205da73f29a2",
+    "checkpoint": "experiments/runs/u1/a4C_invariant_oracle_u1_L8_beta1_H64_B3_seed0/checkpoint_final.pt",
+    "data": "data/u1_configs/u1_L8_beta1.h5",
+    "variant": "invariant_oracle",
+    "k_copies": 32,
+    "gauge_seed": 20260713,
+    "max_configs": null,
+    "protocol_version": 2
+  },
+  "metrics": {
+    "energy": {
+      "eps_gauge": 0.0,
+      "mean_orbit_std": 0.0,
+      "config_std": 1.065248681719242
+    },
+    "wilson_1x1": {
+      "eps_gauge": 0.0,
+      "mean_orbit_std": 0.0,
+      "config_std": 1.0630524266108705
+    },
+    "wilson_2x2": {
+      "eps_gauge": 0.0,
+      "mean_orbit_std": 0.0,
+      "config_std": 0.846082815492004
+    },
+    "wilson_2x4": {
+      "eps_gauge": 0.0,
+      "mean_orbit_std": 0.0,
+      "config_std": 0.3767924058212831
+    },
+    "wilson_3x3": {
+      "eps_gauge": 0.0,
+      "mean_orbit_std": 0.0,
+      "config_std": 0.3899570736317977
+    },
+    "wilson_4x4": {
+      "eps_gauge": 0.0,
+      "mean_orbit_std": 0.0,
+      "config_std": 0.12679634383898852
+    },
+    "q": {
+      "eps_gauge": 0.0,
+      "mean_orbit_std": 0.0,
+      "config_std": 1.0246157947273657
+    },
+    "wall_time_s": 79.48953294754028
+  },
+  "extra": {
+    "source_test_metrics": {
+      "action_r": 0.9995197057723999,
+      "action_rel_err": 0.003376991953700781,
+      "q_r": 0.9962838292121887,
+      "q_acc": 0.9800000190734863,
+      "wilson_1x1_r": 0.9988300800323486,
+      "wilson_2x2_r": 0.7978121042251587,
+      "wilson_2x4_r": 0.30733978748321533,
+      "wilson_3x3_r": 0.2854793071746826,
+      "wilson_4x4_r": 0.04865260049700737
+    }
+  }
+}

@@ -1,0 +1,721 @@
+{
+  "targets": [
+    "energy",
+    "wilson_1x1",
+    "wilson_2x2",
+    "wilson_2x4",
+    "wilson_3x3",
+    "wilson_4x4",
+    "q"
+  ],
+  "rows": [
+    {
+      "experiment": "a4C",
+      "variant": "C",
+      "variant_name": "invariant_oracle",
+      "L": 8,
+      "beta": 1.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 5,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_2x2": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_2x4": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_3x3": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_4x4": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_q": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "source_action_r": {
+        "mean": 0.9995998620986939,
+        "std": 6.049401518700086e-05
+      }
+    },
+    {
+      "experiment": "a4C",
+      "variant": "C",
+      "variant_name": "invariant_oracle",
+      "L": 8,
+      "beta": 2.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 5,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_2x2": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_2x4": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_3x3": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_4x4": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_q": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "source_action_r": {
+        "mean": 0.9994706392288208,
+        "std": 3.334009981349062e-05
+      }
+    },
+    {
+      "experiment": "a4C",
+      "variant": "C",
+      "variant_name": "invariant_oracle",
+      "L": 16,
+      "beta": 2.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 5,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_2x2": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_2x4": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_3x3": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_4x4": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_q": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "source_action_r": {
+        "mean": 0.9994265556335449,
+        "std": 7.110601195128105e-05
+      }
+    },
+    {
+      "experiment": "a4hatch450ep",
+      "variant": "A",
+      "variant_name": "link_nodes",
+      "L": 8,
+      "beta": 2.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 1,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.9916075401693154,
+        "std": 0.0
+      },
+      "eps_wilson_1x1": {
+        "mean": 1.0147859480123373,
+        "std": 0.0
+      },
+      "eps_wilson_2x2": {
+        "mean": 0.9856965729921863,
+        "std": 0.0
+      },
+      "eps_wilson_2x4": {
+        "mean": 1.0455409069148769,
+        "std": 0.0
+      },
+      "eps_wilson_3x3": {
+        "mean": 1.0508189909172112,
+        "std": 0.0
+      },
+      "eps_wilson_4x4": {
+        "mean": 1.007491186771078,
+        "std": 0.0
+      },
+      "eps_q": {
+        "mean": 1.0195629463868379,
+        "std": 0.0
+      },
+      "source_action_r": {
+        "mean": -0.015319418162107468,
+        "std": 0.0
+      }
+    },
+    {
+      "experiment": "a4hatchdeep",
+      "variant": "A",
+      "variant_name": "link_nodes",
+      "L": 8,
+      "beta": 2.0,
+      "H": 64,
+      "B": 6,
+      "n_train": null,
+      "n_seeds": 1,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 1.0293803427471517,
+        "std": 0.0
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.9988105002179164,
+        "std": 0.0
+      },
+      "eps_wilson_2x2": {
+        "mean": 1.0397411393773326,
+        "std": 0.0
+      },
+      "eps_wilson_2x4": {
+        "mean": 1.0160825554504767,
+        "std": 0.0
+      },
+      "eps_wilson_3x3": {
+        "mean": 1.0039073895532695,
+        "std": 0.0
+      },
+      "eps_wilson_4x4": {
+        "mean": 0.9899148767761196,
+        "std": 0.0
+      },
+      "eps_q": {
+        "mean": 1.02389722917905,
+        "std": 0.0
+      },
+      "source_action_r": {
+        "mean": -0.041008755564689636,
+        "std": 0.0
+      }
+    },
+    {
+      "experiment": "a4hatchlowlr",
+      "variant": "A",
+      "variant_name": "link_nodes",
+      "L": 8,
+      "beta": 2.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 1,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.985768356134484,
+        "std": 0.0
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.990853407121546,
+        "std": 0.0
+      },
+      "eps_wilson_2x2": {
+        "mean": 0.9828785619569427,
+        "std": 0.0
+      },
+      "eps_wilson_2x4": {
+        "mean": 0.9929451903906326,
+        "std": 0.0
+      },
+      "eps_wilson_3x3": {
+        "mean": 1.0027315791779643,
+        "std": 0.0
+      },
+      "eps_wilson_4x4": {
+        "mean": 1.011264855232224,
+        "std": 0.0
+      },
+      "eps_q": {
+        "mean": 0.9933937382843344,
+        "std": 0.0
+      },
+      "source_action_r": {
+        "mean": 0.01129056140780449,
+        "std": 0.0
+      }
+    },
+    {
+      "experiment": "a4hatchw11",
+      "variant": "A",
+      "variant_name": "link_nodes",
+      "L": 8,
+      "beta": 2.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 1,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.9984953720005367,
+        "std": 0.0
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.9905182637895523,
+        "std": 0.0
+      },
+      "eps_wilson_2x2": null,
+      "eps_wilson_2x4": null,
+      "eps_wilson_3x3": null,
+      "eps_wilson_4x4": null,
+      "eps_q": {
+        "mean": 0.9817842709207294,
+        "std": 0.0
+      },
+      "source_action_r": {
+        "mean": 0.014564262703061104,
+        "std": 0.0
+      }
+    },
+    {
+      "experiment": "a4match",
+      "variant": "A",
+      "variant_name": "link_nodes",
+      "L": 8,
+      "beta": 2.0,
+      "H": 40,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 3,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.9894041150312542,
+        "std": 0.012824473748721915
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.9896990939103713,
+        "std": 0.007705173033268323
+      },
+      "eps_wilson_2x2": {
+        "mean": 0.9599220998202395,
+        "std": 0.03848188024021458
+      },
+      "eps_wilson_2x4": {
+        "mean": 0.9869318199585871,
+        "std": 0.01160466648130311
+      },
+      "eps_wilson_3x3": {
+        "mean": 1.0157319617419622,
+        "std": 0.012229644555640073
+      },
+      "eps_wilson_4x4": {
+        "mean": 1.0179200567548832,
+        "std": 0.023850646296313945
+      },
+      "eps_q": {
+        "mean": 0.9882401104360223,
+        "std": 0.004382399717790532
+      },
+      "source_action_r": {
+        "mean": -0.004547337380548318,
+        "std": 0.034591814281426866
+      }
+    },
+    {
+      "experiment": "a4match",
+      "variant": "B",
+      "variant_name": "edge_features",
+      "L": 8,
+      "beta": 2.0,
+      "H": 102,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 3,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 1.018280802467296,
+        "std": 0.006610955980293997
+      },
+      "eps_wilson_1x1": {
+        "mean": 1.0159729579475556,
+        "std": 0.005952971020518333
+      },
+      "eps_wilson_2x2": {
+        "mean": 1.0292959244476292,
+        "std": 0.002647412399383411
+      },
+      "eps_wilson_2x4": {
+        "mean": 1.0210535349148702,
+        "std": 0.00525145251831737
+      },
+      "eps_wilson_3x3": {
+        "mean": 1.0398205348472926,
+        "std": 0.011750422008340599
+      },
+      "eps_wilson_4x4": {
+        "mean": 1.0299830777338153,
+        "std": 0.005589704750591092
+      },
+      "eps_q": {
+        "mean": 1.0347557599858268,
+        "std": 0.022933166851595174
+      },
+      "source_action_r": {
+        "mean": -0.062311895191669464,
+        "std": 0.0028233097976530586
+      }
+    },
+    {
+      "experiment": "a4match",
+      "variant": "C",
+      "variant_name": "invariant_oracle",
+      "L": 8,
+      "beta": 2.0,
+      "H": 102,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 3,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_2x2": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_2x4": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_3x3": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_wilson_4x4": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "eps_q": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "source_action_r": {
+        "mean": 0.9994354049364725,
+        "std": 1.7411653858347423e-05
+      }
+    },
+    {
+      "experiment": "a4null",
+      "variant": "A",
+      "variant_name": "link_nodes",
+      "L": 8,
+      "beta": 1.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 3,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.9903023090705414,
+        "std": 0.032987840481518475
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.9634846964141053,
+        "std": 0.02557473876149714
+      },
+      "eps_wilson_2x2": {
+        "mean": 1.001122284179888,
+        "std": 0.03483853653028567
+      },
+      "eps_wilson_2x4": {
+        "mean": 0.9895691598918009,
+        "std": 0.012820807992844753
+      },
+      "eps_wilson_3x3": {
+        "mean": 0.9654885361994866,
+        "std": 0.01212652202866061
+      },
+      "eps_wilson_4x4": {
+        "mean": 0.9592856307212617,
+        "std": 0.019810774743287178
+      },
+      "eps_q": {
+        "mean": 0.9731190330455695,
+        "std": 0.018564002341490554
+      },
+      "source_action_r": {
+        "mean": 0.05874296401937803,
+        "std": 0.013312506405739883
+      }
+    },
+    {
+      "experiment": "a4null",
+      "variant": "A",
+      "variant_name": "link_nodes",
+      "L": 8,
+      "beta": 2.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 3,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.9995676263609498,
+        "std": 0.013150997186181866
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.9885701747782116,
+        "std": 0.008988803595810856
+      },
+      "eps_wilson_2x2": {
+        "mean": 1.0318923783357203,
+        "std": 0.022187531147298295
+      },
+      "eps_wilson_2x4": {
+        "mean": 1.0058560332472408,
+        "std": 0.004626572167818225
+      },
+      "eps_wilson_3x3": {
+        "mean": 1.00349450722572,
+        "std": 0.0066210519518889776
+      },
+      "eps_wilson_4x4": {
+        "mean": 1.0146394816352178,
+        "std": 0.011746894761239116
+      },
+      "eps_q": {
+        "mean": 0.9955721218189207,
+        "std": 0.0033747905720937447
+      },
+      "source_action_r": {
+        "mean": -0.016631736730535824,
+        "std": 0.026544696045208736
+      }
+    },
+    {
+      "experiment": "a4null",
+      "variant": "A",
+      "variant_name": "link_nodes",
+      "L": 16,
+      "beta": 2.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 3,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 1.0018282500359037,
+        "std": 0.01808948432077588
+      },
+      "eps_wilson_1x1": {
+        "mean": 1.0077857767606664,
+        "std": 0.009373291357122972
+      },
+      "eps_wilson_2x2": {
+        "mean": 1.0306859815203933,
+        "std": 0.011119426535460135
+      },
+      "eps_wilson_2x4": {
+        "mean": 1.0361814583586244,
+        "std": 0.024141423559449513
+      },
+      "eps_wilson_3x3": {
+        "mean": 1.020571541805588,
+        "std": 0.024031016619423272
+      },
+      "eps_wilson_4x4": {
+        "mean": 1.028213792798405,
+        "std": 0.007316834329395615
+      },
+      "eps_q": {
+        "mean": 1.0110745122049745,
+        "std": 0.00498344675349074
+      },
+      "source_action_r": {
+        "mean": 0.035578012466430664,
+        "std": 0.10504400155497984
+      }
+    },
+    {
+      "experiment": "a4null",
+      "variant": "B",
+      "variant_name": "edge_features",
+      "L": 8,
+      "beta": 1.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 3,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 0.9683022662656845,
+        "std": 0.001648120941175286
+      },
+      "eps_wilson_1x1": {
+        "mean": 0.9761724723577266,
+        "std": 0.005499745114110422
+      },
+      "eps_wilson_2x2": {
+        "mean": 0.9793855503904648,
+        "std": 0.007801971125967455
+      },
+      "eps_wilson_2x4": {
+        "mean": 0.981622528745785,
+        "std": 0.011444158810511971
+      },
+      "eps_wilson_3x3": {
+        "mean": 0.9741462735406792,
+        "std": 0.0039868470335259806
+      },
+      "eps_wilson_4x4": {
+        "mean": 0.966878079741566,
+        "std": 0.009168157521290056
+      },
+      "eps_q": {
+        "mean": 1.0050182872700113,
+        "std": 0.04508990056927608
+      },
+      "source_action_r": {
+        "mean": 0.08345467845598857,
+        "std": 0.0002367164211293094
+      }
+    },
+    {
+      "experiment": "a4null",
+      "variant": "B",
+      "variant_name": "edge_features",
+      "L": 8,
+      "beta": 2.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 3,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 1.012458865583685,
+        "std": 0.005404080298296033
+      },
+      "eps_wilson_1x1": {
+        "mean": 1.026275117049298,
+        "std": 0.010230415214583264
+      },
+      "eps_wilson_2x2": {
+        "mean": 0.9986307820440831,
+        "std": 0.024767680204692805
+      },
+      "eps_wilson_2x4": {
+        "mean": 1.0194492438989533,
+        "std": 0.012854676018505446
+      },
+      "eps_wilson_3x3": {
+        "mean": 1.0224309579278807,
+        "std": 0.002591081796984099
+      },
+      "eps_wilson_4x4": {
+        "mean": 1.0204441065970038,
+        "std": 0.02162376747918295
+      },
+      "eps_q": {
+        "mean": 1.0077110070071071,
+        "std": 0.02899267319560813
+      },
+      "source_action_r": {
+        "mean": -0.05748611440261205,
+        "std": 0.0019017639478324778
+      }
+    },
+    {
+      "experiment": "a4null",
+      "variant": "B",
+      "variant_name": "edge_features",
+      "L": 16,
+      "beta": 2.0,
+      "H": 64,
+      "B": 3,
+      "n_train": null,
+      "n_seeds": 3,
+      "k_copies": 32,
+      "gauge_seed": 20260713,
+      "eps_energy": {
+        "mean": 1.0053725678612768,
+        "std": 0.030895753654022508
+      },
+      "eps_wilson_1x1": {
+        "mean": 1.0257047421487429,
+        "std": 0.016660087671408322
+      },
+      "eps_wilson_2x2": {
+        "mean": 1.0312222746012971,
+        "std": 0.010332642511222758
+      },
+      "eps_wilson_2x4": {
+        "mean": 1.0160316074687137,
+        "std": 0.00863276988526761
+      },
+      "eps_wilson_3x3": {
+        "mean": 1.031402474857165,
+        "std": 0.00898536853546154
+      },
+      "eps_wilson_4x4": {
+        "mean": 1.047346814148022,
+        "std": 0.028483840142789946
+      },
+      "eps_q": {
+        "mean": 1.0329990374504856,
+        "std": 0.020564385540148614
+      },
+      "source_action_r": {
+        "mean": 0.013814309689526757,
+        "std": 0.011554035272239888
+      }
+    }
+  ]
+}

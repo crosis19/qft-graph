@@ -146,8 +146,37 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
   hypothesis; diagnostic task spawned on saved checkpoints).
   (iii) Q rounding floor (decision 5 outcome note). v2 checkpoints in
   `experiments/runs/u1/` are the A-5 evaluation inputs.
-- Next task: **A-5** (plan §3) — eps_gauge measurement on the v2
-  checkpoints (C should be ~0 by construction) + the augmentation
-  experiment, now the paper's central question given the A/B null.
-- Training runs on Colab via the notebook-08 pattern (CLI scripts +
-  Drive sync); MC stays on laptop CPU.
+- **A-5 part 1 COMPLETE (2026-07-13): eps_gauge on the A-4 v2
+  checkpoints.** Protocol: K=32 gauge copies per test-split config,
+  per-config seeded rng [gauge_seed=20260713, file_config_idx] (copies
+  identical across all models on a file — paired comparison), copies
+  generated in float64 from float32 storage (A-3 convention), eps on the
+  standardized output scale (affine-invariant). Pipeline:
+  `scripts/measure_gauge_invariance.py` -> `results/a5eps_*.json`
+  (46 runs) -> `scripts/make_a5_table.py` -> `results/a5_table.json`.
+  Headline: **A and B have eps_gauge ~ 1.00 on every target** (0.96-1.05
+  across all cells, seeds, both parameter budgets, and all four escape
+  hatches) — their predictions vary as much along a gauge orbit as
+  across physical configs, i.e. zero gauge-invariant content, a sharper
+  null than r ~ 0; **C is exactly 0 (bitwise) everywhere** — the sanity
+  anchor holds. Detail: at beta=1 (the cell with the small r ~ 0.08
+  signal) eps dips seed-consistently a few % below 1 (A 0.96-0.99,
+  B 0.97) — the size expected from a small invariant component.
+  Robustness: eps stable to ~1-2% under an alternative gauge seed and
+  under K=16.
+- **A-5 numerics caveat (load-bearing, test-pinned):** batched PyG
+  evaluation is position-in-batch dependent at float32 lsb — bit-identical
+  graphs at different positions of one Batch return outputs differing by
+  ~1e-8, which would put a spurious floor under C's exact zero. The eps
+  protocol therefore forwards every graph UNBATCHED (batch size 1).
+- Next: **A-5 part 2** (augmentation experiment) — Colab notebook 09
+  (`a5aug`/`a5base`/`a5C` arms: A/B x {aug, no-aug} x n_train
+  {50..3200} x 3 seeds at L=8 beta=2 + optional L=16 check; full-size
+  no-aug arms intentionally reuse a4null/a4C records). Training CLI
+  grew `--gauge_augment` (fresh random gauge transform per train-config
+  access; labels exactly invariant, reused) and `--n_train` (run_id
+  gains `_n{n}`). After the runs sync: F3 eps measurement +
+  `scripts/plot_a5_curves.py` -> `figures/a5_augmentation.*`, then the
+  half-page paper summary (A-5 done-when).
+- Training runs on Colab via the notebook-08/09 pattern (CLI scripts +
+  Drive sync); MC and eps_gauge measurement stay on laptop CPU.

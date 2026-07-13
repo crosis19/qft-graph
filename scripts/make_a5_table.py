@@ -72,8 +72,14 @@ def aggregate(groups: dict[tuple, list[dict]]) -> list[dict]:
             "gauge_seed": runs[0]["config"]["gauge_seed"],
         }
         for t in TARGETS:
-            eps = [r["metrics"][t]["eps_gauge"] for r in runs]
-            row[f"eps_{t}"] = {"mean": float(np.mean(eps)), "std": float(np.std(eps))}
+            # Escape-hatch runs train a subset of heads (e.g. a4hatchw11 is
+            # W1x1-only), so a target may be absent from a whole group.
+            eps = [r["metrics"][t]["eps_gauge"] for r in runs if t in r["metrics"]]
+            row[f"eps_{t}"] = (
+                {"mean": float(np.mean(eps)), "std": float(np.std(eps))}
+                if len(eps) == len(runs)
+                else None
+            )
         action_r = [r["extra"]["source_test_metrics"]["action_r"] for r in runs]
         row["source_action_r"] = {
             "mean": float(np.mean(action_r)), "std": float(np.std(action_r))
@@ -82,7 +88,9 @@ def aggregate(groups: dict[tuple, list[dict]]) -> list[dict]:
     return rows
 
 
-def fmt(m: dict) -> str:
+def fmt(m: dict | None) -> str:
+    if m is None:
+        return "-"
     if m["mean"] == 0.0 and m["std"] == 0.0:
         return "0 (exact)"
     return f"{m['mean']:.3f}({int(round(m['std'] * 1000)):02d})"
