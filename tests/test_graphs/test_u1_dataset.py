@@ -6,9 +6,13 @@ import pytest
 import torch
 from torch_geometric.data import Batch
 
+from torch_geometric.loader import DataLoader
+
 from qft_graph.config import ModelConfig
+from qft_graph.graphs.edge_types import ADJACENT
 from qft_graph.graphs.u1_dataset import (
     build_u1_dataset,
+    gauge_augmented_train_split,
     load_u1_ensemble,
     standardize_scalar_targets,
     standardize_wilson_targets,
@@ -192,3 +196,87 @@ class TestStandardizeScalar:
         dataset = build_u1_dataset(h5file, "C", n_configs=1)
         with pytest.raises(ValueError, match="need >=2"):
             standardize_scalar_targets(dataset, "y_q")
+
+
+class TestGaugeAugmentation:
+    """On-the-fly gauge augmentation wrapper (task A-5)."""
+
+    def test_config_idx_stamped(self, h5file):
+        dataset = build_u1_dataset(h5file, "A")
+        assert [d.config_idx for d in dataset] == list(range(N))
+
+    def test_no_augment_passthrough(self, h5file):
+        train = build_u1_dataset(h5file, "A", n_configs=4)
+        ds = gauge_augmented_train_split(h5file, "A", train, seed=0, augment=False)
+        assert len(ds) == 4
+        for i in range(4):
+            assert ds[i] is train[i]
+
+    def test_labels_copied_features_change(self, h5file):
+        """Augmented graphs keep the (gauge-invariant) targets but carry
+        transformed link features; repeated access re-transforms."""
+        train = build_u1_dataset(h5file, "A", n_configs=4)
+        standardize_wilson_targets(train)  # wrap AFTER standardizing, as train_u1 does
+        ds = gauge_augmented_train_split(h5file, "A", train, seed=0)
+        first = ds[2]
+        assert torch.equal(first.y, train[2].y)
+        assert torch.equal(first.y_wilson, train[2].y_wilson)
+        assert torch.equal(first.y_q, train[2].y_q)
+        assert first.wilson_names == train[2].wilson_names
+        assert first.config_idx == 2
+        assert not torch.equal(first["gauge"].x, train[2]["gauge"].x)
+        second = ds[2]  # fresh transform every access ("on-the-fly")
+        assert not torch.equal(second["gauge"].x, first["gauge"].x)
+
+    def test_variant_b_edge_features_change(self, h5file):
+        train = build_u1_dataset(h5file, "B", n_configs=4)
+        ds = gauge_augmented_train_split(h5file, "B", train, seed=0)
+        assert not torch.equal(
+            ds[1][ADJACENT].edge_attr, train[1][ADJACENT].edge_attr
+        )
+
+    def test_variant_c_features_bit_identical(self, h5file):
+        """The invariant oracle sees THE SAME inputs under augmentation —
+        float64 transform noise is below float32 feature resolution."""
+        train = build_u1_dataset(h5file, "C", n_configs=4)
+        ds = gauge_augmented_train_split(h5file, "C", train, seed=0)
+        for i in range(4):
+            assert torch.equal(ds[i]["spacetime"].x, train[i]["spacetime"].x)
+
+    def test_deterministic_given_seed(self, h5file):
+        train = build_u1_dataset(h5file, "A", n_configs=4)
+        ds1 = gauge_augmented_train_split(h5file, "A", train, seed=7)
+        ds2 = gauge_augmented_train_split(h5file, "A", train, seed=7)
+        for i in (0, 3, 1):  # same access order
+            assert torch.equal(ds1[i]["gauge"].x, ds2[i]["gauge"].x)
+
+    def test_alignment_via_config_idx(self, h5file):
+        """A non-leading subset (e.g. after --n_train slicing or any future
+        reordering) still picks the right thetas: variant C features of the
+        augmented graph match the base graph built from the same config."""
+        dataset = build_u1_dataset(h5file, "C")
+        subset = [dataset[5], dataset[2]]  # out of order, non-leading
+        ds = gauge_augmented_train_split(h5file, "C", subset, seed=0)
+        assert torch.equal(ds[0]["spacetime"].x, dataset[5]["spacetime"].x)
+        assert torch.equal(ds[1]["spacetime"].x, dataset[2]["spacetime"].x)
+
+    def test_missing_config_idx_raises(self, h5file):
+        train = build_u1_dataset(h5file, "A", n_configs=2)
+        del train[1].config_idx
+        with pytest.raises(ValueError, match="config_idx"):
+            gauge_augmented_train_split(h5file, "A", train, seed=0)
+
+    def test_dataloader_batching(self, h5file):
+        """PyG DataLoader over the wrapper: shapes match the plain path and
+        a model forward consumes the batch."""
+        train = build_u1_dataset(h5file, "A", n_configs=6)
+        ds = gauge_augmented_train_split(h5file, "A", train, seed=0)
+        batch = next(iter(DataLoader(ds, batch_size=4, shuffle=False)))
+        assert batch.y.shape == (4,)
+        assert batch.y_wilson.shape == (4, len(LOOPS))
+        assert batch.y_q.shape == (4,)
+        assert batch.globals.shape == (4, 1)
+        config = ModelConfig(hidden_dim=16, n_mp_blocks=2, encoder_layers=1)
+        model = U1GaugeGNN(config, variant="link_nodes", wilson_loops=LOOPS).eval()
+        out = model(batch)
+        assert out["energy"].shape == (4,)

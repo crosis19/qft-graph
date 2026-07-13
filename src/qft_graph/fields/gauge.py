@@ -98,6 +98,32 @@ def random_gauge_transform(
     return gauge_transform(theta, alpha)
 
 
+def gauge_orbit(
+    theta: np.ndarray, n_copies: int, rng: np.random.Generator
+) -> np.ndarray:
+    """Stack of n_copies random gauge copies of one configuration (task A-5).
+
+    The input is promoted to float64 BEFORE transforming (the A-3 storage
+    convention: gauge copies are generated in float64 from the stored
+    float32 links, never re-rounded to float32), so Variant C features
+    built from these copies are bit-identical to the original's and its
+    eps_gauge is exactly 0 — the A-5 sanity anchor.
+
+    Args:
+        theta: One configuration (2, L1, L2), any float dtype.
+        n_copies: Number of gauge copies K (plan A-5 protocol: K=32).
+        rng: Seeded generator. Pass a per-config child (e.g.
+            np.random.default_rng([master_seed, config_index])) so the
+            copies are reproducible and identical across every model
+            evaluated on the same ensemble file (paired comparison).
+
+    Returns:
+        (n_copies, 2, L1, L2) float64 array of gauge copies.
+    """
+    theta64 = np.asarray(theta, dtype=np.float64)
+    return np.stack([random_gauge_transform(theta64, rng) for _ in range(n_copies)])
+
+
 class U1GaugeField(Field):
     """U(1) link variables as graph field content.
 

@@ -37,6 +37,60 @@ def energy_std_ratio(predicted: torch.Tensor, true: torch.Tensor) -> float:
     return (pred_std / true_std).item()
 
 
+def gauge_invariance_error(
+    orbit_preds: torch.Tensor, config_preds: torch.Tensor
+) -> dict[str, float]:
+    """Per-target gauge-invariance error eps_gauge (plan §3, task A-5).
+
+        eps_gauge = mean_configs[ std_over_gauge_copies(y_hat) ]
+                    / std_over_configs(y_hat)
+
+    A gauge-invariant predictor has eps_gauge = 0 (Variant C reaches this
+    exactly: its inputs are bit-identical across gauge copies); a predictor
+    whose output tracks the gauge representative as much as the physics has
+    eps_gauge ~ 1. Both stds are sample stds (ddof=1), computed in float64.
+    The ratio is invariant under affine rescaling of y_hat, so predictions
+    can be fed on the model's standardized output scale.
+
+    Args:
+        orbit_preds: (n_configs, n_copies) predictions on gauge copies.
+        config_preds: (n_configs,) predictions on the original configs
+            (the config-to-config spread in the denominator).
+
+    Returns:
+        {"eps_gauge", "mean_orbit_std", "config_std"}. A degenerate
+        denominator (constant predictor across configs) yields
+        eps_gauge = 0.0 when the orbit spread is also zero (a constant IS
+        invariant) and inf otherwise; the components disambiguate.
+    """
+    if orbit_preds.ndim != 2:
+        raise ValueError(
+            f"orbit_preds must be (n_configs, n_copies), got {tuple(orbit_preds.shape)}"
+        )
+    n_configs, n_copies = orbit_preds.shape
+    if config_preds.shape != (n_configs,):
+        raise ValueError(
+            f"config_preds shape {tuple(config_preds.shape)} does not match "
+            f"orbit_preds n_configs={n_configs}"
+        )
+    if n_configs < 2 or n_copies < 2:
+        raise ValueError(
+            f"Need >=2 configs and >=2 gauge copies for sample stds, got "
+            f"({n_configs}, {n_copies})"
+        )
+    mean_orbit_std = orbit_preds.double().std(dim=1).mean().item()
+    config_std = config_preds.double().std().item()
+    if config_std == 0.0:
+        eps = 0.0 if mean_orbit_std == 0.0 else float("inf")
+    else:
+        eps = mean_orbit_std / config_std
+    return {
+        "eps_gauge": eps,
+        "mean_orbit_std": mean_orbit_std,
+        "config_std": config_std,
+    }
+
+
 def q_rounded_accuracy(predicted: torch.Tensor, true: torch.Tensor) -> float:
     """Exact-integer accuracy for topological charge regression (task A-4).
 

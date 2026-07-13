@@ -1,4 +1,4 @@
-"""HDF5 -> HeteroData datasets for the U(1) ensembles (tasks A-2 -> A-4).
+"""HDF5 -> HeteroData datasets for the U(1) ensembles (tasks A-2 -> A-5).
 
 Reads the A-1/A-2 file schema (theta[N, 2, L, L] float32; action, q,
 wilson/<RxT> label datasets; beta/L/seed/... attrs) and builds graph
@@ -23,6 +23,7 @@ import numpy as np
 import torch
 
 from qft_graph.config import LatticeConfig
+from qft_graph.fields.gauge import random_gauge_transform
 from qft_graph.graphs.builder import U1GaugeGraphBuilder
 from qft_graph.lattice.hypercubic import HypercubicLattice
 from qft_graph.models.u1_gnn import DEFAULT_WILSON_LOOPS
@@ -119,8 +120,109 @@ def build_u1_dataset(
         # Column-order provenance: consumers (standardizer, loss code)
         # validate against this instead of trusting a repeated tuple.
         data.wilson_names = list(wilson_loops)
+        # Position in the ensemble file — lets consumers that need the raw
+        # theta back (gauge augmentation, task A-5) align by index instead
+        # of assuming a split scheme.
+        data.config_idx = i
         dataset.append(data)
     return dataset
+
+
+class GaugeAugmentedU1Dataset(torch.utils.data.Dataset):
+    """Train-split wrapper: a fresh random gauge copy per access (task A-5).
+
+    On-the-fly augmentation for the A-5 experiment: every __getitem__
+    draws a new random gauge transform of the underlying configuration
+    (in float64, from the float32 storage — the A-3/A-5 numerics
+    convention) and rebuilds the graph. Targets are copied from the
+    wrapped base graph: action, Wilson loops, and Q are exactly
+    gauge-invariant, so the already-standardized labels transfer
+    unchanged.
+
+    With augment=False the base graphs pass through untouched, so both
+    arms of the augmentation experiment share one DataLoader code path.
+
+    Reproducibility: transforms are drawn sequentially from one generator
+    seeded at construction; together with the seeded DataLoader shuffle
+    (set_seed in scripts/train_u1.py) the augmentation stream is
+    deterministic per run.
+
+    Args:
+        base: Graphs from build_u1_dataset (standardized or not), e.g.
+            the train split.
+        thetas: (n_file_configs, 2, L, L) raw link angles for the WHOLE
+            ensemble file; each base graph picks its own row via the
+            config_idx stamped by build_u1_dataset.
+        builder: U1GaugeGraphBuilder matching the base graphs' variant.
+        seed: Seed for the augmentation stream.
+        augment: False = pass base graphs through (control arm).
+    """
+
+    def __init__(
+        self,
+        base: list,
+        thetas: torch.Tensor | np.ndarray,
+        builder: U1GaugeGraphBuilder,
+        seed: int,
+        augment: bool = True,
+    ) -> None:
+        idx = []
+        for pos, d in enumerate(base):
+            ci = getattr(d, "config_idx", None)
+            if ci is None:
+                raise ValueError(
+                    f"base graph at position {pos} lacks config_idx provenance; "
+                    "rebuild with the current build_u1_dataset"
+                )
+            idx.append(int(ci))
+        thetas64 = np.asarray(thetas, dtype=np.float64)
+        if thetas64.ndim != 4 or (idx and max(idx) >= thetas64.shape[0]):
+            raise ValueError(
+                f"thetas shape {thetas64.shape} cannot cover config_idx up to "
+                f"{max(idx) if idx else 'n/a'}"
+            )
+        self._base = base
+        self._thetas = thetas64[idx]  # aligned copy, one row per base graph
+        self._builder = builder
+        self._augment = augment
+        self._rng = np.random.default_rng(seed)
+
+    def __len__(self) -> int:
+        return len(self._base)
+
+    def __getitem__(self, i: int):
+        base = self._base[i]
+        if not self._augment:
+            return base
+        theta_g = random_gauge_transform(self._thetas[i], self._rng)
+        data = self._builder.build({"gauge": torch.from_numpy(theta_g)})
+        data.y = base.y
+        data.y_wilson = base.y_wilson
+        data.y_q = base.y_q
+        data.wilson_names = base.wilson_names
+        data.config_idx = base.config_idx
+        return data
+
+
+def gauge_augmented_train_split(
+    h5_path: str | Path,
+    variant: str,
+    train: list,
+    seed: int,
+    augment: bool = True,
+) -> GaugeAugmentedU1Dataset:
+    """Wrap an (already standardized) train split with gauge augmentation.
+
+    Reloads the raw link angles and (beta, L) from the ensemble file the
+    split was built from, so callers cannot desynchronize thetas from
+    graphs — alignment runs through each graph's config_idx.
+    """
+    ens = load_u1_ensemble(h5_path)
+    lattice = HypercubicLattice(
+        LatticeConfig(dimensions=(ens["L"], ens["L"]), spacing=1.0, boundary="periodic")
+    )
+    builder = U1GaugeGraphBuilder(lattice, beta=ens["beta"], variant=variant)
+    return GaugeAugmentedU1Dataset(train, ens["theta"], builder, seed=seed, augment=augment)
 
 
 def standardize_scalar_targets(

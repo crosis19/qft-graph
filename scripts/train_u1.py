@@ -20,6 +20,12 @@ Usage (pilot, laptop CPU):
 
 Usage (Colab, full protocol):
   python scripts/train_u1.py --data ... --variant A --seeds 0 1 2 3 4
+
+A-5 augmentation experiment (notebook 09): --gauge_augment retrains with
+a fresh random gauge transform of every train config at every access;
+--n_train N caps the train split for the data-efficiency curves (run_id
+gains an _n{N} tag). eps_gauge of the resulting checkpoints is measured
+by scripts/measure_gauge_invariance.py.
 """
 
 from __future__ import annotations
@@ -35,6 +41,7 @@ from torch_geometric.loader import DataLoader
 from qft_graph.config import ModelConfig, resolve_device
 from qft_graph.graphs.u1_dataset import (
     build_u1_dataset,
+    gauge_augmented_train_split,
     standardize_scalar_targets,
     standardize_wilson_targets,
 )
@@ -77,6 +84,15 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--n_configs", type=int, default=None)
     p.add_argument("--train_frac", type=float, default=0.8)
     p.add_argument("--val_frac", type=float, default=0.1)
+    p.add_argument("--n_train", type=int, default=None,
+                   help="A-5 data-efficiency knob: cap the TRAIN split to its "
+                        "first n configs (val/test untouched, unlike "
+                        "--n_configs which caps the file before splitting); "
+                        "adds _n{n} to the run_id")
+    p.add_argument("--gauge_augment", action="store_true",
+                   help="A-5 augmentation arm: fresh random gauge transform "
+                        "of every train config at every access (labels are "
+                        "gauge-invariant and reused; val/test stay clean)")
     p.add_argument("--seeds", type=int, nargs="+", default=[0])
     p.add_argument("--device", type=str, default="auto")
     p.add_argument("--run_prefix", type=str, default="u1a4",
@@ -158,6 +174,13 @@ def train_one_seed(args, seed, logger) -> dict:
         args.data, args.variant, wilson_loops=loops, n_configs=args.n_configs
     )
     train, val, test = split_dataset(dataset, args.train_frac, args.val_frac)
+    if args.n_train is not None:
+        if not 2 <= args.n_train <= len(train):
+            raise ValueError(
+                f"--n_train {args.n_train} outside [2, {len(train)}] "
+                f"(train split of {len(dataset)} configs)"
+            )
+        train = train[: args.n_train]
 
     # Target standardization: train stats, reused on val/test (decisions 3+5)
     w_stats = standardize_wilson_targets(train)
@@ -178,16 +201,22 @@ def train_one_seed(args, seed, logger) -> dict:
     model = U1GaugeGNN(config, variant=args.variant, **model_kwargs).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     logger.info(
-        "seed %d: %s H=%d (%s) %d params, %d/%d/%d train/val/test on %s",
+        "seed %d: %s H=%d (%s) %d params, %d/%d/%d train/val/test on %s%s",
         seed, args.variant, hidden_dim, arm_info["arm"], n_params,
         len(train), len(val), len(test), device,
+        " [gauge-augmented]" if args.gauge_augment else "",
     )
 
     opt = torch.optim.AdamW(
         model.parameters(), lr=args.lr, weight_decay=args.weight_decay
     )
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs)
-    loader = DataLoader(train, batch_size=args.batch_size, shuffle=True)
+    train_data = (
+        gauge_augmented_train_split(args.data, args.variant, train, seed=seed)
+        if args.gauge_augment
+        else train
+    )
+    loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
 
     history = []
     t0 = time.time()
@@ -223,9 +252,10 @@ def train_one_seed(args, seed, logger) -> dict:
             )
 
     test_metrics = evaluate(model, test, loops, a_stats, q_stats, args.batch_size, device)
+    n_train_tag = f"_n{args.n_train}" if args.n_train is not None else ""
     run_id = (
         f"{args.run_prefix}_{args.variant}_{Path(args.data).stem}"
-        f"_H{hidden_dim}_B{args.n_mp_blocks}_seed{seed}"
+        f"_H{hidden_dim}_B{args.n_mp_blocks}{n_train_tag}_seed{seed}"
     )
 
     ckpt_dir = Path("experiments/runs/u1") / run_id
@@ -242,6 +272,8 @@ def train_one_seed(args, seed, logger) -> dict:
             "w_stats": w_stats,
             "q_stats": q_stats,
             "seed": seed,
+            "gauge_augment": args.gauge_augment,
+            "n_train": args.n_train,
         },
         ckpt_dir / "checkpoint_final.pt",
     )
