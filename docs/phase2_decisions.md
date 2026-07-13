@@ -58,13 +58,33 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
    is rerun under v2 via notebook 08. Sanity anchor: at L<=16, B<=3 the
    natural Q std is ~1, so v1 and v2 should agree closely there.
 
+   **Outcome correction (2026-07-13, after the v2 rerun):** the original
+   diagnosis was wrong about v2 curing the anomalies; v2 remains the
+   adopted protocol, but the two phenomena have different roots.
+   (a) Exact-integer Q accuracy obeys a rounding floor,
+   acc ~ P(|N(0, sigma_Q*sqrt(1-q_r^2))| < 0.5) — verified
+   quantitatively in both protocols — so it hardens with volume
+   (sigma_Q grows with L) and NO loss weighting fixes it; v1's
+   natural-scale Q loss was an accidental sigma_Q^2 upweighting that
+   bought higher q_r at L=32 at the cost of instability elsewhere.
+   Report q_r alongside q_acc with the floor formula as context.
+   (b) The beta=4 B>=4 failures are protocol-independent: the action
+   trains fine (r ~ 0.93-0.99) while global/topological readouts
+   collapse and W4x4 INVERTS with depth (0.76/0.91/0.62/0.25 for
+   B=2/3/4/6) — vs monotone receptive-field gains at beta=2. The
+   ordered phase halves the input feature spread (std cos theta_P:
+   0.40 -> 0.19). Working hypothesis: over-smoothing (ARCHITECTURE.md
+   mitigation section); confirming diagnostic = embedding cosine
+   similarity vs depth on the saved checkpoints. Treated as a finding
+   in the heatmap, not an exclusion.
+
 ## Still open (do not decide silently — flag to Josh)
 
-4. N_f = 2 vs N_f = 1 framing for the Schwinger paper (plan assumes N_f = 2
+6. N_f = 2 vs N_f = 1 framing for the Schwinger paper (plan assumes N_f = 2
    for sampling; decide at WS3).
-5. Phase IIa as standalone short paper vs. first section of the Schwinger
+7. Phase IIa as standalone short paper vs. first section of the Schwinger
    paper (decide after A-5 results).
-6. Whether Phase I v2 absorbs the delayed-acceptance idea or it stays
+8. Whether Phase I v2 absorbs the delayed-acceptance idea or it stays
    exclusive to the IIb paper (plan assumes the latter).
 
 ## Status pointers (as of 2026-07-11)
