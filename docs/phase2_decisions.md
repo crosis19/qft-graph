@@ -73,10 +73,23 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
    collapse and W4x4 INVERTS with depth (0.76/0.91/0.62/0.25 for
    B=2/3/4/6) — vs monotone receptive-field gains at beta=2. The
    ordered phase halves the input feature spread (std cos theta_P:
-   0.40 -> 0.19). Working hypothesis: over-smoothing (ARCHITECTURE.md
-   mitigation section); confirming diagnostic = embedding cosine
-   similarity vs depth on the saved checkpoints. Treated as a finding
-   in the heatmap, not an exclusion.
+   0.40 -> 0.19). **Over-smoothing CONFIRMED (2026-07-13,
+   scripts/diagnose_oversmoothing.py, figures/a4_oversmoothing.pdf):**
+   at beta=4 B=6 the spacetime embeddings collapse (mean pairwise
+   cosine 0.96-1.00, two seeds at exactly 1.0) while beta=2 stays
+   healthy (~0.5-0.65) at every depth; at the seed-scattered beta=4
+   B=4 cell, per-seed collapse predicts per-seed failure (cos 0.88 ->
+   W4x4 r 0.26 vs cos 0.73/0.78 -> r 0.83/0.77). Refinement: the
+   collapse is TRAINED-IN — it is already present at the encoder
+   output of the deep beta=4 models — i.e., a training-dynamics
+   degeneracy the deep stacks fall into when input feature spread is
+   halved, not pure forward diffusion. Phase I's residual+LayerNorm
+   mitigations hold at beta=2 but not beta=4. Consistent detail: with
+   fully collapsed (identical) node embeddings the pooled readout
+   still carries graph-mean information, which is why the action
+   (a bulk average) survives at B=6 while exact-integer Q and large
+   Wilson loops (needing per-node structure / rare-event precision)
+   fail. Treated as a finding in the heatmap, not an exclusion.
 
 ## Still open (do not decide silently — flag to Josh)
 

@@ -1,0 +1,63 @@
+{
+  "run_id": "a4_oversmoothing_provenance",
+  "timestamp": "2026-07-13T14:31:03.638691+00:00",
+  "git_commit": "4653eb9aacceb5207030948f5fe19aa75721b08c",
+  "config_hash": "8af313c4c3e9",
+  "config": {
+    "n_configs": 50,
+    "betas": [
+      2.0,
+      4.0
+    ],
+    "depths": [
+      2,
+      3,
+      4,
+      6
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "protocol_version": 2
+  },
+  "metrics": {
+    "beta2_B2": {
+      "cos_final": 0.5721044166882833,
+      "cos_encoder": 0.5937530408302942
+    },
+    "beta2_B3": {
+      "cos_final": 0.5129164777199428,
+      "cos_encoder": 0.5385229833920796
+    },
+    "beta2_B4": {
+      "cos_final": 0.6461488008499146,
+      "cos_encoder": 0.5803693465391796
+    },
+    "beta2_B6": {
+      "cos_final": 0.6221644000212351,
+      "cos_encoder": 0.6149071904023489
+    },
+    "beta4_B2": {
+      "cos_final": 0.6595043969154357,
+      "cos_encoder": 0.7750074024995168
+    },
+    "beta4_B3": {
+      "cos_final": 0.6618152221043904,
+      "cos_encoder": 0.7382117513815561
+    },
+    "beta4_B4": {
+      "cos_final": 0.7957550915082297,
+      "cos_encoder": 0.901248144308726
+    },
+    "beta4_B6": {
+      "cos_final": 0.9865210664272309,
+      "cos_encoder": 0.9859503531455994
+    }
+  },
+  "extra": {
+    "figure": "figures\\a4_oversmoothing.pdf",
+    "output_json": "results\\a4_oversmoothing.json"
+  }
+}
