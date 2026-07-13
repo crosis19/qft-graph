@@ -1,7 +1,7 @@
 {
   "run_id": "a4_summary_provenance",
-  "timestamp": "2026-07-13T14:18:57.639690+00:00",
-  "git_commit": "2f9779511e03cf02d1845420003579ebd891b82c",
+  "timestamp": "2026-07-13T14:24:19.047088+00:00",
+  "git_commit": "1bbd3239ffa36fb11f2852f05a96f2028314ab78",
   "config_hash": "29014b6587a3",
   "config": {
     "glob": "a4*",

@@ -118,8 +118,23 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
   generalization (r=-0.03), while the same MLP on plaquette features
   reaches r=0.97 — representation hardness, not a GNN bug. Colab
   protocol implications need Josh (see session notes / pilot report).
-- Next: **A-4 training runs** (Colab) — matrix to be revised in light
-  of the pilot null for A/B; A-5 augmentation question moves to the
-  critical path.
-- Training runs on Colab via `notebooks/07_ws1_experiments_colab.ipynb`
-  pattern (CLI scripts + Drive sync); MC stays on laptop CPU.
+- **A-4 COMPLETE** (2026-07-13): full protocol-v2 matrix (114 runs,
+  notebook 08) in `results/a4*.json`; deliverables per plan done-when:
+  `scripts/make_a4_table.py` -> `results/a4_table.json` (19 rows,
+  LaTeX), `scripts/plot_a4_heatmap.py` ->
+  `figures/a4_receptive_field.{pdf,png}`. Headline results: (i) A/B
+  null on all gauge-invariant targets — robust across seeds, beta,
+  volume, four escape hatches, and parameter matching (E5: B at the A
+  budget and A at the B budget both at chance) — vs C at ceiling;
+  learned-vs-given invariance is binary at this scale, except a small
+  seed-consistent r ~ 0.08 at beta=1 (both variants, both protocols —
+  curriculum lead). (ii) Receptive-field gains at beta=2 vs
+  ordered-phase depth degradation at beta=4 (over-smoothing
+  hypothesis; diagnostic task spawned on saved checkpoints).
+  (iii) Q rounding floor (decision 5 outcome note). v2 checkpoints in
+  `experiments/runs/u1/` are the A-5 evaluation inputs.
+- Next task: **A-5** (plan §3) — eps_gauge measurement on the v2
+  checkpoints (C should be ~0 by construction) + the augmentation
+  experiment, now the paper's central question given the A/B null.
+- Training runs on Colab via the notebook-08 pattern (CLI scripts +
+  Drive sync); MC stays on laptop CPU.
