@@ -41,11 +41,20 @@ HEADLINE_PREFIXES = ("a4null", "a4C")
 
 def collect() -> dict[tuple, list[dict]]:
     groups = defaultdict(list)
+    seen_sources: set[str] = set()
     for path in sorted(Path("results").glob("a5eps_*.json")):
         d = json.loads(path.read_text())
         if d.get("config", {}).get("protocol_version") != 2:
             raise ValueError(f"Non-v2 eps record: {path.name}")
-        m = RUN_RE.match(d["config"]["source_run_id"])
+        src = d["config"]["source_run_id"]
+        if src in seen_sources:
+            # Colab and the laptop share the Drive working tree; a sync
+            # conflict can materialize a duplicate copy of the same eps
+            # record, which would silently double a seed in the stats.
+            print(f"WARNING: duplicate eps record for {src} ({path.name}) — skipped")
+            continue
+        seen_sources.add(src)
+        m = RUN_RE.match(src)
         if not m:
             raise ValueError(f"Unparseable source_run_id in {path.name}")
         g = m.groupdict()

@@ -1,0 +1,68 @@
+{
+  "run_id": "a5eps_a5base_link_nodes_u1_L8_beta2_H64_B3_n200_seed2",
+  "timestamp": "2026-07-14T02:01:37.372980+00:00",
+  "git_commit": "e2cb63fc5d7e94578274f80263bb577a57fe928b",
+  "config_hash": "e08de317939a",
+  "config": {
+    "source_run_id": "a5base_link_nodes_u1_L8_beta2_H64_B3_n200_seed2",
+    "source_config_hash": "a8a129e1aad1",
+    "checkpoint": "experiments/runs/u1/a5base_link_nodes_u1_L8_beta2_H64_B3_n200_seed2/checkpoint_final.pt",
+    "data": "data/u1_configs/u1_L8_beta2.h5",
+    "variant": "link_nodes",
+    "k_copies": 32,
+    "gauge_seed": 20260713,
+    "max_configs": null,
+    "protocol_version": 2
+  },
+  "metrics": {
+    "energy": {
+      "eps_gauge": 0.9891691508181037,
+      "mean_orbit_std": 0.0005080479048236663,
+      "config_std": 0.000513610745344696
+    },
+    "wilson_1x1": {
+      "eps_gauge": 0.983269540413951,
+      "mean_orbit_std": 7.290423548153137e-05,
+      "config_std": 7.41447105651611e-05
+    },
+    "wilson_2x2": {
+      "eps_gauge": 1.0171544819262528,
+      "mean_orbit_std": 0.00014578922656161662,
+      "config_std": 0.00014333046666178563
+    },
+    "wilson_2x4": {
+      "eps_gauge": 0.9967352775912508,
+      "mean_orbit_std": 0.00012058302836685183,
+      "config_std": 0.0001209779879149632
+    },
+    "wilson_3x3": {
+      "eps_gauge": 1.0194686696926092,
+      "mean_orbit_std": 8.283554431730305e-05,
+      "config_std": 8.1253643961692e-05
+    },
+    "wilson_4x4": {
+      "eps_gauge": 0.9945549915905944,
+      "mean_orbit_std": 0.00036415891539652486,
+      "config_std": 0.0003661526194887671
+    },
+    "q": {
+      "eps_gauge": 0.9898284365453751,
+      "mean_orbit_std": 0.00044534156106398887,
+      "config_std": 0.0004499179298366963
+    },
+    "wall_time_s": 218.59021496772766
+  },
+  "extra": {
+    "source_test_metrics": {
+      "action_r": 0.006401859689503908,
+      "action_rel_err": 0.14616824686527252,
+      "q_r": -0.023989740759134293,
+      "q_acc": 0.3725000023841858,
+      "wilson_1x1_r": -0.017009910196065903,
+      "wilson_2x2_r": 0.06240038946270943,
+      "wilson_2x4_r": 0.03119886852800846,
+      "wilson_3x3_r": 0.039642080664634705,
+      "wilson_4x4_r": -0.07030897587537766
+    }
+  }
+}

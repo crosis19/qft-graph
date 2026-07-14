@@ -1,0 +1,23 @@
+{
+  "run_id": "a5_curves_provenance",
+  "timestamp": "2026-07-14T02:17:51.124343+00:00",
+  "git_commit": "e2cb63fc5d7e94578274f80263bb577a57fe928b",
+  "config_hash": "f989650ee47f",
+  "config": {
+    "cell": "u1_L8_beta2",
+    "protocol_version": 2
+  },
+  "metrics": {
+    "n_points_per_arm": {
+      "A + aug": 7,
+      "A": 7,
+      "B + aug": 7,
+      "B": 7,
+      "C (oracle)": 7
+    }
+  },
+  "extra": {
+    "figure": "figures/a5_augmentation.pdf",
+    "output_json": "results\\a5_curves.json"
+  }
+}

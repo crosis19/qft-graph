@@ -169,14 +169,29 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
   graphs at different positions of one Batch return outputs differing by
   ~1e-8, which would put a spurious floor under C's exact zero. The eps
   protocol therefore forwards every graph UNBATCHED (batch size 1).
-- Next: **A-5 part 2** (augmentation experiment) — Colab notebook 09
-  (`a5aug`/`a5base`/`a5C` arms: A/B x {aug, no-aug} x n_train
-  {50..3200} x 3 seeds at L=8 beta=2 + optional L=16 check; full-size
-  no-aug arms intentionally reuse a4null/a4C records). Training CLI
-  grew `--gauge_augment` (fresh random gauge transform per train-config
-  access; labels exactly invariant, reused) and `--n_train` (run_id
-  gains `_n{n}`). After the runs sync: F3 eps measurement +
-  `scripts/plot_a5_curves.py` -> `figures/a5_augmentation.*`, then the
-  half-page paper summary (A-5 done-when).
+- **A-5 COMPLETE (2026-07-13): augmentation experiment (part 2) run and
+  measured.** Notebook 09 F1a-c + F2 (102 runs: `a5aug`/`a5base`/`a5C`,
+  n_train {50..3200} x 3 seeds at L=8 beta=2 + L=16 aug check; full-size
+  no-aug arms reuse a4null/a4C). Outcome — the plan's augmentation
+  question gets a clean NO at this scale: (i) test r stays at chance
+  (|r| <~ 0.06) for A/B at EVERY n_train, augmented or not; (ii)
+  eps_gauge stays ~ 1.00 at every n_train (and at L=16) — augmentation
+  never produces an invariant component; (iii) what training does
+  instead is shrink predictions toward the constant predictor
+  (augmented-A action-head config std 1.4e-3 at n=50 -> 1.1e-6 at
+  n=3200; unaugmented 2.5e-3 -> 1.6e-6), with the residual fluctuation
+  remaining pure gauge noise; (iv) oracle C reaches action r=0.87(6)
+  from 50 configs, ceiling by n~200-400 (W4x4 receptive-field-limited
+  at r~0.48, B=3). Reading: single links are first-order uninformative
+  under the gauge group, so the augmentation-consistency gradient
+  vanishes exactly like the supervised one — invariance must be built
+  in; this SHARPENS Phase I Sec. V.B flexibility-over-rigidity
+  (flexibility suffices for translation, fails for gauge). Deliverables:
+  `results/a5_table.json`, `figures/a5_augmentation.{pdf,png}`
+  (`scripts/plot_a5_curves.py`), half-page summary `docs/a5_summary.md`.
+  Consequence for B-2: **Variant C (invariant inputs) is the winning
+  graph variant** feeding WS3.
 - Training runs on Colab via the notebook-08/09 pattern (CLI scripts +
-  Drive sync); MC and eps_gauge measurement stay on laptop CPU.
+  Drive sync); MC and eps_gauge measurement stay on laptop CPU (Colab
+  F3 and laptop cooperated via the measurement script's skip logic —
+  both mount the same Drive tree).
