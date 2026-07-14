@@ -91,12 +91,25 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
    Wilson loops (needing per-node structure / rare-event precision)
    fail. Treated as a finding in the heatmap, not an exclusion.
 
+7. **Phase IIa is written up as a standalone short paper** (Josh,
+   2026-07-14; resolves open decision 7 — "for now", may still be folded
+   into the Schwinger paper as its Sec. 1 later). Working title per plan
+   §3 WS2 exit: "learned vs. exact gauge invariance in heterogeneous
+   GNNs for lattice gauge theory". Seed prose: docs/a5_summary.md;
+   evidence base: results/a4_table.json, results/a5_table.json,
+   figures/a4_receptive_field.*, figures/a5_augmentation.*. The paper
+   is its own task/session (CLAUDE.md ground rule 3).
+
+9. **Variant C (invariant_oracle) is the WS2 winning graph variant**
+   (Josh, 2026-07-14, ratifying the A-4/A-5 evidence: A/B at chance
+   with eps_gauge ~ 1 at every scale, unfixable by augmentation; C at
+   ceiling with eps exactly 0). B-2 builds on Variant C graphs +
+   global (beta, m) features per plan §4.
+
 ## Still open (do not decide silently — flag to Josh)
 
 6. N_f = 2 vs N_f = 1 framing for the Schwinger paper (plan assumes N_f = 2
    for sampling; decide at WS3).
-7. Phase IIa as standalone short paper vs. first section of the Schwinger
-   paper (decide after A-5 results).
 8. Whether Phase I v2 absorbs the delayed-acceptance idea or it stays
    exclusive to the IIb paper (plan assumes the latter).
 
