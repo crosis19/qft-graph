@@ -20,5 +20,7 @@ distclean: clean
 
 .PHONY: all clean distclean
 
+# Package only figures actually referenced by the manuscript (arXiv
+# flags unreferenced files for deletion otherwise)
 arxiv: $(MAIN).pdf
-	tar czf arxiv-v1.tar.gz $(MAIN).tex $(MAIN).bbl figures/*.pdf tables/*.tex
+	tar czf arxiv-v1.tar.gz $(MAIN).tex $(MAIN).bbl tables/*.tex 	    $$(grep -oE 'figures/[a-z_]+\.pdf' $(MAIN).tex | sort -u)
