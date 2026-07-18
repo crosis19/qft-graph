@@ -51,9 +51,13 @@ class TestQuadraticPeak:
         noise = 0.05  # realistic: chi errors ~ 0.5% of peak height
         err = noise * np.ones_like(chi_true)
         chi = chi_true + rng.normal(0, noise, len(m2))
-        res = susceptibility_peak_quadratic(m2, chi, err, n_points=7, seed=0)
+        res = susceptibility_peak_quadratic(m2, chi, err, n_points=7)
         assert res["m2_peak_err"] > 0 and res["chi_max_err"] > 0
+        assert res["fit_ok"] and np.isfinite(res["chi2_dof"])
         assert abs(res["m2_peak"] - (-1.3)) < 3 * res["m2_peak_err"] + 0.02
+        # Covariance-propagated peak-height error must be commensurate with
+        # the data errors, never wildly larger (the old bootstrap failure)
+        assert res["chi_max_err"] < 3 * err.max()
 
 
 class TestGammaOverNu:

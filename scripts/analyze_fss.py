@@ -131,13 +131,14 @@ def main() -> None:
             np.array([p["m2"] for p in pts]),
             np.array([p["susceptibility"] for p in pts]),
             np.array([p["susceptibility_err"] for p in pts]),
-            seed=args.seed,
         )
         res["L"] = L
         peaks.append(res)
         logger.info(
-            "chi peak L=%d: m2 = %.4f +/- %.4f, chi_max = %.2f +/- %.2f",
+            "chi peak L=%d: m2 = %.4f +/- %.4f, chi_max = %.2f +/- %.2f "
+            "(chi2/dof %.2f%s)",
             L, res["m2_peak"], res["m2_peak_err"], res["chi_max"], res["chi_max_err"],
+            res["chi2_dof"], "" if res["fit_ok"] else " — FIT FAILED, grid max used",
         )
     report["chi_peaks"] = peaks
 

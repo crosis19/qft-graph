@@ -159,28 +159,31 @@ def susceptibility_peak_quadratic(
     chi_values: np.ndarray,
     chi_errors: np.ndarray | None = None,
     n_points: int = 5,
-    n_boot: int = 500,
-    seed: int = 0,
 ) -> dict[str, float]:
     """Locate the susceptibility peak by quadratic fit around the maximum.
 
     Fits chi(m2) = a*m2^2 + b*m2 + c to the n_points grid points nearest
-    the raw maximum (weighted by 1/chi_errors when given) and reads the
-    peak off the vertex. Errors come from a parametric bootstrap:
-    resample chi within its errors, refit, take the std of the results.
+    the raw maximum, weighted by 1/chi_errors when given. Peak location
+    and height come from the vertex; their uncertainties are propagated
+    from the (unscaled) parameter covariance of the weighted fit via the
+    delta method, and the fit's chi^2/dof is reported so poorly-described
+    windows are visible. This replaces an earlier parametric bootstrap,
+    whose resampled fits included quadratics that badly misdescribed the
+    data and produced error bars inconsistent with the underlying points.
 
     Args:
         m2_values: Array of m^2 values (any order).
         chi_values: Susceptibility at each m^2.
         chi_errors: Optional 1-sigma errors on chi (enables weighting and
-            the bootstrap error estimate).
-        n_points: Number of grid points in the fit window.
-        n_boot: Bootstrap resamples for errors (ignored without chi_errors).
-        seed: Bootstrap RNG seed.
+            error propagation).
+        n_points: Number of grid points in the fit window (must exceed 3
+            for a meaningful chi^2/dof).
 
     Returns:
-        Dict with m2_peak, m2_peak_err, chi_max, chi_max_err
-        (errors are 0.0 when chi_errors is None).
+        Dict with m2_peak, m2_peak_err, chi_max, chi_max_err, chi2_dof
+        (errors are 0.0 and chi2_dof is nan when chi_errors is None), and
+        fit_ok (False when the fit had no interior maximum and the raw
+        grid maximum was used instead, with its data error).
     """
     order = np.argsort(m2_values)
     m2 = np.asarray(m2_values, dtype=float)[order]
@@ -195,34 +198,63 @@ def susceptibility_peak_quadratic(
     lo = max(0, min(idx - n_points // 2, len(m2) - n_points))
     window = slice(lo, lo + n_points)
     x, y = m2[window], chi[window]
-    w = None if err is None else 1.0 / np.clip(err[window], 1e-12, None)
 
-    def vertex(yy: np.ndarray) -> tuple[float, float]:
-        a, b, c = np.polyfit(x, yy, 2, w=w)
-        if a >= 0:  # No maximum: fall back to grid max
-            j = int(np.argmax(yy))
-            return float(x[j]), float(yy[j])
-        m2_pk = -b / (2 * a)
-        # Clamp inside the window: the vertex of a bad fit can escape
-        m2_pk = float(np.clip(m2_pk, x.min(), x.max()))
-        return m2_pk, float(c - b**2 / (4 * a))
+    if err is not None:
+        w = 1.0 / np.clip(err[window], 1e-12, None)
+        # cov='unscaled' keeps the covariance in the units implied by the
+        # supplied 1/sigma weights (no chi^2/dof rescaling)
+        coef, cov = np.polyfit(x, y, 2, w=w, cov="unscaled")
+        resid = (np.polyval(coef, x) - y) * w
+        dof = max(len(x) - 3, 1)
+        chi2_dof = float(np.sum(resid**2) / dof)
+    else:
+        coef = np.polyfit(x, y, 2)
+        cov = None
+        chi2_dof = float("nan")
 
-    m2_peak, chi_max = vertex(y)
+    a, b, c = (float(v) for v in coef)
+
+    def _grid_max_fallback() -> dict[str, float]:
+        j = int(np.argmax(y))
+        return {
+            "m2_peak": float(x[j]),
+            # Location known only to the grid resolution in this mode
+            "m2_peak_err": float(np.diff(x).mean()) if err is not None else 0.0,
+            "chi_max": float(y[j]),
+            "chi_max_err": float(err[window][j]) if err is not None else 0.0,
+            "chi2_dof": chi2_dof,
+            "fit_ok": False,
+        }
+
+    if a >= 0:
+        return _grid_max_fallback()
+
+    m2_peak = -b / (2 * a)
+    chi_max = c - b**2 / (4 * a)
+    if not (x.min() <= m2_peak <= x.max()):
+        # Vertex escaped the fit window: the quadratic does not describe
+        # a peak here; report the raw maximum honestly instead
+        return _grid_max_fallback()
 
     m2_peak_err = chi_max_err = 0.0
-    if err is not None:
-        rng = np.random.default_rng(seed)
-        boots = np.array(
-            [vertex(y + rng.normal(0.0, err[window])) for _ in range(n_boot)]
-        )
-        m2_peak_err = float(boots[:, 0].std())
-        chi_max_err = float(boots[:, 1].std())
+    if cov is not None:
+        # Delta method: gradients of the vertex coordinates wrt (a, b, c)
+        g_m2 = np.array([b / (2 * a**2), -1.0 / (2 * a), 0.0])
+        g_chi = np.array([b**2 / (4 * a**2), -b / (2 * a), 1.0])
+        # PDG-style scale factor: when the quadratic only approximately
+        # describes the window (chi^2/dof > 1), inflate the propagated
+        # errors by sqrt(chi^2/dof) rather than report model-perfect ones
+        scale = float(np.sqrt(max(chi2_dof, 1.0)))
+        m2_peak_err = float(np.sqrt(g_m2 @ cov @ g_m2)) * scale
+        chi_max_err = float(np.sqrt(g_chi @ cov @ g_chi)) * scale
 
     return {
-        "m2_peak": m2_peak,
+        "m2_peak": float(m2_peak),
         "m2_peak_err": m2_peak_err,
-        "chi_max": chi_max,
+        "chi_max": float(chi_max),
         "chi_max_err": chi_max_err,
+        "chi2_dof": chi2_dof,
+        "fit_ok": True,
     }
 
 
