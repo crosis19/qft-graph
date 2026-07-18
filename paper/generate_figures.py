@@ -278,10 +278,17 @@ def load_sweep_data():
         PROJECT_ROOT / 'results' / 'phase1_v2',
         PROJECT_ROOT / 'data' / 'sweep_results_v2',
     ):
-        files = {L: base / f'sweep_{L}x{L}_lam=0.5.json' for L in (16, 32, 64)}
-        if all(p.exists() for p in files.values()):
+        required = {L: base / f'sweep_{L}x{L}_lam=0.5.json' for L in (16, 32, 64)}
+        if all(p.exists() for p in required.values()):
+            # Optional intermediate sizes (Schaich suggestion: more dof
+            # for the gamma/nu fit) are included when present
+            files = dict(required)
+            for L in (24, 48):
+                p = base / f'sweep_{L}x{L}_lam=0.5.json'
+                if p.exists():
+                    files[L] = p
             out = {}
-            for L, p in files.items():
+            for L, p in sorted(files.items()):
                 with open(p) as f:
                     pts = sorted(json.load(f), key=lambda q: q['m2'])
                 # xi panel: prefer the k!=0 two-momentum estimator when the
@@ -323,22 +330,27 @@ def fig_finite_size_scaling():
         print("  SKIPPED: no sweep results found.")
         return
 
-    colors = {'16': '#4488ff', '32': '#44bb88', '64': '#cc44ff'}
+    # Distinct color AND marker per L: legible in black-and-white print
+    # and for colorblind readers (Schaich suggestion)
+    styles = {
+        '16': ('#0072b2', 'o'), '24': ('#e69f00', 'D'), '32': ('#009e73', 's'),
+        '48': ('#cc79a7', 'v'), '64': ('#d55e00', '^'),
+    }
     fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.5))
 
-    for L_str in ['16', '32', '64']:
+    for L_str in sorted(sweep_data, key=int):
         data = sweep_data[L_str]
         m2 = np.array(data['m2_values'])
-        c = colors[L_str]
+        c, mk = styles[L_str]
 
-        axes[0].errorbar(m2, data['mags'], yerr=data['mags_err'], fmt='o-',
+        axes[0].errorbar(m2, data['mags'], yerr=data['mags_err'], fmt=mk + '-',
                          color=c, label=f'$L={L_str}$', markersize=3,
                          linewidth=1, capsize=1.5, elinewidth=0.7)
-        axes[1].errorbar(m2, data['chis'], yerr=data['chis_err'], fmt='s-',
+        axes[1].errorbar(m2, data['chis'], yerr=data['chis_err'], fmt=mk + '-',
                          color=c, label=f'$L={L_str}$', markersize=3,
                          linewidth=1, capsize=1.5, elinewidth=0.7)
         axes[2].errorbar(m2, data['xi_over_L'], yerr=data['xi_over_L_err'],
-                         fmt='^-', color=c, label=f'$L={L_str}$', markersize=3,
+                         fmt=mk + '-', color=c, label=f'$L={L_str}$', markersize=3,
                          linewidth=1, capsize=1.5, elinewidth=0.7)
 
     axes[0].set_xlabel(r'$m^2$')
@@ -423,15 +435,18 @@ def fig_scaling_collapse():
                 best_cost = cost
                 best_nu = nu_try
 
-    colors = {'16': '#4488ff', '32': '#44bb88', '64': '#cc44ff'}
+    styles = {
+        '16': ('#0072b2', 'o'), '24': ('#e69f00', 'D'), '32': ('#009e73', 's'),
+        '48': ('#cc79a7', 'v'), '64': ('#d55e00', '^'),
+    }
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.0))
 
     # Left: ξ/L crossing
-    for L_str in ['16', '32', '64']:
+    for L_str in sorted(sweep_data, key=int):
         data = sweep_data[L_str]
-        c = colors[L_str]
+        c, mk = styles[L_str]
         axes[0].errorbar(m2_values, data['xi_over_L'], yerr=data['xi_over_L_err'],
-                         fmt='o-', color=c, label=f'$L={L_str}$', markersize=3,
+                         fmt=mk + '-', color=c, label=f'$L={L_str}$', markersize=3,
                          linewidth=1, capsize=1.5, elinewidth=0.7)
     axes[0].axvline(m2c, color='gray', ls='--', alpha=0.5,
                     label=rf'$m^2_c = {m2c:.2f}$')
@@ -441,12 +456,12 @@ def fig_scaling_collapse():
     axes[0].legend(frameon=False, fontsize=7)
 
     # Right: Scaling collapse
-    for L_str in ['16', '32', '64']:
+    for L_str in sorted(sweep_data, key=int):
         L = int(L_str)
-        c = colors[L_str]
+        c, mk = styles[L_str]
         x_scaled = (m2_values - m2c) * L**(1/best_nu)
         axes[1].scatter(x_scaled, sweep_data[L_str]['xi_over_L'],
-                        s=15, color=c, alpha=0.7,
+                        s=15, color=c, alpha=0.7, marker=mk,
                         label=f'$L={L_str}$', edgecolors='none')
     axes[1].set_xlabel(rf'$(m^2 - m^2_c) \cdot L^{{1/\nu}}$, $\nu={best_nu:.2f}$')
     axes[1].set_ylabel(r'$\xi / L$')

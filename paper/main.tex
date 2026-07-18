@@ -358,8 +358,8 @@ $16 \times 16$, $\sim$63 min at $64 \times 64$).
 \begin{table}[t]
 \centering
 \caption{Action prediction accuracy across lattice sizes. Pearson correlation
-$r$ and mean relative error are computed on held-out validation sets;
-entries are mean $\pm$ std over 5 seeds.}
+$r$ and mean relative error are computed on held-out validation sets
+over 5 seeds. We report $1 - r$ (smaller is better) since correlations are near unity; parenthetical uncertainties are seed-to-seed standard deviations.}
 \label{tab:action}
 \input{tables/table1_body}
 \end{table}
@@ -401,8 +401,7 @@ feedforward network ($H=256$).
 \begin{table}[t]
 \centering
 \caption{Architecture comparison on $16 \times 16$ lattice ($\msq=-0.5$,
-$\lambda=0.5$). All models trained for 150 epochs on the same data split;
-entries are mean $\pm$ std over 5 seeds.}
+$\lambda=0.5$). All models trained for 150 epochs on the same data split over 5 seeds. We report $1 - r$ (smaller is better) since correlations are near unity; parenthetical uncertainties are seed-to-seed standard deviations.}
 \label{tab:baselines}
 \input{tables/table2_body}
 \end{table}
@@ -428,9 +427,9 @@ gradient flow within each message-passing block, whereas the homogeneous skip
 connection bypasses message passing entirely to rescue a signal that would
 otherwise be destroyed.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/depth_ablation.pdf}
+\includegraphics[width=\textwidth]{figures/depth_ablation.pdf}
 \caption{Depth ablation at $16 \times 16$ (mean $\pm$ std over 3 seeds).
 \textbf{Left:} Pearson $r$ vs.\ number of message-passing blocks $B$. The
 homogeneous GNN without a readout skip connection degrades monotonically
@@ -439,7 +438,7 @@ large error bars at $B = 2$--$3$ reflect bimodal seed-to-seed outcomes.
 \textbf{Right:} $1 - r$ on a log scale, resolving the persistent gap between
 the HeteroGNN and the skip-equipped homogeneous baseline at every depth.}
 \label{fig:depth}
-\end{figure}
+\end{figure*}
 
 Beyond architectural stability, all spatially structured models achieve
 $r > 0.99$, confirming that the $\phifour$ action is learnable as a local
@@ -484,8 +483,7 @@ Table~\ref{tab:generalization} reports the corrected protocol.
 \caption{Generalization across coupling values for a single
 coupling-conditioned model trained jointly on the $\dagger$-marked $\msq$
 points and evaluated on 1000 held-out configurations per coupling
-($\ast$ = extrapolation beyond the training grid). Mean $\pm$ std over 5
-seeds. Relative error is inflated where the action distribution crosses
+($\ast$ = extrapolation beyond the training grid), over 5 seeds. We report $1 - r$ (smaller is better) since correlations are near unity; parenthetical uncertainties are seed-to-seed standard deviations. Relative error is inflated where the action distribution crosses
 zero (near $\msq \approx -2.5$); Pearson $r$ is the meaningful metric
 there.}
 \label{tab:generalization}
@@ -514,9 +512,9 @@ $\lambda = 0.5$
 for $L = 16, 32, 64$ using 2000 configurations per point with warm-starting
 between successive $\msq$ values.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/finite_size_scaling.pdf}
+\includegraphics[width=\textwidth]{figures/finite_size_scaling.pdf}
 \caption{Finite-size scaling results for $\lambda = 0.5$. \textbf{Left:}
 Order parameter $|M|$ showing progressive sharpening of the phase transition
 with increasing $L$. \textbf{Center:} Susceptibility $\chi$ with peaks growing
@@ -525,7 +523,7 @@ as $\chi_\text{max} \sim L^{\gamma/\nu}$ and converging toward $\msqc$.
 and $L = 32$ curves at $\msqc = -2.22 \pm 0.24$. Error bars are binned
 jackknife errors with bin sizes set by the measured $\tau_\text{int}$.}
 \label{fig:fss}
-\end{figure}
+\end{figure*}
 
 Figure~\ref{fig:fss} shows the three canonical finite-size scaling observables.
 All error bars are binned jackknife errors with bin sizes set by the measured
@@ -574,7 +572,9 @@ uncertainty), we obtain:
 \end{equation}
 
 Dedicated lattice studies of two-dimensional $\phifour$ theory locate the
-critical line to much higher precision (e.g.\ Ref.~\cite{SchaichLoinaz2009});
+critical line to much higher precision, from Ref.~\cite{SchaichLoinaz2009}
+through several successively improved analyses, most recently the
+high-precision continuum determination of Ref.~\cite{DurrKiel2025};
 their coupling normalization differs from ours (continuum-limit ratios
 $f = \lambda/\mu_c^2$ rather than a fixed bare $\lambda$ at finite spacing),
 so we do not attempt a quantitative comparison here.
@@ -587,7 +587,8 @@ Carlo sampling itself. The local Metropolis algorithm suffers from critical
 slowing down ($\tau \sim \xi^z$, $z \approx 2$), which degrades effective
 statistics precisely where they matter most---near the critical point. A cluster
 algorithm (Wolff~\cite{Wolff1989} or Swendsen--Wang~\cite{SwendsenWang1987})
-would reduce $z$ to near zero and dramatically tighten the $\nu$ estimate, but
+would reduce the dynamic exponent to $z \approx 0.25$ for this universality
+class and correspondingly tighten the $\nu$ estimate, but
 is beyond the scope of this initial architecture demonstration. Our purpose here
 is to show that the bipartite GNN \emph{captures} the physics of the phase
 transition, not to compete with dedicated finite-size scaling studies.
@@ -607,7 +608,7 @@ edge features (restoring exact translation invariance).
 \centering
 \caption{Size transfer: a single model trained at $16 \times 16$
 ($^\dagger$, validation split) evaluated at other lattice sizes without
-retraining. Mean $\pm$ std over 3 seeds.}
+retraining, over 3 seeds. We report $1 - r$ (smaller is better) since correlations are near unity; parenthetical uncertainties are seed-to-seed standard deviations.}
 \label{tab:size-transfer}
 \input{tables/table_size_transfer_body}
 \end{table}

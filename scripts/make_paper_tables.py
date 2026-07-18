@@ -40,6 +40,20 @@ def fmt_pct_pm(mean: float, std: float) -> str:
     return rf"${100 * mean:.2f} \pm {100 * std:.2f}\%$"
 
 
+def fmt_one_minus_r(r_mean: float, r_std: float) -> str:
+    """Report 1 - r in scientific notation (Schaich suggestion: with many
+    r values near 1, the deviation is the informative quantity)."""
+    v = 1.0 - r_mean
+    if v <= 0:
+        v = 1e-16
+    e = int(np.floor(np.log10(v)))
+    mv = v / 10**e
+    ms = r_std / 10**e
+    if r_std <= 0:
+        return rf"${mv:.1f} \times 10^{{{e}}}$"
+    return rf"${mv:.1f}({ms:.1f}) \times 10^{{{e}}}$"
+
+
 def load(name: str) -> dict | None:
     path = RESULTS / f"{name}.json"
     if not path.exists():
@@ -87,14 +101,14 @@ def table1_action() -> bool:
         size_label = size.replace("x", r" \times ")
         rows.append(
             rf"${size_label}$ & {n_sites} & "
-            + fmt_pm(s["r_mean"], s["r_std"])
+            + fmt_one_minus_r(s["r_mean"], s["r_std"])
             + " & "
             + fmt_pct_pm(s["rel_err_mean"], s["rel_err_std"])
             + r" \\"
         )
     _write(
         "table1_body.tex", rows, "@{}lccc@{}",
-        r"Lattice & Sites & Pearson $r$ & Rel.\ Error",
+        r"Lattice & Sites & $1 - r$ & Rel.\ Error",
     )
     return True
 
@@ -111,14 +125,14 @@ def table2_baselines() -> bool:
         s = next((x for x in data["summary"] if x["model"] == model), None)
         if s is None:
             continue
-        r_str = fmt_pm(s["r_mean"], s["r_std"])
+        r_str = fmt_one_minus_r(s["r_mean"], s["r_std"])
         e_str = fmt_pct_pm(s["rel_err_mean"], s["rel_err_std"])
         rows.append(
             rf"{MODEL_LABELS[model]} & {s['n_params']:,} & {r_str} & {e_str} \\"
         )
     _write(
         "table2_body.tex", rows, "@{}lccc@{}",
-        r"Model & Params & Pearson $r$ & Rel.\ Error",
+        r"Model & Params & $1 - r$ & Rel.\ Error",
     )
     return True
 
@@ -136,14 +150,14 @@ def table3_prime() -> bool:
     for row in data["table"]:
         rows.append(
             rf"${row['m2']:g}{mark[row['role']]}$ & "
-            + fmt_pm(row["r_mean"], row["r_std"], digits=4)
+            + fmt_one_minus_r(row["r_mean"], row["r_std"])
             + " & "
             + fmt_pct_pm(row["rel_err_mean"], row["rel_err_std"])
             + r" \\"
         )
     _write(
         "table3prime_body.tex", rows, "@{}lcc@{}",
-        r"$\msq$ & Pearson $r$ & Rel.\ Error",
+        r"$\msq$ & $1 - r$ & Rel.\ Error",
     )
     return True
 
@@ -168,14 +182,14 @@ def table_size_transfer() -> bool:
             train_mark = r"^\dagger" if s["eval_L"] == 16 else ""
             rows.append(
                 rf"{vlabel} & ${s['eval_L']} \times {s['eval_L']}{train_mark}$ & "
-                + fmt_pm(s["r_mean"], s["r_std"], digits=4)
+                + fmt_one_minus_r(s["r_mean"], s["r_std"])
                 + " & "
                 + fmt_pct_pm(s["rel_err_mean"], s["rel_err_std"])
                 + r" \\"
             )
     _write(
         "table_size_transfer_body.tex", rows, "@{}lccc@{}",
-        r"Variant & Eval.\ lattice & Pearson $r$ & Rel.\ Error",
+        r"Variant & Eval.\ lattice & $1 - r$ & Rel.\ Error",
     )
     return True
 
