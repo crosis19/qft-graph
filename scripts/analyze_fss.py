@@ -47,11 +47,30 @@ def main() -> None:
     parser.add_argument("--output", type=str, default="results/fss_analysis_v2.json")
     parser.add_argument("--n_boot", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--peak_dir", type=str, default=None,
+                        help="Directory of refined (denser-grid) peak scans; a "
+                             "size's chi-peak fit prefers this dir when present. "
+                             "Crossings/collapse still use --sweep_dir.")
+    parser.add_argument("--peak_n_points", type=int, default=9,
+                        help="Points in the quadratic peak-fit window for "
+                             "refined scans (denser grid warrants more points).")
     args = parser.parse_args()
 
     logger = setup_logging()
     sweep_dir = Path(args.sweep_dir)
     sweeps = {L: load_sweep(sweep_dir, L, args.coupling) for L in args.sizes}
+
+    # Refined peak scans (denser grid) used only for the chi-peak / gamma/nu
+    # determination; crossings and the nu collapse keep the uniform coarse grid
+    peak_sweeps = {}
+    if args.peak_dir:
+        peak_dir = Path(args.peak_dir)
+        for L in args.sizes:
+            p = peak_dir / f"sweep_{L}x{L}_lam={args.coupling}.json"
+            if p.exists():
+                with open(p) as f:
+                    peak_sweeps[L] = sorted(json.load(f), key=lambda q: q["m2"])
+                logger.info("using refined peak scan for L=%d (%s)", L, p.name)
 
     report: dict = {"sizes": args.sizes, "coupling": args.coupling}
 
@@ -69,8 +88,11 @@ def main() -> None:
             p1, p2 = sweeps[L1], sweeps[L2]
             m2 = np.array([p["m2"] for p in p1])
             m2_2 = np.array([p["m2"] for p in p2])
-            if not np.allclose(m2, m2_2):
-                raise ValueError(f"m2 grids differ between L={L1} and L={L2}")
+            if not (len(m2) == len(m2_2) and np.allclose(m2, m2_2)):
+                # Mixed-grid inputs (e.g. some sizes refined): crossings
+                # require a common grid, so skip this pair rather than fail
+                logger.warning("skipping crossing L=%d/%d (m2 grids differ)", L1, L2)
+                continue
             center, err = crossing_with_errors(
                 m2,
                 np.array([p[key] for p in p1]),
@@ -126,18 +148,22 @@ def main() -> None:
     # --- susceptibility peaks (quadratic fit) and gamma/nu ---
     peaks = []
     for L in sorted(args.sizes):
-        pts = sweeps[L]
+        refined = L in peak_sweeps
+        pts = peak_sweeps[L] if refined else sweeps[L]
         res = susceptibility_peak_quadratic(
             np.array([p["m2"] for p in pts]),
             np.array([p["susceptibility"] for p in pts]),
             np.array([p["susceptibility_err"] for p in pts]),
+            n_points=args.peak_n_points if refined else 5,
         )
         res["L"] = L
+        res["refined"] = refined
         peaks.append(res)
         logger.info(
-            "chi peak L=%d: m2 = %.4f +/- %.4f, chi_max = %.2f +/- %.2f "
+            "chi peak L=%d%s: m2 = %.4f +/- %.4f, chi_max = %.2f +/- %.2f "
             "(chi2/dof %.2f%s)",
-            L, res["m2_peak"], res["m2_peak_err"], res["chi_max"], res["chi_max_err"],
+            L, " [refined]" if refined else "",
+            res["m2_peak"], res["m2_peak_err"], res["chi_max"], res["chi_max_err"],
             res["chi2_dof"], "" if res["fit_ok"] else " — FIT FAILED, grid max used",
         )
     report["chi_peaks"] = peaks
