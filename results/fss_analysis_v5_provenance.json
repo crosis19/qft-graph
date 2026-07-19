@@ -1,0 +1,54 @@
+{
+  "run_id": "fss_analysis_v5_provenance",
+  "timestamp": "2026-07-19T02:51:07.737952+00:00",
+  "git_commit": "d8d41889129d48a081fc00834a7b00f53aa69b9d",
+  "config_hash": "f2029c6dd7a4",
+  "config": {
+    "sweep_dir": "data\\sweep_results_v2",
+    "sizes": [
+      16,
+      24,
+      32,
+      48,
+      64
+    ],
+    "coupling": 0.5,
+    "n_boot": 1000,
+    "seed": 0
+  },
+  "metrics": {
+    "m2_c_abs": {
+      "value": -2.3936499499476778,
+      "err": 0.1885742446316967
+    },
+    "m2_c_var": {
+      "value": -2.3938820810874315,
+      "err": 0.18686119388431663
+    },
+    "m2_c_2mom": {
+      "value": -2.5375181777065343,
+      "err": 0.14093865333736535
+    },
+    "gamma_over_nu": {
+      "value": 1.5950779539819204,
+      "err": 0.029021238914677082,
+      "exact_2d_ising": 1.75
+    },
+    "nu": {
+      "value": 1.893939393939394,
+      "err": 0.42938887288599586,
+      "exact_2d_ising": 1.0,
+      "estimator": "2mom",
+      "window": 0.6,
+      "n_boot": 60
+    },
+    "convention_sensitivity": {
+      "m2_c_shift": 0.0002321311397537329,
+      "combined_err": 0.2654757079626819,
+      "shift_outside_error": false
+    }
+  },
+  "extra": {
+    "analysis_json": "results\\fss_analysis_v5.json"
+  }
+}

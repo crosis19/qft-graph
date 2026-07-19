@@ -1,0 +1,28 @@
+{
+  "run_id": "fss_peakrefine_64x64",
+  "timestamp": "2026-07-18T19:23:38.633424+00:00",
+  "git_commit": "d8d41889129d48a081fc00834a7b00f53aa69b9d",
+  "config_hash": "4a99187afccc",
+  "config": {
+    "dimensions": [
+      64,
+      64
+    ],
+    "coupling": 0.5,
+    "m2_min": -2.04,
+    "m2_max": -2.36,
+    "m2_steps": 25,
+    "n_configs": 5000,
+    "n_thermalization": 2500,
+    "n_sweeps_between": 60,
+    "warm_start": true,
+    "seed": 42
+  },
+  "metrics": {
+    "tau_int_max": 43.792899733407765,
+    "acceptance_min": 0.44577921061197917
+  },
+  "extra": {
+    "output_json": "data\\sweep_peakrefine\\sweep_64x64_lam=0.5.json"
+  }
+}
