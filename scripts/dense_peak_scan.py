@@ -76,7 +76,13 @@ def main() -> None:
                     help="JSON with chi_peaks to read each size's peak centre from.")
     ap.add_argument("--coupling", type=float, default=0.5)
     ap.add_argument("--half_width", type=float, default=0.016,
-                    help="m^2 half-window around each peak centre.")
+                    help="Fixed m^2 half-window around each peak centre "
+                         "(used when --hw_scale is 0).")
+    ap.add_argument("--hw_scale", type=float, default=0.0,
+                    help="If > 0, use an L-dependent half-window hw_scale / L so "
+                         "the grid step scales with the peak width (~L^-1/nu, "
+                         "nu=1) -> a fixed fit window is the same relative slice "
+                         "of every peak (uniform chi^2/dof across sizes).")
     ap.add_argument("--n_points", type=int, default=9)
     ap.add_argument("--n_configs", type=int, default=2500)
     ap.add_argument("--n_therm", type=int, default=1500)
@@ -98,7 +104,8 @@ def main() -> None:
         centre = peaks.get(L, fallback.get(L))
         if centre is None:
             raise SystemExit(f"no peak centre for L={L} (not in analysis or fallback)")
-        grid = np.linspace(centre - args.half_width, centre + args.half_width, args.n_points)
+        hw = args.hw_scale / L if args.hw_scale > 0 else args.half_width
+        grid = np.linspace(centre - hw, centre + hw, args.n_points)
         for i, m2 in enumerate(grid):
             seed = args.seed + 1000 * L + i
             jobs.append((L, float(m2), args.coupling, args.n_configs, args.n_therm,

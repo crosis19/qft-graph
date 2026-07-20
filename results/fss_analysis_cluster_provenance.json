@@ -1,7 +1,7 @@
 {
   "run_id": "fss_analysis_cluster_provenance",
-  "timestamp": "2026-07-20T19:36:16.690261+00:00",
-  "git_commit": "fdca039460b68b3cc5105f61d527d4ce756d42db",
+  "timestamp": "2026-07-20T22:31:46.623227+00:00",
+  "git_commit": "c1f0687be81e765fb138e5be9d12a6aa8abc42cb",
   "config_hash": "ab4b4d94d28c",
   "config": {
     "sweep_dir": "data\\sweep_cluster",
@@ -32,8 +32,8 @@
       "err": 0.08774734422559692
     },
     "gamma_over_nu": {
-      "value": 1.7350788195021751,
-      "err": 0.012132332742081512,
+      "value": 1.731781369010837,
+      "err": 0.007789307305220675,
       "exact_2d_ising": 1.75
     },
     "nu": {
