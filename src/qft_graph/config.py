@@ -36,6 +36,13 @@ class MCConfig:
     n_sweeps_between: int = 10
     step_size: float = 1.0  # Metropolis proposal width
     seed: int = 42
+    # Wolff/Brower-Tamayo cluster-hybrid knobs (ClusterSampler only; ignored by
+    # the Metropolis samplers). One hybrid "sweep" is n_cluster_per_sweep
+    # single-cluster sign flips followed by n_local_per_sweep local sweeps.
+    # Magnitude updates are mandatory (cluster flips never change |phi|), so
+    # n_local_per_sweep must be >= 1.
+    n_cluster_per_sweep: int = 1
+    n_local_per_sweep: int = 1
 
 
 @dataclass

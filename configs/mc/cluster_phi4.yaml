@@ -1,0 +1,21 @@
+# Wolff/Brower-Tamayo cluster-hybrid sampler for 2D phi^4 (tasks V2-1, V2-2).
+#
+# Single-cluster (Wolff) sign flips decorrelate the Z2 sector without critical
+# slowing down (z ~ 0.25); the interleaved local Metropolis sweeps update the
+# field magnitudes |phi| that cluster flips leave invariant (Brower-Tamayo).
+# This removes the critical-slowing-down bias of the local sampler (tau_int
+# ~ 35-100 at the susceptibility peaks) and makes near-critical FSS on large
+# lattices laptop-cheap.
+#
+# Physics (lam=0.5): the pseudo-critical region is m^2 ~ -2.15 for this action
+# normalisation (results/fss_analysis_v5.json). One "measurement" is
+# n_sweeps_between hybrid sweeps, each n_cluster_per_sweep cluster flips plus
+# n_local_per_sweep local sweeps. Validated by tests/test_mc/test_cluster.py.
+mc:
+  n_configs: 10000
+  n_thermalization: 1000
+  n_sweeps_between: 5
+  step_size: 1.0
+  seed: 42
+  n_cluster_per_sweep: 2   # single-cluster Wolff flips per hybrid sweep
+  n_local_per_sweep: 1     # local Metropolis sweeps per hybrid sweep (|phi| updates)
