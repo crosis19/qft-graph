@@ -84,6 +84,97 @@ class TestGammaOverNu:
         assert abs(slope - 1.75) < 3 * err + 0.1
 
 
+class TestCorrectionsToScaling:
+    """chi_max = A L^(gamma/nu) (1 + b L^(-omega)) recovers gamma/nu when the
+    naive power law is biased by the finite-L correction."""
+
+    L = np.array([16, 24, 32, 48, 64, 96, 128], dtype=float)
+
+    def _synthetic(self, A=1.5, gnu=1.75, b=0.8, omega=1.0):
+        chi = A * self.L**gnu * (1.0 + b * self.L ** (-omega))
+        return chi, 0.01 * chi  # 1% errors for weighting
+
+    def test_recovers_slope_despite_correction(self):
+        from qft_graph.analysis.critical import (
+            fit_gamma_over_nu,
+            fit_gamma_over_nu_corrections,
+        )
+
+        chi, err = self._synthetic()
+        naive, _ = fit_gamma_over_nu(self.L, chi, err)
+        res = fit_gamma_over_nu_corrections(self.L, chi, err)  # omega floats
+        assert res["fit_ok"]
+        # The model is exact, so the corrected fit recovers gamma/nu tightly...
+        assert abs(res["gamma_over_nu"] - 1.75) < 0.03
+        assert abs(res["omega"] - 1.0) < 0.3
+        # ...while the naive power law is pulled away from 1.75 by the correction.
+        assert abs(naive - 1.75) > abs(res["gamma_over_nu"] - 1.75)
+
+    def test_fixed_omega(self):
+        from qft_graph.analysis.critical import fit_gamma_over_nu_corrections
+
+        chi, err = self._synthetic(omega=2.0)
+        res = fit_gamma_over_nu_corrections(self.L, chi, err, omega=2.0)
+        assert res["fit_ok"] and res["n_params"] == 3
+        assert abs(res["gamma_over_nu"] - 1.75) < 0.02
+        assert res["omega"] == 2.0
+
+    def test_matches_naive_without_correction(self):
+        from qft_graph.analysis.critical import (
+            fit_gamma_over_nu,
+            fit_gamma_over_nu_corrections,
+        )
+
+        chi = 2.0 * self.L**1.75  # b = 0, pure power law
+        err = 0.01 * chi
+        naive, _ = fit_gamma_over_nu(self.L, chi, err)
+        res = fit_gamma_over_nu_corrections(self.L, chi, err)
+        assert abs(res["gamma_over_nu"] - naive) < 0.05
+        assert abs(res["gamma_over_nu"] - 1.75) < 0.05
+
+    def test_too_few_points(self):
+        from qft_graph.analysis.critical import fit_gamma_over_nu_corrections
+
+        L = np.array([16, 32, 64], dtype=float)
+        chi = 2.0 * L**1.75
+        res = fit_gamma_over_nu_corrections(L, chi, 0.01 * chi)  # needs >=5
+        assert not res["fit_ok"]
+
+
+class TestAICModelAverage:
+    """AIC-weighted gamma/nu over varying small-L cuts (arXiv:2008.01069)."""
+
+    L = np.array([16, 24, 32, 48, 64, 96, 128], dtype=float)
+
+    def test_average_less_biased_than_full_fit(self):
+        from qft_graph.analysis.critical import (
+            aic_model_average_gamma_nu,
+            fit_gamma_over_nu,
+        )
+
+        chi = 1.5 * self.L**1.75 * (1.0 + 0.8 * self.L ** (-1.0))
+        err = 0.01 * chi
+        naive_full, _ = fit_gamma_over_nu(self.L, chi, err)
+        res = aic_model_average_gamma_nu(self.L, chi, err)
+        assert res["gamma_over_nu_err"] > 0
+        assert res["sys_err"] >= 0 and res["stat_err"] > 0
+        # Dropping the (biased) small-L points via AIC weighting reduces the bias.
+        assert abs(res["gamma_over_nu"] - 1.75) < abs(naive_full - 1.75)
+        assert len(res["models"]) >= 3
+
+    def test_clean_power_law_prefers_full_data(self):
+        from qft_graph.analysis.critical import aic_model_average_gamma_nu
+
+        chi = 2.0 * self.L**1.75  # no correction
+        err = 0.01 * chi
+        res = aic_model_average_gamma_nu(self.L, chi, err)
+        assert abs(res["gamma_over_nu"] - 1.75) < 0.02
+        # With nothing to gain from dropping data, the 2*N_cut penalty makes the
+        # full-data fit (n_cut=0) the highest-weight model.
+        full = next(m for m in res["models"] if m["n_cut"] == 0)
+        assert full["weight"] == max(m["weight"] for m in res["models"])
+
+
 class TestCrossingWithErrors:
     def test_two_lines_known_crossing(self):
         import numpy as np

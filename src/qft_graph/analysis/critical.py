@@ -302,6 +302,191 @@ def fit_gamma_over_nu(
     return float(slope), float(slope_err)
 
 
+def fit_gamma_over_nu_corrections(
+    L_values: np.ndarray,
+    chi_max: np.ndarray,
+    chi_max_err: np.ndarray | None = None,
+    omega: float | None = None,
+) -> dict[str, float]:
+    """Corrections-to-scaling fit chi_max = A L^(gamma/nu) (1 + b L^(-omega)).
+
+    The naive power law chi_max ~ L^(gamma/nu) is biased by the leading
+    irrelevant operator on small lattices; including a (1 + b L^(-omega))
+    correction removes that curvature. With clean (unbiased) cluster data the
+    corrected and naive slopes should agree — reporting both is Schaich's
+    robustness cross-check (corrections-to-scaling / AIC, arXiv:2008.01069).
+
+    Args:
+        L_values: Lattice sizes.
+        chi_max: Peak susceptibilities.
+        chi_max_err: Optional 1-sigma errors (absolute-sigma weighting +
+            chi^2/dof).
+        omega: If given, FIX the correction exponent (e.g. 2.0 for 2D Ising)
+            and fit 3 parameters; if None, fit omega as a 4th parameter.
+
+    Returns:
+        Dict with gamma_over_nu(+_err), amplitude, b, omega(+_err), chi2_dof,
+        n_params, fit_ok (and reason when the fit is not attempted/failed).
+    """
+    L = np.asarray(L_values, dtype=float)
+    chi = np.asarray(chi_max, dtype=float)
+    err = None if chi_max_err is None else np.asarray(chi_max_err, dtype=float)
+    order = np.argsort(L)
+    L, chi = L[order], chi[order]
+    if err is not None:
+        err = err[order]
+
+    fit_omega = omega is None
+    n_params = 4 if fit_omega else 3
+    if len(L) < n_params + 1:
+        return {"fit_ok": False, "reason": "too few points for fit", "n_params": n_params}
+
+    # Initial guesses from the naive log-log slope.
+    gnu0, _ = fit_gamma_over_nu(L, chi, err)
+    A0 = float(np.mean(chi / L**gnu0))
+
+    if fit_omega:
+        def model(Lx, A, gnu, b, om):
+            return A * Lx**gnu * (1.0 + b * Lx ** (-om))
+        p0 = [A0, gnu0, 0.0, 1.5]
+        bounds = ([0.0, 0.0, -np.inf, 0.05], [np.inf, np.inf, np.inf, 6.0])
+    else:
+        def model(Lx, A, gnu, b):
+            return A * Lx**gnu * (1.0 + b * Lx ** (-float(omega)))
+        p0 = [A0, gnu0, 0.0]
+        bounds = ([0.0, 0.0, -np.inf], [np.inf, np.inf, np.inf])
+
+    kw: dict = {}
+    if err is not None:
+        kw = {"sigma": err, "absolute_sigma": True}
+    try:
+        popt, pcov = curve_fit(
+            model, L, chi, p0=p0, bounds=bounds, maxfev=20000, **kw
+        )
+    except (RuntimeError, ValueError) as exc:
+        return {"fit_ok": False, "reason": str(exc), "n_params": n_params}
+
+    perr = np.sqrt(np.abs(np.diag(pcov)))
+    resid = model(L, *popt) - chi
+    if err is not None:
+        chi2 = float(np.sum((resid / err) ** 2))
+    else:
+        chi2 = float(np.sum(resid**2))
+    dof = max(len(L) - n_params, 1)
+    gnu_err = float(perr[1])
+    return {
+        "gamma_over_nu": float(popt[1]),
+        "gamma_over_nu_err": gnu_err,
+        "amplitude": float(popt[0]),
+        "b": float(popt[2]),
+        "omega": float(popt[3]) if fit_omega else float(omega),
+        "omega_err": float(perr[3]) if fit_omega else 0.0,
+        "chi2_dof": chi2 / dof,
+        "n_params": n_params,
+        "fit_ok": True,
+        # A 4-parameter fit on few sizes can be near-degenerate (omega rails to
+        # its bound, covariance explodes); the propagated error flags it so the
+        # paper quotes the omega-fixed / AIC values instead of a meaningless one.
+        "well_constrained": bool(np.isfinite(gnu_err) and gnu_err < 0.5),
+        "exact_2d_ising": 1.75,
+    }
+
+
+def _weighted_loglog_slope(
+    x: np.ndarray, y: np.ndarray, sigma: np.ndarray
+) -> tuple[float, float, float]:
+    """Weighted straight-line fit y = slope*x + c; return slope, slope_err, chi2."""
+    w = 1.0 / sigma**2
+    delta = w.sum() * (w * x * x).sum() - (w * x).sum() ** 2
+    slope = (w.sum() * (w * x * y).sum() - (w * x).sum() * (w * y).sum()) / delta
+    intercept = ((w * y).sum() - slope * (w * x).sum()) / w.sum()
+    slope_err = float(np.sqrt(w.sum() / delta))
+    resid = y - (slope * x + intercept)
+    chi2 = float((w * resid**2).sum())
+    return float(slope), slope_err, chi2
+
+
+def aic_model_average_gamma_nu(
+    L_values: np.ndarray,
+    chi_max: np.ndarray,
+    chi_max_err: np.ndarray,
+    min_points: int = 3,
+) -> dict[str, object]:
+    """AIC-weighted gamma/nu over power-law fits with a varying small-L cut.
+
+    Bayesian model averaging (Jay & Neil, arXiv:2008.01069): fit the power law
+    ln chi_max = (gamma/nu) ln L + c on each subset that drops the smallest
+    0,1,2,... lattices (which carry the largest corrections to scaling). Each
+    fit's
+
+        AIC = chi^2 + 2 k + 2 N_cut     (k = 2 params, N_cut = points dropped)
+
+    penalises both parameters and discarded data; weights w ~ exp(-AIC/2). The
+    model-averaged central value and a variance combining the statistical
+    errors with the systematic spread across fit windows are returned, as a
+    cross-check on any single fit range.
+
+    Args:
+        L_values: Lattice sizes.
+        chi_max: Peak susceptibilities.
+        chi_max_err: 1-sigma errors on chi_max (required for the weighting).
+        min_points: Minimum lattices kept in the smallest fit window.
+
+    Returns:
+        Dict with gamma_over_nu(+_err), stat_err, sys_err, per-model list, and
+        exact_2d_ising.
+    """
+    L = np.asarray(L_values, dtype=float)
+    chi = np.asarray(chi_max, dtype=float)
+    err = np.asarray(chi_max_err, dtype=float)
+    order = np.argsort(L)
+    L, chi, err = L[order], chi[order], err[order]
+    n = len(L)
+    if n < min_points:
+        raise ValueError(f"Need at least min_points={min_points} lattices, got {n}")
+
+    x_all, y_all = np.log(L), np.log(chi)
+    sig_all = err / chi  # error on ln chi
+    k = 2  # slope + intercept
+
+    models = []
+    for lmin_idx in range(0, n - min_points + 1):
+        x, y, s = x_all[lmin_idx:], y_all[lmin_idx:], sig_all[lmin_idx:]
+        slope, slope_err, chi2 = _weighted_loglog_slope(x, y, s)
+        n_cut = lmin_idx
+        aic = chi2 + 2 * k + 2 * n_cut
+        models.append({
+            "L_min": int(L[lmin_idx]),
+            "n_points": int(len(x)),
+            "gamma_over_nu": slope,
+            "gamma_over_nu_err": slope_err,
+            "chi2": chi2,
+            "chi2_dof": chi2 / max(len(x) - k, 1),
+            "n_cut": int(n_cut),
+            "aic": float(aic),
+        })
+
+    aics = np.array([m["aic"] for m in models])
+    w = np.exp(-0.5 * (aics - aics.min()))
+    w /= w.sum()
+    for m, wi in zip(models, w):
+        m["weight"] = float(wi)
+
+    means = np.array([m["gamma_over_nu"] for m in models])
+    vars = np.array([m["gamma_over_nu_err"] ** 2 for m in models])
+    avg = float(np.sum(w * means))
+    stat_var = float(np.sum(w * vars))
+    sys_var = float(max(np.sum(w * means**2) - avg**2, 0.0))
+    return {
+        "gamma_over_nu": avg,
+        "gamma_over_nu_err": float(np.sqrt(stat_var + sys_var)),
+        "stat_err": float(np.sqrt(stat_var)),
+        "sys_err": float(np.sqrt(sys_var)),
+        "models": models,
+        "exact_2d_ising": 1.75,
+    }
+
+
 def crossing_with_errors(
     m2_values: np.ndarray,
     y1: np.ndarray,

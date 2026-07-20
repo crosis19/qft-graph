@@ -36,6 +36,7 @@ from qft_graph.mc.analysis import (
     binned_jackknife,
     integrated_autocorrelation_time_wolff,
 )
+from qft_graph.mc.cluster import ClusterSampler
 from qft_graph.mc.metropolis import create_sampler
 from qft_graph.mc.observables import ObservableSet
 from qft_graph.utils.logging import setup_logging
@@ -122,6 +123,14 @@ def main() -> None:
     parser.add_argument("--n_configs", type=int, default=2000)
     parser.add_argument("--n_thermalization", type=int, default=1500)
     parser.add_argument("--n_sweeps_between", type=int, default=10)
+    parser.add_argument("--sampler", choices=["local", "cluster"], default="local",
+                        help="'local' = Metropolis/Checkerboard (create_sampler); "
+                             "'cluster' = Wolff/Brower-Tamayo hybrid (removes the "
+                             "critical-slowing-down bias, task V2-2).")
+    parser.add_argument("--n_cluster_per_sweep", type=int, default=2,
+                        help="Cluster sampler: single-cluster Wolff flips per sweep.")
+    parser.add_argument("--n_local_per_sweep", type=int, default=1,
+                        help="Cluster sampler: local |phi| sweeps per sweep (>=1).")
     parser.add_argument("--warm_start", action="store_true",
                         help="Seed each m^2 point with the last config of the previous one")
     parser.add_argument("--store_series", action="store_true",
@@ -157,8 +166,13 @@ def main() -> None:
             n_thermalization=args.n_thermalization,
             n_sweeps_between=args.n_sweeps_between,
             seed=point_seed,
+            n_cluster_per_sweep=args.n_cluster_per_sweep,
+            n_local_per_sweep=args.n_local_per_sweep,
         )
-        sampler = create_sampler(action, mc_config)
+        if args.sampler == "cluster":
+            sampler = ClusterSampler(action, mc_config)
+        else:
+            sampler = create_sampler(action, mc_config)
         mc_result = sampler.generate(args.n_configs, initial_phi=warm_phi)
         if args.warm_start:
             warm_phi = mc_result.configurations[-1].clone()
@@ -206,7 +220,7 @@ def main() -> None:
         json.dump(results, f, indent=2)
     logger.info("Sweep results saved to %s", out_path)
 
-    run_id = args.run_id or f"fss_sweep_{dims_str}_lam={args.coupling}"
+    run_id = args.run_id or f"fss_sweep_{args.sampler}_{dims_str}_lam={args.coupling}"
     log_run(
         run_id,
         config={
@@ -218,6 +232,9 @@ def main() -> None:
             "n_configs": args.n_configs,
             "n_thermalization": args.n_thermalization,
             "n_sweeps_between": args.n_sweeps_between,
+            "sampler": args.sampler,
+            "n_cluster_per_sweep": args.n_cluster_per_sweep,
+            "n_local_per_sweep": args.n_local_per_sweep,
             "warm_start": args.warm_start,
             "seed": args.seed,
         },

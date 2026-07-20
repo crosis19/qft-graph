@@ -23,9 +23,11 @@ from pathlib import Path
 import numpy as np
 
 from qft_graph.analysis.critical import (
+    aic_model_average_gamma_nu,
     crossing_with_errors,
     extract_nu,
     fit_gamma_over_nu,
+    fit_gamma_over_nu_corrections,
     susceptibility_peak_quadratic,
 )
 from qft_graph.utils.logging import setup_logging
@@ -168,13 +170,45 @@ def main() -> None:
         )
     report["chi_peaks"] = peaks
 
-    gamma_nu, gamma_nu_err = fit_gamma_over_nu(
-        np.array([p["L"] for p in peaks]),
-        np.array([p["chi_max"] for p in peaks]),
-        np.array([p["chi_max_err"] for p in peaks]),
-    )
+    L_arr = np.array([p["L"] for p in peaks], dtype=float)
+    chi_arr = np.array([p["chi_max"] for p in peaks])
+    chi_err_arr = np.array([p["chi_max_err"] for p in peaks])
+
+    gamma_nu, gamma_nu_err = fit_gamma_over_nu(L_arr, chi_arr, chi_err_arr)
     report["gamma_over_nu"] = {"value": gamma_nu, "err": gamma_nu_err, "exact_2d_ising": 1.75}
-    logger.info("gamma/nu = %.3f +/- %.3f (exact: 1.75)", gamma_nu, gamma_nu_err)
+    logger.info("gamma/nu (naive power law) = %.3f +/- %.3f (exact: 1.75)",
+                gamma_nu, gamma_nu_err)
+
+    # --- Robustness cross-checks on the naive power law (Schaich): a
+    # corrections-to-scaling fit chi_max = A L^(g/n)(1 + b L^(-w)) and an
+    # AIC-weighted average over small-L cuts (arXiv:2008.01069). With clean
+    # (unbiased) cluster data these should agree with the naive slope.
+    corr_free = fit_gamma_over_nu_corrections(L_arr, chi_arr, chi_err_arr)
+    corr_fixed = fit_gamma_over_nu_corrections(L_arr, chi_arr, chi_err_arr, omega=2.0)
+    report["gamma_over_nu_corrections"] = {
+        "omega_free": corr_free, "omega_fixed_2": corr_fixed,
+    }
+    if corr_free.get("fit_ok"):
+        logger.info(
+            "gamma/nu (corrections, omega free) = %.3f +/- %.3f "
+            "(omega = %.2f +/- %.2f, chi2/dof %.2f)",
+            corr_free["gamma_over_nu"], corr_free["gamma_over_nu_err"],
+            corr_free["omega"], corr_free["omega_err"], corr_free["chi2_dof"],
+        )
+    if corr_fixed.get("fit_ok"):
+        logger.info(
+            "gamma/nu (corrections, omega=2 fixed) = %.3f +/- %.3f (chi2/dof %.2f)",
+            corr_fixed["gamma_over_nu"], corr_fixed["gamma_over_nu_err"],
+            corr_fixed["chi2_dof"],
+        )
+    if len(L_arr) >= 3:
+        aic = aic_model_average_gamma_nu(L_arr, chi_arr, chi_err_arr)
+        report["gamma_over_nu_aic"] = aic
+        logger.info(
+            "gamma/nu (AIC model average) = %.3f +/- %.3f (stat %.3f, sys %.3f)",
+            aic["gamma_over_nu"], aic["gamma_over_nu_err"],
+            aic["stat_err"], aic["sys_err"],
+        )
 
     # --- nu from scaling collapse ---
     # Prefer the k!=0 estimator (defined in both phases); restrict to a
