@@ -60,7 +60,20 @@ def main() -> None:
 
     logger = setup_logging()
     sweep_dir = Path(args.sweep_dir)
-    sweeps = {L: load_sweep(sweep_dir, L, args.coupling) for L in args.sizes}
+    # Base sweeps (crossings/collapse). Tolerate a missing size: it then
+    # contributes chi_max via its peak scan only (e.g. when a large lattice's
+    # broken-phase base points are too costly to be worth running).
+    sweeps = {}
+    for L in args.sizes:
+        p = sweep_dir / f"sweep_{L}x{L}_lam={args.coupling}.json"
+        if p.exists():
+            sweeps[L] = load_sweep(sweep_dir, L, args.coupling)
+        else:
+            logger.warning(
+                "no base sweep for L=%d (%s); using it for chi_max only "
+                "(skipped in crossings/collapse/tau_int)", L, p.name,
+            )
+    base_sizes = sorted(sweeps.keys())
 
     # Refined peak scans (denser grid) used only for the chi-peak / gamma/nu
     # determination; crossings and the nu collapse keep the uniform coarse grid
@@ -86,7 +99,7 @@ def main() -> None:
         estimators.append(("2mom", "xi_2mom_over_L", "xi_2mom_over_L_err"))
     crossings = {conv: [] for conv, _, _ in estimators}
     for conv, key, ekey in estimators:
-        for L1, L2 in zip(sorted(args.sizes)[:-1], sorted(args.sizes)[1:]):
+        for L1, L2 in zip(base_sizes[:-1], base_sizes[1:]):
             p1, p2 = sweeps[L1], sweeps[L2]
             m2 = np.array([p["m2"] for p in p1])
             m2_2 = np.array([p["m2"] for p in p2])
@@ -151,7 +164,13 @@ def main() -> None:
     peaks = []
     for L in sorted(args.sizes):
         refined = L in peak_sweeps
-        pts = peak_sweeps[L] if refined else sweeps[L]
+        if refined:
+            pts = peak_sweeps[L]
+        elif L in sweeps:
+            pts = sweeps[L]
+        else:
+            logger.warning("no base or peak scan for L=%d; skipping chi peak", L)
+            continue
         res = susceptibility_peak_quadratic(
             np.array([p["m2"] for p in pts]),
             np.array([p["susceptibility"] for p in pts]),
@@ -226,10 +245,10 @@ def main() -> None:
                 for p in sweeps[L]
                 if p[key_for_nu] > 0 and abs(p["m2"] - m2c) < window
             ]
-            for L in args.sizes
+            for L in base_sizes
         }
-        if all(len(v) >= 4 for v in xi_over_L_data.values()):
-            nu, _ = extract_nu(args.sizes, xi_over_L_data, m2c)
+        if base_sizes and all(len(v) >= 4 for v in xi_over_L_data.values()):
+            nu, _ = extract_nu(base_sizes, xi_over_L_data, m2c)
             # Honest error: parametric bootstrap over the xi/L point errors
             # AND the m2_c uncertainty (the collapse-quality width badly
             # underestimates it). Points with err > value are dropped inside
@@ -237,7 +256,7 @@ def main() -> None:
             rng = np.random.default_rng(args.seed)
             err_lookup = {
                 (L, p["m2"]): p[f"{key_for_nu}_err"]
-                for L in args.sizes for p in sweeps[L]
+                for L in base_sizes for p in sweeps[L]
             }
             m2c_err = report[m2c_key]["err"]
             boots = []
@@ -245,7 +264,7 @@ def main() -> None:
                 m2c_b = m2c + rng.normal(0.0, m2c_err)
                 resampled = {}
                 ok = True
-                for L in args.sizes:
+                for L in base_sizes:
                     pts = []
                     for m2v, y in xi_over_L_data[L]:
                         e = err_lookup[(L, m2v)]
@@ -257,7 +276,7 @@ def main() -> None:
                         break
                     resampled[L] = pts
                 if ok:
-                    nb, _ = extract_nu(args.sizes, resampled, m2c_b)
+                    nb, _ = extract_nu(base_sizes, resampled, m2c_b)
                     boots.append(nb)
             nu_err = float(np.std(boots)) if len(boots) > 5 else float("inf")
             report["nu"] = {
@@ -272,7 +291,7 @@ def main() -> None:
 
     # --- tau_int summary ---
     tau_table = {}
-    for L in sorted(args.sizes):
+    for L in base_sizes:
         taus = np.array([p["tau_int"] for p in sweeps[L]])
         i_max = int(np.argmax(taus))
         tau_table[str(L)] = {

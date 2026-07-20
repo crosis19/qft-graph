@@ -1,0 +1,83 @@
+{
+  "run_id": "tau_int_comparison_provenance",
+  "timestamp": "2026-07-20T18:04:08.556889+00:00",
+  "git_commit": "75ebda8bc047adda3b70dc7b60f45fac55710a44",
+  "config_hash": "27dc8face660",
+  "config": {
+    "sizes": [
+      16,
+      24,
+      32,
+      48,
+      64,
+      96,
+      128
+    ],
+    "coupling": 0.5,
+    "n_configs": 4000,
+    "seed": 20
+  },
+  "metrics": {
+    "rows": [
+      {
+        "L": 16,
+        "m2": -2.081697720353503,
+        "tau_int_cluster": 8.292723403060116,
+        "cluster_fraction": 0.22511523962020874,
+        "tau_int_local": 65.10481566936049,
+        "decorrelation_speedup": 7.850836511119619
+      },
+      {
+        "L": 24,
+        "m2": -2.1452935050558084,
+        "tau_int_cluster": 12.781735393675111,
+        "cluster_fraction": 0.270844429731369,
+        "tau_int_local": 104.43835969793652,
+        "decorrelation_speedup": 8.170906100091587
+      },
+      {
+        "L": 32,
+        "m2": -2.1672503334221584,
+        "tau_int_cluster": 8.336641071643134,
+        "cluster_fraction": 0.22933287918567657,
+        "tau_int_local": 91.89944370782626,
+        "decorrelation_speedup": 11.023557679653477
+      },
+      {
+        "L": 48,
+        "m2": -2.174026660965886,
+        "tau_int_cluster": 8.580606206065692,
+        "cluster_fraction": 0.1682095229625702,
+        "tau_int_local": 141.23249981280466,
+        "decorrelation_speedup": 16.45950139431482
+      },
+      {
+        "L": 64,
+        "m2": -2.1888665905511484,
+        "tau_int_cluster": 8.727371185514736,
+        "cluster_fraction": 0.19264642894268036,
+        "tau_int_local": 184.58267590901153,
+        "decorrelation_speedup": 21.149859675428132
+      },
+      {
+        "L": 96,
+        "m2": -2.1955276703232736,
+        "tau_int_cluster": 8.677876105054835,
+        "cluster_fraction": 0.1583777368068695,
+        "tau_int_local": null,
+        "decorrelation_speedup": null
+      },
+      {
+        "L": 128,
+        "m2": -2.197232488105584,
+        "tau_int_cluster": 8.696615280057674,
+        "cluster_fraction": 0.11239506304264069,
+        "tau_int_local": null,
+        "decorrelation_speedup": null
+      }
+    ]
+  },
+  "extra": {
+    "output_json": "results\\tau_int_comparison.json"
+  }
+}

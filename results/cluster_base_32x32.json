@@ -1,0 +1,31 @@
+{
+  "run_id": "cluster_base_32x32",
+  "timestamp": "2026-07-20T16:11:15.298519+00:00",
+  "git_commit": "75ebda8bc047adda3b70dc7b60f45fac55710a44",
+  "config_hash": "8a4962d9d437",
+  "config": {
+    "dimensions": [
+      32,
+      32
+    ],
+    "coupling": 0.5,
+    "m2_min": -1.6,
+    "m2_max": -2.7,
+    "m2_steps": 23,
+    "n_configs": 2500,
+    "n_thermalization": 800,
+    "n_sweeps_between": 6,
+    "sampler": "cluster",
+    "n_cluster_per_sweep": 2,
+    "n_local_per_sweep": 1,
+    "warm_start": true,
+    "seed": 42
+  },
+  "metrics": {
+    "tau_int_max": 1.9856948022223606,
+    "acceptance_min": 0.4173955023288727
+  },
+  "extra": {
+    "output_json": "data\\sweep_cluster\\sweep_32x32_lam=0.5.json"
+  }
+}

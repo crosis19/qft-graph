@@ -1,0 +1,55 @@
+{
+  "run_id": "fss_analysis_cluster_provenance",
+  "timestamp": "2026-07-20T18:27:39.662758+00:00",
+  "git_commit": "75ebda8bc047adda3b70dc7b60f45fac55710a44",
+  "config_hash": "dcda5929284e",
+  "config": {
+    "sweep_dir": "data\\sweep_cluster",
+    "sizes": [
+      16,
+      24,
+      32,
+      48,
+      64,
+      96
+    ],
+    "coupling": 0.5,
+    "n_boot": 1000,
+    "seed": 0
+  },
+  "metrics": {
+    "m2_c_abs": {
+      "value": -2.6018558390399655,
+      "err": 0.14009379845864323
+    },
+    "m2_c_var": {
+      "value": -2.211664990210802,
+      "err": 0.003060049134999592
+    },
+    "m2_c_2mom": {
+      "value": -2.5328246820970217,
+      "err": 0.08774734422559692
+    },
+    "gamma_over_nu": {
+      "value": 1.702577034235909,
+      "err": 0.02164557772441279,
+      "exact_2d_ising": 1.75
+    },
+    "nu": {
+      "value": 1.8484848484848486,
+      "err": 0.1978886417185029,
+      "exact_2d_ising": 1.0,
+      "estimator": "2mom",
+      "window": 0.6,
+      "n_boot": 60
+    },
+    "convention_sensitivity": {
+      "m2_c_shift": 0.39019084882916344,
+      "combined_err": 0.1401272145847464,
+      "shift_outside_error": true
+    }
+  },
+  "extra": {
+    "analysis_json": "results\\fss_analysis_cluster.json"
+  }
+}

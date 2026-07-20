@@ -1,0 +1,31 @@
+{
+  "run_id": "cluster_peak_128x128",
+  "timestamp": "2026-07-20T17:52:39.732775+00:00",
+  "git_commit": "75ebda8bc047adda3b70dc7b60f45fac55710a44",
+  "config_hash": "664256a32122",
+  "config": {
+    "dimensions": [
+      128,
+      128
+    ],
+    "coupling": 0.5,
+    "m2_min": -2.02,
+    "m2_max": -2.3,
+    "m2_steps": 15,
+    "n_configs": 1500,
+    "n_thermalization": 1000,
+    "n_sweeps_between": 8,
+    "sampler": "cluster",
+    "n_cluster_per_sweep": 2,
+    "n_local_per_sweep": 1,
+    "warm_start": true,
+    "seed": 42
+  },
+  "metrics": {
+    "tau_int_max": 1.9206649036614083,
+    "acceptance_min": 0.45270824432373047
+  },
+  "extra": {
+    "output_json": "data\\sweep_cluster_peak\\sweep_128x128_lam=0.5.json"
+  }
+}
