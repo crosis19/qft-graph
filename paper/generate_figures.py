@@ -275,6 +275,7 @@ def load_sweep_data():
     import json
 
     for base in (
+        PROJECT_ROOT / 'data' / 'sweep_cluster',        # cluster ensembles (V2)
         PROJECT_ROOT / 'results' / 'phase1_v2',
         PROJECT_ROOT / 'data' / 'sweep_results_v2',
     ):

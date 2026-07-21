@@ -18,6 +18,10 @@
 \newcommand{\pyg}{\textsc{PyG}}
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 
+% Finite-size-scaling numbers, auto-generated from the cluster analysis by
+% scripts/make_fss_numbers.py (ground rule 4). Re-run that script to update.
+\input{fss_numbers}
+
 \begin{document}
 
 \title{Heterogeneous Bipartite Graph Neural Networks\\for Lattice Quantum Field Theory}
@@ -45,10 +49,10 @@ bipartite design eliminates by construction. The model achieves near-perfect act
 $64 \times 64$), and a single model trained at $16 \times 16$ transfers to
 lattices from $8 \times 8$ to $64 \times 64$ with $r = 1.0000$ and no
 retraining. The underlying Monte Carlo pipeline reproduces Ising-class
-finite-size scaling---susceptibility peak growth with $\gamma/\nu = 1.57(12)$,
-order-parameter S-curves, and correlation-length crossings giving
-$\nu = 1.10(43)$, consistent with the exact $\nu = 1$---validating the
-training distributions. The bipartite
+finite-size scaling---order-parameter S-curves, susceptibility-peak growth, and
+correlation-length crossings that recover the exact Ising exponents once a
+cluster sampler controls the critical slowing down of local updates---validating
+the training distributions. The bipartite
 structure naturally accommodates multiple field types (scalar, gauge, fermion) at
 the same lattice site, providing a direct path to gauge theories and lattice QCD
 without architectural changes.
@@ -111,7 +115,7 @@ We benchmark this architecture on two-dimensional scalar $\phifour$ theory, the
 simplest interacting field theory with a well-understood phase transition in the
 Ising universality class ($\nu = 1$ exactly). This provides a rigorous test:
 the model must learn the action functional, reproduce the phase transition, and
-yield correct finite-size scaling across lattice sizes $L = 16, 32, 64$.
+yield correct finite-size scaling across lattice sizes up to $L = \Lmax$.
 
 \subsection{Related Work and Novelty}
 \label{sec:related}
@@ -507,91 +511,107 @@ family is identified --- long-range physics enters the ensemble
 This and the following subsection characterize the \emph{Monte Carlo
 ensembles} used throughout this work: they validate the data-generation
 pipeline against known Ising-universality results, rather than testing the
-network itself. We perform a coupling sweep over $\msq \in [-2.8, -1.5]$ at
-$\lambda = 0.5$
-for $L = 16, 32, 64$ using 2000 configurations per point with warm-starting
-between successive $\msq$ values.
+network itself. We map the phase transition of the two-dimensional \phifour\
+theory at $\lambda = 0.5$ by a coupling sweep in \msq. Because the observables
+of interest live at the critical point---exactly where the local Metropolis
+update suffers critical slowing down---we generate the finite-size-scaling
+ensembles with a Wolff/Brower--Tamayo embedded-cluster
+sampler~\cite{Wolff1989,BrowerTamayo1989}: single-cluster $\mathbb{Z}_2$ sign
+flips, whose dynamic exponent is $z \approx 0.25$ for this universality class,
+interleaved with local sweeps that update the field magnitude. This holds the
+integrated autocorrelation time to $\mathcal{O}(1)$ across the entire scan and
+lets us reach $\Nsizes$ sizes up to $L = \Lmax$. We retain the local-Metropolis
+ensembles at the same couplings as a direct measurement of the sampling bias
+they carry.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/finite_size_scaling.pdf}
-\caption{Finite-size scaling results for $\lambda = 0.5$. \textbf{Left:}
-Order parameter $|M|$ showing progressive sharpening of the phase transition
-with increasing $L$. \textbf{Center:} Susceptibility $\chi$ with peaks growing
-as $\chi_\text{max} \sim L^{\gamma/\nu}$ and converging toward $\msqc$.
-\textbf{Right:} Correlation length ratio $\xiL$ with crossing of the $L = 16$
-and $L = 32$ curves at $\msqc = -2.22 \pm 0.24$. Error bars are binned
-jackknife errors with bin sizes set by the measured $\tau_\text{int}$.}
+\caption{Finite-size scaling of the cluster ensembles at $\lambda = 0.5$.
+\textbf{Left:} order parameter $|M|$, sharpening with $L$. \textbf{Center:}
+susceptibility $\chi$, with peaks growing as $\chi_\text{max} \sim
+L^{\gamma/\nu}$. \textbf{Right:} correlation-length ratio $\xiL$, whose curves
+cross near $\msqc = \ClMsqc$. Error bars are binned jackknife errors with bin
+sizes set by the measured $\tau_\text{int}$; per-$L$ markers are
+colorblind-distinct.}
 \label{fig:fss}
 \end{figure*}
 
-Figure~\ref{fig:fss} shows the three canonical finite-size scaling observables.
-All error bars are binned jackknife errors with bin sizes set by the measured
-integrated autocorrelation time (Wolff automatic windowing~\cite{Wolff2004}):
-$\tau_\text{int}$ is 1--3 stored configurations over most of the scan but rises
-to $\approx 17$, $30$, and $100$ at the pseudocritical points of $L = 16, 32,
-64$ respectively (configurations separated by $10$, $20$, $40$ Metropolis
-sweeps), quantifying the critical slowing down of the local update.
+Figure~\ref{fig:fss} shows the three canonical finite-size-scaling observables.
+The qualitative picture---an order-parameter S-curve sharpening with $L$, a
+growing susceptibility peak, and crossing $\xiL$ curves---is reproduced by both
+samplers; the local ensembles, however, are quantitatively biased by critical
+slowing down. Table~\ref{tab:tauint} lists the integrated autocorrelation time
+of $|M|$ at each pseudocritical point in single sweeps: for the local update it
+grows from $\TauLocLo$ at $L = 16$ to $\TauLocHi$ at $L = 64$ ($\tau \sim
+\xi^z$, $z \approx 2$), while the cluster hybrid holds $\tau_\text{int} \approx
+\TauClTyp$ independent of $L$---a decorrelation speed-up that reaches
+$\SpeedupHi\times$ by $L = 64$ and makes $L = 96, 128$ practical at all.
 
-The order parameter exhibits the expected S-curve behavior, with the transition
-sharpening progressively from $L = 16$ to $L = 64$. The susceptibility peaks,
-located by quadratic fits around the maxima, grow with volume:
-$\chi_\text{max} = 9.1(6),\ 27.0(1.4),\ 113(106)$ at
-$\msq = -2.094(25),\ -2.139(4),\ -2.204(20)$ for $L = 16, 32, 64$. A weighted
-fit of $\ln\chi_\text{max}$ vs $\ln L$ gives
+The resulting bias in the exponent is direct. For the local ensembles the
+effective slope of $\ln\chi_\text{max}$ versus $\ln L$ falls monotonically with
+volume, from $\LocEffSlopeLo$ ($L = 16$--$24$) to $\LocEffSlopeHi$ ($L =
+48$--$64$) as the largest lattices lose effective statistics, and a global fit
+gives the downward-biased $\gamma/\nu = \LocGammaNu$. The cluster effective
+slope shows no such trend. Locating the peaks by quadratic fits to dense scans
+centered on each maximum (grid width $\propto L^{-1}$, so every fit spans the
+same fraction of its peak and $\chi^2/\text{dof} \sim 1$), a weighted fit of
+$\ln\chi_\text{max}$ versus $\ln L$ over all $\Nsizes$ sizes gives
 \begin{equation}
-\gamma/\nu = 1.57 \pm 0.12,
+\gamma/\nu = \ClGammaNu,
+\label{eq:gammanu}
 \end{equation}
-within $1.6\sigma$ of the exact two-dimensional Ising value $\gamma/\nu = 1.75$;
-the $L = 64$ peak height carries a large uncertainty precisely because
-$\tau_\text{int} \approx 100$ there leaves only $\sim 20$ effectively
-independent configurations.
+consistent with the exact two-dimensional Ising value $\gamma/\nu = 1.75$. A
+corrections-to-scaling fit $\chi_\text{max} = A\,L^{\gamma/\nu}(1 + b\,
+L^{-\omega})$ with $\omega = 2$, and an Akaike-weighted average over
+fit ranges~\cite{JayNeil2020}, give $\ClGammaNuCorr$ and $\ClGammaNuAIC$
+respectively, consistent with the naive fit.
 
-The $\xiL$ ratio shows a crossing of the $L = 16$ and $L = 32$ curves at
-$\msqc = -2.22 \pm 0.24$ (parametric bootstrap over the jackknife errors); at
-the present statistics the $L = 32$/$L = 64$ crossing is not resolved within
-errors. Any residual drift of pairwise crossings with $L$ has two sources:
-corrections to scaling (the leading irrelevant operator shifts pairwise
-crossings by $O(L^{-\omega})$, so the $L=16/32$ crossing need not coincide with
-the asymptotic $\msqc$), and critical slowing down of the local Metropolis
-algorithm, whose autocorrelation times grow as $\tau \sim \xi^z$ with dynamic
-exponent $z \approx 2$, degrading the effective statistics near the critical
-point for the largest lattice.
+\begin{table}[t]
+\centering
+\caption{Susceptibility peak height $\chi_\text{max}$ and $|M|$ integrated
+autocorrelation time (single sweeps, at the pseudocritical point) for the
+local-Metropolis and cluster samplers. The local $\tau_\text{int}$ grows as
+$\xi^z$ ($z \approx 2$); the cluster's stays $\mathcal{O}(1)$, and the local
+sampler is impractical beyond $L = 64$ at these statistics.}
+\label{tab:tauint}
+\input{tables/tau_int_body}
+\end{table}
 
 \subsection{Critical Exponent Extraction}
 \label{sec:nu}
 
-From the $\xiL$ crossing and data collapse analysis (parametric bootstrap over
-the binned jackknife errors of every $\xiL$ point and the crossing
-uncertainty), we obtain:
+The correlation-length exponent and the critical coupling follow from the
+approach of the pseudocritical points to the infinite-volume limit,
+$\msq_\text{peak}(L) = \msqc - a\,L^{-1/\nu}$. A three-parameter fit to the
+$\Nsizes$ cluster peak locations gives
 \begin{equation}
-\nu = 1.10 \pm 0.43 \qquad (\text{exact: } \nu = 1),
+\nu = \ClNu, \qquad \msqc = \ClMsqc \quad (\lambda = 0.5),
+\label{eq:nu}
 \end{equation}
-\begin{equation}
-\msqc = -2.22 \pm 0.24 \qquad (\lambda = 0.5).
-\end{equation}
+with $\chi^2/\text{dof} = \ClNuChiDof$, consistent with the exact Ising $\nu =
+1$. We quote this pseudocritical-shift fit rather than a $\xiL$ data collapse
+because the naive collapse-quality metric has no proper interior minimum on
+these data.\footnote{The same fit on the local ensembles gives $\nu = \LocNu$:
+the central value agrees, but the local peak positions scatter under critical
+slowing down ($\chi^2/\text{dof} \approx 4$), inflating the error roughly
+sixfold.}
 
-Dedicated lattice studies of two-dimensional $\phifour$ theory locate the
-critical line to much higher precision, from Ref.~\cite{SchaichLoinaz2009}
-through several successively improved analyses, most recently the
-high-precision continuum determination of Ref.~\cite{DurrKiel2025};
-their coupling normalization differs from ours (continuum-limit ratios
-$f = \lambda/\mu_c^2$ rather than a fixed bare $\lambda$ at finite spacing),
-so we do not attempt a quantitative comparison here.
-
-We emphasize that this serves as a \emph{consistency check} rather than a
-precision measurement: the central value is compatible with the exact Ising
-result $\nu = 1$, but the large uncertainty precludes a strong quantitative
-claim. The dominant source of error is not the GNN architecture but the Monte
-Carlo sampling itself. The local Metropolis algorithm suffers from critical
-slowing down ($\tau \sim \xi^z$, $z \approx 2$), which degrades effective
-statistics precisely where they matter most---near the critical point. A cluster
-algorithm (Wolff~\cite{Wolff1989} or Swendsen--Wang~\cite{SwendsenWang1987})
-would reduce the dynamic exponent to $z \approx 0.25$ for this universality
-class and correspondingly tighten the $\nu$ estimate, but
-is beyond the scope of this initial architecture demonstration. Our purpose here
-is to show that the bipartite GNN \emph{captures} the physics of the phase
-transition, not to compete with dedicated finite-size scaling studies.
+Two points frame these results. First, this is a validation of the training
+ensembles, not a precision lattice study: dedicated determinations of the
+two-dimensional \phifour\ critical line~\cite{SchaichLoinaz2009,DurrKiel2025}
+reach far higher precision and use a different coupling normalization
+(continuum-limit ratios $f = \lambda/\mu_c^2$ rather than a fixed bare $\lambda$
+at finite spacing), so we do not attempt a quantitative comparison. Second---and
+this is why we belabor the sampling---the exercise makes concrete the bottleneck
+that motivates the broader program. The cluster algorithm that removes the bias
+here exists only because the scalar theory has a simple $\mathbb{Z}_2$ order
+parameter; no comparable algorithm is known for the gauge and fermion theories
+targeted in the subsequent phases, where critical slowing down (and, with
+dynamical fermions, the cost of the determinant) is the dominant obstacle to
+generating training data. A learned surrogate for the action---the architecture
+developed here---is one route into precisely that regime, where exact cluster
+methods are unavailable.
 
 \subsection{Size Transfer}
 \label{sec:size-transfer}
@@ -771,8 +791,9 @@ preserving a physically interpretable local action decomposition. On
 two-dimensional scalar $\phifour$ theory, the model achieves near-perfect action prediction and transfers
 across a $64\times$ range of lattice volumes without retraining; the
 underlying Monte Carlo pipeline reproduces the expected Ising-class
-finite-size scaling ($\nu = 1.10 \pm 0.43$, $\gamma/\nu = 1.57 \pm 0.12$),
-validating the ensembles the model is trained on. Comparison
+finite-size scaling---recovering the exact critical exponents with a cluster
+sampler that removes the critical-slowing-down bias of local updates---validating
+the ensembles the model is trained on. Comparison
 against homogeneous GNN, CNN, and MLP baselines demonstrates the viability of
 the bipartite representation for lattice field theory.
 
