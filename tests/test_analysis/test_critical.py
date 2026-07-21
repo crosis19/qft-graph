@@ -175,6 +175,40 @@ class TestAICModelAverage:
         assert full["weight"] == max(m["weight"] for m in res["models"])
 
 
+class TestPseudocriticalShift:
+    """nu and m2_c from m2_peak(L) = m2_c - a L^{-1/nu}."""
+
+    L = np.array([16, 24, 32, 48, 64, 96, 128], dtype=float)
+
+    def _synthetic(self, m2c=-2.2, a=1.6, nu=1.0):
+        m2p = m2c - a * self.L ** (-1.0 / nu)
+        return m2p, 0.002 * np.ones_like(m2p)
+
+    def test_recovers_nu_and_m2c(self):
+        from qft_graph.analysis.critical import fit_nu_from_pseudocritical_shifts
+
+        m2p, err = self._synthetic(m2c=-2.2, a=1.6, nu=1.0)
+        res = fit_nu_from_pseudocritical_shifts(self.L, m2p, err)
+        assert res["fit_ok"]
+        assert abs(res["nu"] - 1.0) < 0.05
+        assert abs(res["m2_c"] - (-2.2)) < 0.01
+
+    def test_recovers_non_ising_nu(self):
+        from qft_graph.analysis.critical import fit_nu_from_pseudocritical_shifts
+
+        m2p, err = self._synthetic(m2c=-1.5, a=2.0, nu=0.63)
+        res = fit_nu_from_pseudocritical_shifts(self.L, m2p, err)
+        assert abs(res["nu"] - 0.63) < 0.05
+
+    def test_fixed_nu(self):
+        from qft_graph.analysis.critical import fit_nu_from_pseudocritical_shifts
+
+        m2p, err = self._synthetic(m2c=-2.2, a=1.6, nu=1.0)
+        res = fit_nu_from_pseudocritical_shifts(self.L, m2p, err, fix_nu=1.0)
+        assert res["fit_ok"] and res["n_params"] == 2
+        assert abs(res["m2_c"] - (-2.2)) < 0.01
+
+
 class TestCrossingWithErrors:
     def test_two_lines_known_crossing(self):
         import numpy as np

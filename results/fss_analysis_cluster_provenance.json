@@ -1,7 +1,7 @@
 {
   "run_id": "fss_analysis_cluster_provenance",
-  "timestamp": "2026-07-20T22:31:46.623227+00:00",
-  "git_commit": "c1f0687be81e765fb138e5be9d12a6aa8abc42cb",
+  "timestamp": "2026-07-21T01:02:08.543934+00:00",
+  "git_commit": "5629ddcf9411d698f147c5cf344603019d2fe46d",
   "config_hash": "ab4b4d94d28c",
   "config": {
     "sweep_dir": "data\\sweep_cluster",

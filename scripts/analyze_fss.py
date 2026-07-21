@@ -28,6 +28,7 @@ from qft_graph.analysis.critical import (
     extract_nu,
     fit_gamma_over_nu,
     fit_gamma_over_nu_corrections,
+    fit_nu_from_pseudocritical_shifts,
     susceptibility_peak_quadratic,
 )
 from qft_graph.utils.logging import setup_logging
@@ -228,6 +229,33 @@ def main() -> None:
             aic["gamma_over_nu"], aic["gamma_over_nu_err"],
             aic["stat_err"], aic["sys_err"],
         )
+
+    # --- nu and m2_c from the pseudo-critical shift m2_peak(L) = m2_c - a L^-1/nu.
+    # This is the robust route to nu: the xi/L collapse metric below has no proper
+    # minimum and rails to a search bound depending on the assumed m2_c, so its nu
+    # is an artefact. The peak locations are clean, so this fit is the paper's
+    # primary nu and m2_c.
+    m2peak_arr = np.array([p["m2_peak"] for p in peaks])
+    m2peak_err_arr = np.array([max(p["m2_peak_err"], 1e-4) for p in peaks])
+    if len(L_arr) >= 4:
+        nu_shift = fit_nu_from_pseudocritical_shifts(
+            L_arr, m2peak_arr, m2peak_err_arr
+        )
+        nu_shift_fixed = fit_nu_from_pseudocritical_shifts(
+            L_arr, m2peak_arr, m2peak_err_arr, fix_nu=1.0
+        )
+        report["nu_pseudocritical"] = nu_shift
+        report["m2_c_pseudocritical"] = {
+            "value": nu_shift.get("m2_c"), "err": nu_shift.get("m2_c_err"),
+            "value_nu1": nu_shift_fixed.get("m2_c"),
+        }
+        if nu_shift.get("fit_ok"):
+            logger.info(
+                "nu (pseudo-critical shift) = %.3f +/- %.3f, m2_c = %.4f +/- %.4f "
+                "(chi2/dof %.2f; exact nu = 1)",
+                nu_shift["nu"], nu_shift["nu_err"], nu_shift["m2_c"],
+                nu_shift["m2_c_err"], nu_shift["chi2_dof"],
+            )
 
     # --- nu from scaling collapse ---
     # Prefer the k!=0 estimator (defined in both phases); restrict to a

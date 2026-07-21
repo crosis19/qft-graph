@@ -487,6 +487,92 @@ def aic_model_average_gamma_nu(
     }
 
 
+def fit_nu_from_pseudocritical_shifts(
+    L_values: np.ndarray,
+    m2_peak: np.ndarray,
+    m2_peak_err: np.ndarray | None = None,
+    fix_nu: float | None = None,
+) -> dict[str, float]:
+    """Extract nu and m2_c from the pseudo-critical shift of the chi peaks.
+
+    The susceptibility-peak location approaches the infinite-volume critical
+    point as
+
+        m2_peak(L) = m2_c - a L^{-1/nu}
+
+    (up to higher-order corrections). A three-parameter fit gives nu and m2_c
+    directly. This is far more robust than a xi/L data collapse whose naive
+    "minimise the scatter of the collapsed curve" metric has no proper interior
+    minimum -- it rails to whichever nu search bound the assumed m2_c favours
+    (nu -> 1.85 for a mis-estimated m2_c = -2.53, nu -> 0.6 for m2_c = -2.21 on
+    the same data), so the collapse nu is an artefact, not a measurement. The
+    peak locations, by contrast, are clean (chi2/dof ~ 1 per fit).
+
+    Args:
+        L_values: Lattice sizes.
+        m2_peak: Susceptibility-peak locations m2_peak(L).
+        m2_peak_err: Optional 1-sigma errors (absolute-sigma weighting +
+            chi2/dof).
+        fix_nu: If given, fix nu (e.g. 1.0 for 2D Ising) and fit only m2_c and
+            the amplitude (2 params).
+
+    Returns:
+        Dict with m2_c(+_err), amplitude, nu(+_err) (or nu_fixed), chi2_dof,
+        n_params, fit_ok, exact_2d_ising.
+    """
+    L = np.asarray(L_values, dtype=float)
+    m2 = np.asarray(m2_peak, dtype=float)
+    err = None if m2_peak_err is None else np.asarray(m2_peak_err, dtype=float)
+    order = np.argsort(L)
+    L, m2 = L[order], m2[order]
+    if err is not None:
+        err = np.clip(err[order], 1e-6, None)
+
+    if fix_nu is None:
+        def model(Lx, m2c, a, nu):
+            return m2c - a * Lx ** (-1.0 / nu)
+        p0 = [float(m2.min()) - 0.05, 1.0, 1.0]
+        bounds = ([-np.inf, -np.inf, 0.2], [np.inf, np.inf, 5.0])
+        n_params = 3
+    else:
+        def model(Lx, m2c, a):
+            return m2c - a * Lx ** (-1.0 / float(fix_nu))
+        p0 = [float(m2.min()) - 0.05, 1.0]
+        bounds = (-np.inf, np.inf)
+        n_params = 2
+
+    if len(L) < n_params + 1:
+        return {"fit_ok": False, "reason": "too few points", "n_params": n_params}
+
+    kw: dict = {} if err is None else {"sigma": err, "absolute_sigma": True}
+    try:
+        popt, pcov = curve_fit(
+            model, L, m2, p0=p0, bounds=bounds, maxfev=20000, **kw
+        )
+    except (RuntimeError, ValueError) as exc:
+        return {"fit_ok": False, "reason": str(exc), "n_params": n_params}
+
+    perr = np.sqrt(np.abs(np.diag(pcov)))
+    resid = model(L, *popt) - m2
+    chi2 = float(np.sum((resid / err) ** 2)) if err is not None else float(np.sum(resid**2))
+    dof = max(len(L) - n_params, 1)
+    out = {
+        "m2_c": float(popt[0]),
+        "m2_c_err": float(perr[0]),
+        "amplitude": float(popt[1]),
+        "chi2_dof": chi2 / dof,
+        "n_params": n_params,
+        "fit_ok": True,
+        "exact_2d_ising_nu": 1.0,
+    }
+    if fix_nu is None:
+        out["nu"] = float(popt[2])
+        out["nu_err"] = float(perr[2])
+    else:
+        out["nu_fixed"] = float(fix_nu)
+    return out
+
+
 def crossing_with_errors(
     m2_values: np.ndarray,
     y1: np.ndarray,

@@ -18,6 +18,10 @@ import argparse
 import json
 from pathlib import Path
 
+import numpy as np
+
+from qft_graph.analysis.critical import fit_nu_from_pseudocritical_shifts
+
 
 def load(path: str) -> dict:
     with open(path) as f:
@@ -85,6 +89,25 @@ def main() -> None:
 
     cl_corr = cluster.get("gamma_over_nu_corrections", {}).get("omega_fixed_2", {})
     cl_aic = cluster.get("gamma_over_nu_aic", {})
+    # nu and m2_c from the pseudo-critical-shift fit (robust; the xi/L collapse
+    # metric is unreliable). Compute it for BOTH samplers from their chi-peak
+    # locations so the comparison is apples-to-apples: both give nu ~ 1, but the
+    # local peak locations are CSD-scattered (huge error, poor chi2/dof) while
+    # the cluster's are clean.
+    def peak_shift_nu(report: dict) -> tuple:
+        pk = sorted(report.get("chi_peaks", []), key=lambda p: p["L"])
+        if len(pk) < 4:
+            return (None, None), (None, None)
+        L = np.array([p["L"] for p in pk], float)
+        m2p = np.array([p["m2_peak"] for p in pk])
+        err = np.array([max(p["m2_peak_err"], 1e-4) for p in pk])
+        r = fit_nu_from_pseudocritical_shifts(L, m2p, err)
+        if not r.get("fit_ok"):
+            return (None, None), (None, None)
+        return (r["nu"], r["nu_err"]), (r["m2_c"], r["m2_c_err"])
+
+    local_nu, _ = peak_shift_nu(local)
+    cluster_nu, cluster_m2c = peak_shift_nu(cluster)
     table_b = {
         "gamma_over_nu": {
             "local_naive": gn(local),
@@ -95,13 +118,13 @@ def main() -> None:
             "exact_2d_ising": 1.75,
         },
         "nu": {
-            "local": gn(local, "nu"),
-            "cluster": gn(cluster, "nu"),
+            "local_pseudocritical": local_nu,
+            "cluster_pseudocritical": cluster_nu,
             "exact_2d_ising": 1.0,
         },
         "m2_c": {
-            "local_2mom": gn(local, "m2_c_2mom"),
-            "cluster_2mom": gn(cluster, "m2_c_2mom"),
+            "cluster_pseudocritical": cluster_m2c,
+            "cluster_2mom_crossing": gn(cluster, "m2_c_2mom"),
         },
     }
 
@@ -132,9 +155,10 @@ def main() -> None:
           f"{fmt(*b['gamma_over_nu']['cluster_corrections_omega2'])} | 1.75 |")
     print(f"| gamma/nu (AIC avg) | -- | "
           f"{fmt(*b['gamma_over_nu']['cluster_aic'])} | 1.75 |")
-    print(f"| nu | {fmt(*b['nu']['local'])} | {fmt(*b['nu']['cluster'])} | 1.0 |")
-    print(f"| m2_c (2mom) | {fmt(*b['m2_c']['local_2mom'], nd=3)} | "
-          f"{fmt(*b['m2_c']['cluster_2mom'], nd=3)} | -- |")
+    print(f"| nu (pseudo-crit. shift) | {fmt(*b['nu']['local_pseudocritical'])} | "
+          f"{fmt(*b['nu']['cluster_pseudocritical'])} | 1.0 |")
+    print(f"| m2_c (pseudo-crit. shift) | -- | "
+          f"{fmt(*b['m2_c']['cluster_pseudocritical'], nd=4)} | -- |")
     print(f"\nWritten to {args.output}")
 
 
