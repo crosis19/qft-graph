@@ -49,10 +49,10 @@ bipartite design eliminates by construction. The model achieves near-perfect act
 $64 \times 64$), and a single model trained at $16 \times 16$ transfers to
 lattices from $8 \times 8$ to $64 \times 64$ with $r = 1.0000$ and no
 retraining. The underlying Monte Carlo pipeline reproduces Ising-class
-finite-size scaling---order-parameter S-curves, susceptibility-peak growth, and
-correlation-length crossings that recover the exact Ising exponents once a
-cluster sampler controls the critical slowing down of local updates---validating
-the training distributions. The bipartite
+finite-size scaling---order-parameter S-curves, susceptibility-peak growth with
+$\gamma/\nu = \ClGammaNu$, and correlation-length crossings giving $\nu = \ClNu$,
+consistent with the exact Ising values, once a cluster sampler controls the
+critical slowing down of local updates---validating the training distributions. The bipartite
 structure naturally accommodates multiple field types (scalar, gauge, fermion) at
 the same lattice site, providing a direct path to gauge theories and lattice QCD
 without architectural changes.
@@ -791,9 +791,10 @@ preserving a physically interpretable local action decomposition. On
 two-dimensional scalar $\phifour$ theory, the model achieves near-perfect action prediction and transfers
 across a $64\times$ range of lattice volumes without retraining; the
 underlying Monte Carlo pipeline reproduces the expected Ising-class
-finite-size scaling---recovering the exact critical exponents with a cluster
-sampler that removes the critical-slowing-down bias of local updates---validating
-the ensembles the model is trained on. Comparison
+finite-size scaling---$\gamma/\nu = \ClGammaNu$ and $\nu = \ClNu$, consistent
+with the exact Ising values, once a cluster sampler removes the
+critical-slowing-down bias of local updates---validating the ensembles the model
+is trained on. Comparison
 against homogeneous GNN, CNN, and MLP baselines demonstrates the viability of
 the bipartite representation for lattice field theory.
 
