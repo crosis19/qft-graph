@@ -35,8 +35,8 @@
 \begin{abstract}
 We introduce a heterogeneous bipartite graph neural network architecture that
 separates \emph{spacetime geometry} from \emph{field content} into distinct node
-types connected by typed edges---mirroring the geometry--matter separation
-fundamental to continuum quantum field theory. Unlike existing approaches that
+types connected by typed edges---a design inspired by the geometry--matter
+distinction in continuum quantum field theory. Unlike existing approaches that
 embed all information on spacetime nodes in a homogeneous graph, our
 architecture represents fields as a separate layer coupled to the lattice
 through typed ``inhabits'' edges and three-stage message passing. We benchmark on
@@ -93,7 +93,7 @@ where the metric $g_{\mu\nu}$ encodes spacetime geometry and $\phi$ encodes
 field content. These couple through the action but are distinct mathematical
 objects living in different spaces.
 
-We propose a \emph{heterogeneous bipartite graph} architecture that mirrors this
+We propose a \emph{heterogeneous bipartite graph} architecture built around this
 separation on the lattice. Spacetime nodes encode lattice geometry
 (coordinates, spacing, boundary conditions), while field nodes encode dynamical
 degrees of freedom (scalar values, gauge link matrices, spinor components). The
@@ -698,8 +698,9 @@ further stabilize deep stacking.
 (Eq.~\ref{eq:action-readout}) decomposes the total action into per-site
 contributions, and the finite receptive field of $B$ message-passing blocks
 limits each contribution to information within $Ba$ lattice spacings. The model
-therefore learns a \emph{local effective action} operator---analogous to a
-Wilsonian effective action in which modes above a momentum cutoff
+therefore admits an interpretation as a \emph{local effective action}
+operator---analogous to a Wilsonian effective action in which modes above a
+momentum cutoff
 $\Lambda \sim 1/(Ba)$ have been integrated out. In this view, the message-passing depth $B$ plays the role of an implicit
 renormalization scale, controlling the resolution at which the theory is
 represented. This interpretation explains both the model's success on the local
@@ -766,37 +767,34 @@ encoders. The three-stage message passing naturally handles the tripartite
 field--gauge--spacetime coupling. This phase will benchmark against the
 Schwinger model (QED in 1+1D), which has exact solutions for comparison.
 
-\textbf{Phase~III: SU(3) Yang--Mills in 4D.} The architecture extends to
-four-dimensional lattices by setting the lattice dimension parameter to 4,
-with link encoders structured to respect the $\text{SU}(3)$ group; the target
-is to reproduce established lattice QCD benchmarks (string tension, glueball
-spectrum).
-
-Beyond these concrete phases, the longer-term program---connecting the
-learned Euclidean representation to real-time Minkowski physics---is
-deliberately speculative, and we defer its discussion to future work.
+\textbf{Phase~III: SU(3) Yang--Mills in 4D.} In four dimensions, with link
+encoders structured to respect the $\text{SU}(3)$ group, the target is to
+reproduce established lattice QCD benchmarks such as the string tension and
+glueball spectrum. Connecting the learned Euclidean representation to real-time
+Minkowski physics is a longer-term and deliberately speculative direction.
 
 %=============================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 %=============================================================================
 
-We have introduced a representation of lattice quantum field theory that
-explicitly separates spacetime geometry from field degrees of freedom in a
-heterogeneous graph---a separation inspired by the geometry--matter
-distinction fundamental to continuum QFT and, to our knowledge, absent from
-prior lattice-QFT neural architectures~\cite{Favoni2022,Luo2021,Apte2024}. This separation eliminates a
-structural failure mode of homogeneous graph representations while
-preserving a physically interpretable local action decomposition. On
-two-dimensional scalar $\phifour$ theory, the model achieves near-perfect action prediction and transfers
-across a $64\times$ range of lattice volumes without retraining; the
-underlying Monte Carlo pipeline reproduces the expected Ising-class
-finite-size scaling---$\gamma/\nu = \ClGammaNu$ and $\nu = \ClNu$, consistent
-with the exact Ising values, once a cluster sampler removes the
-critical-slowing-down bias of local updates---validating the ensembles the model
-is trained on. Comparison
-against homogeneous GNN, CNN, and MLP baselines demonstrates the viability of
-the bipartite representation for lattice field theory.
+The central result of this work is that representing lattice field theory as a
+\emph{heterogeneous} graph---with spacetime geometry and field degrees of freedom
+as distinct node types---eliminates a structural failure mode of the homogeneous
+graph representations used previously, in which message passing destroys the
+field signal without ad hoc skip connections. This geometry--field separation,
+inspired by the geometry--matter distinction fundamental to continuum QFT and, to
+our knowledge, absent from prior lattice-QFT neural
+architectures~\cite{Favoni2022,Luo2021,Apte2024}, preserves a physically
+interpretable local action decomposition. On two-dimensional scalar $\phifour$
+theory, the model achieves near-perfect action prediction and transfers across a
+$64\times$ range of lattice volumes without retraining; the underlying Monte
+Carlo pipeline reproduces the expected Ising-class finite-size
+scaling---$\gamma/\nu = \ClGammaNu$ and $\nu = \ClNu$, consistent with the exact
+Ising values, once a cluster sampler removes the critical-slowing-down bias of
+local updates---validating the ensembles the model is trained on. Comparison
+against homogeneous GNN, CNN, and MLP baselines demonstrates the viability of the
+bipartite representation for lattice field theory.
 
 The architecture's key contribution is not improved accuracy on this benchmark
 but its \emph{extensibility and physical alignment}: the same graph structure
