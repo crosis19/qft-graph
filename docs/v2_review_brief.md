@@ -50,19 +50,27 @@ workaround"; "to our knowledge, absent from ...") were already fixed in your pas
    graph representation is the originating idea. The physics-first alternative
    below is therefore **not** adopted; it is retained only as a record in case the
    venue changes to a physics journal.
-3. **arXiv: no re-submission for now.** IMPORTANT CORRECTION to the reviewers'
-   advice: the moderation email is submission-level ("your *submission* will not
-   be accepted"), never mentions a category, and offers only one route back — a
-   conventional-journal DOI. If moderators had judged it merely misfiled, the
-   normal action is *reclassification*, not rejection. Re-submitting substantially
-   the same work under a different primary category would route it to different
-   moderators and is generally treated as **circumventing moderation**, risking
-   removal or submitting privileges. The category advice (physics.comp-ph or
-   cs.LG primary, hep-lat cross-list) is sound only for the *post-DOI*
-   re-submission. A legitimate, zero-risk step in the meantime: reply on ticket
-   MOD-97144 asking whether the decision was category-specific or submission-wide.
-   (Endorsement is per-archive, so a different archive would likely need a new
-   endorsement regardless.)
+3. **arXiv: not pursuing it — decision made 2026-07-22.** The v1 submission was
+   declined by moderation and we are not re-submitting, appealing, or posting a
+   later version there. The route is journal publication only.
+   - *Recorded for context, since the earlier reviewer advice was wrong on this:*
+     the moderation email is submission-level ("your *submission* will not be
+     accepted"), never names a category, and offered only one way back — a
+     conventional-journal DOI. Had moderators judged it merely misfiled, the
+     normal action is *reclassification*, not rejection. Re-submitting
+     substantially the same work under a different primary category would have
+     routed it to different moderators and is generally treated as circumventing
+     moderation. So the reviewers' "switch the primary category" suggestion was
+     never a viable shortcut. Moot now regardless.
+   - **Consequence for venue choice:** with no preprint anywhere, the published
+     version is the *only* public copy, so open access matters more than it
+     otherwise would. This strengthens the MLST choice (gold OA) and would make
+     SciPost Physics (diamond OA, free) the natural fallback; a paywalled
+     subscription-route paper (PRE/CPC) would leave the work effectively
+     invisible outside subscribing institutions.
+   - The manuscript itself contains no arXiv self-references, so nothing in the
+     paper needed changing (verified 2026-07-22). The arXiv eprint fields in
+     `references.bib` are ordinary citations of others' work and stay.
 
 ## Alternate physics-first abstract opening (option, if we push hep-lat)
 Replaces only the first sentence; the rest of the abstract is unchanged.
