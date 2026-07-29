@@ -11,8 +11,18 @@ $(MAIN).pdf: $(MAIN).tex references.bib
 	pdflatex $(MAIN)
 	pdflatex $(MAIN)
 
+# 12 pt single-column review build for MLST submission (IOP prefers >= 12 pt).
+# Produces main_submission.pdf; the twocolumn build above is unchanged.
+submission: $(MAIN).tex references.bib
+	sed 's/,twocolumn,/,preprint,/' $(MAIN).tex > main_submission.tex
+	pdflatex main_submission
+	bibtex main_submission
+	pdflatex main_submission
+	pdflatex main_submission
+
 clean:
 	rm -f $(MAIN).aux $(MAIN).bbl $(MAIN).blg $(MAIN).log $(MAIN).out
+	rm -f main_submission.*
 	rm -f $(MAIN).toc $(MAIN).fls $(MAIN).fdb_latexmk $(MAIN).synctex.gz
 
 distclean: clean

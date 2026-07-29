@@ -1,3 +1,5 @@
+% MLST submission build: run `make submission` in paper/ to produce
+% main_submission.pdf (12 pt single column, per IOP's review-format preference).
 \documentclass[aps,prd,twocolumn,superscriptaddress,nofootinbib]{revtex4-2}
 
 \usepackage{amsmath,amssymb}
@@ -33,7 +35,7 @@
 \date{\today}
 
 \begin{abstract}
-We introduce a heterogeneous bipartite graph neural network architecture that
+We introduce a heterogeneous bipartite graph neural network (GNN) architecture that
 separates \emph{spacetime geometry} from \emph{field content} into distinct node
 types connected by typed edges---a design inspired by the geometry--matter
 distinction in continuum quantum field theory. Unlike existing approaches that
@@ -41,7 +43,7 @@ embed all information on spacetime nodes in a homogeneous graph, our
 architecture represents fields as a separate layer coupled to the lattice
 through typed ``inhabits'' edges and three-stage message passing. We benchmark on
 two-dimensional scalar $\phifour$ theory in the Ising universality class ($\nu =
-1$), comparing against homogeneous GNN, convolutional, and MLP baselines. We show that
+1$), comparing against homogeneous GNN, convolutional, and multilayer-perceptron (MLP) baselines. We show that
 homogeneous GNN representations suffer a structural failure mode---message
 passing destroys the field signal without ad hoc skip connections---which the
 bipartite design eliminates by construction. The model achieves near-perfect action prediction across lattice sizes
@@ -54,9 +56,14 @@ $\gamma/\nu = \ClGammaNu$, and correlation-length crossings giving $\nu = \ClNu$
 consistent with the exact Ising values, once a cluster sampler controls the
 critical slowing down of local updates---validating the training distributions. The bipartite
 structure naturally accommodates multiple field types (scalar, gauge, fermion) at
-the same lattice site, providing a direct path to gauge theories and lattice QCD
-without architectural changes.
+the same lattice site, providing a direct path to gauge theories and lattice
+quantum chromodynamics (QCD) without architectural changes.
 \end{abstract}
+
+% Keywords for the MLST submission form (revtex4-2/prd does not render them):
+% graph neural networks; lattice field theory; heterogeneous graphs;
+% action matching; Monte Carlo simulation; finite-size scaling;
+% critical exponents; machine learning for physics
 
 \maketitle
 
@@ -67,7 +74,7 @@ without architectural changes.
 
 Lattice quantum field theory is the primary non-perturbative tool for studying
 strongly coupled quantum systems, underpinning our quantitative understanding of
-hadron physics through lattice QCD~\cite{Wilson1974}. Despite decades of
+hadron physics through lattice quantum chromodynamics (QCD)~\cite{Wilson1974}. Despite decades of
 algorithmic advances, lattice calculations face persistent computational
 bottlenecks: critical slowing down near phase transitions, the fermion sign
 problem at finite baryon density, and the inability to directly simulate
@@ -197,8 +204,9 @@ node to its corresponding spacetime site.
 enabling spacetime-to-field message flow.
 \end{itemize}
 
-For an $L \times L$ lattice, the graph has $2L^2$ nodes and $4L^2 + 2L^2 =
-6L^2$ directed edges (for $d = 2$). The graph is implemented using PyTorch
+Figure~\ref{fig:graph-structure} shows the resulting two-layer graph for a
+$4 \times 4$ lattice. For an $L \times L$ lattice, the graph has $2L^2$ nodes
+and $4L^2 + 2L^2 = 6L^2$ directed edges (for $d = 2$). The graph is implemented using PyTorch
 Geometric's~\cite{FeyLenssen2019} \texttt{HeteroData} container.
 
 \subsection{Model: HeteroGNN}
@@ -207,7 +215,8 @@ Geometric's~\cite{FeyLenssen2019} \texttt{HeteroData} container.
 The model consists of three stages: type-specific encoding, iterative
 three-stage message passing, and a physics-informed readout head.
 
-\textbf{Encoding.} Each node and edge type has a dedicated MLP encoder that
+\textbf{Encoding.} Each node and edge type has a dedicated multilayer
+perceptron (MLP) encoder that
 projects raw features to a shared hidden dimension $H$:
 \begin{align}
 \mathbf{h}_i^{(\text{st})} &= \text{MLP}_{\text{st}}(x_i^1, x_i^2) \in \mathbb{R}^H, \\
@@ -394,7 +403,7 @@ protocols (150 epochs, AdamW, cosine annealing):
 coordinates on a single node type; same message-passing depth ($B=3$) and
 hidden dimension ($H=64$), with a skip connection from the initial encoding
 to the readout to prevent over-smoothing of the field signal.
-\item \textbf{Lattice CNN:} Periodic-padded 2D convolutions treating $\phi(x)$
+\item \textbf{Lattice convolutional neural network (CNN):} Periodic-padded 2D convolutions treating $\phi(x)$
 as a single-channel image (4 layers, 32 channels), plus a
 \emph{parameter-matched} variant (4 layers, 72 channels, 146k parameters
 $\approx$ the HeteroGNN's 150k) to control for model capacity.
@@ -665,7 +674,7 @@ encoder, connected to spacetime via typed edges. The three-stage message-passing
 blocks handle arbitrary numbers of field types without modification.
 
 \textbf{Physical interpretability.} The action readout
-(Eq.~\ref{eq:action-readout}) decomposes the total action into per-site
+(Eq.~\eqref{eq:action-readout}) decomposes the total action into per-site
 contributions $\hat{s}(x)$ that can be directly compared with the lattice
 action density, enabling local error analysis.
 
@@ -677,7 +686,7 @@ vectors $a\hat{e}_\mu$ rather than as a node feature, reflecting the fact that
 distances are properties of connections, not of individual points. To validate
 this choice, we tested four architecture variants (lattice spacing in
 nodes vs.\ edges, with and without the explicit $a^d$ volume factor in
-Eq.~\ref{eq:action-readout}) across lattice sizes $8 \times 8$ through
+Eq.~\eqref{eq:action-readout}) across lattice sizes $8 \times 8$ through
 $64 \times 64$ at varying lattice spacings $a = 1/L$. Two findings emerged.
 First, the $a^d$ volume scaling is essential: without it, performance collapses
 as $a$ decreases (Pearson $r$ drops from $>0.999$ to $-0.26$ at $64 \times 64$
@@ -695,7 +704,7 @@ node type during message passing. Residual connections and layer normalization
 further stabilize deep stacking.
 
 \textbf{Interpretation as a learned effective action.} The action readout
-(Eq.~\ref{eq:action-readout}) decomposes the total action into per-site
+(Eq.~\eqref{eq:action-readout}) decomposes the total action into per-site
 contributions, and the finite receptive field of $B$ message-passing blocks
 limits each contribution to information within $Ba$ lattice spacings. The model
 therefore admits an interpretation as a \emph{local effective action}
@@ -817,16 +826,29 @@ Code and data are available at
 % We thank D.~Schaich for helpful comments on the finite-size scaling analysis.
 % ---------------------------------------------------------------------------
 Generative AI was used in the preparation of this work. Anthropic's Claude
-(Claude Code, Opus~4 series) assisted with implementing and testing the
+models (Claude Opus~4.6, Claude Opus~4.8, and Claude Fable~5, used via Claude
+Code) assisted with implementing and testing the
 simulation and analysis code, executing the finite-size-scaling analyses,
 preparing figures, and drafting and editing portions of the manuscript. All
 physics-critical code is covered by exact-value unit tests, every reported
-number is regenerated from the archived data by committed scripts, and all
-references were verified against the published records; the author directed the
-work and takes full responsibility for its content. Pre-submission feedback was
-obtained from ChatGPT (OpenAI) and Gemini (Google), which informed revisions to
-the presentation.
+number is regenerated from data in the public repository by committed scripts,
+and all references were verified against the published records; the author
+directed the work and takes full responsibility for its content.
+Pre-submission feedback was obtained from OpenAI's ChatGPT (GPT-5.5) and
+Google's Gemini (Gemini~3~Pro), which informed revisions to the presentation.
+
+This work received no funding from any agency in the public, commercial, or
+not-for-profit sectors. The author declares no conflicts of interest.
 \end{acknowledgments}
+
+\section*{Data availability}
+The analysis-level data supporting this study---Monte Carlo observables,
+finite-size-scaling fit inputs and outputs, and training metrics---and all
+code required to regenerate every figure, table, and quoted number are openly
+available at \url{https://github.com/crosis19/qft-graph}. Raw Monte Carlo
+field configurations and model checkpoints are not deposited owing to their
+size, but are exactly regenerable from the committed configuration files and
+seeds.
 
 \bibliography{references}
 

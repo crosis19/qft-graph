@@ -26,9 +26,9 @@ from matplotlib import rc
 rc('font', family='serif', size=10)
 rc('text', usetex=False)  # Set True if LaTeX is available
 rc('axes', labelsize=11)
-rc('xtick', labelsize=9)
-rc('ytick', labelsize=9)
-rc('legend', fontsize=8)
+rc('xtick', labelsize=10)
+rc('ytick', labelsize=10)
+rc('legend', fontsize=10)
 
 # Setup paths
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -124,8 +124,8 @@ def fig_graph_structure():
     ax.set_xticks(range(L))
     ax.set_yticks(range(L))
     ax.set_zticks([0, -2])
-    ax.set_zticklabels(['ST', 'Field'], fontsize=7)
-    ax.tick_params(axis='both', labelsize=7, pad=1)
+    ax.set_zticklabels(['ST', 'Field'], fontsize=9)
+    ax.tick_params(axis='both', labelsize=9, pad=1)
 
     # Clean up panes
     ax.xaxis.pane.fill = False
@@ -136,7 +136,7 @@ def fig_graph_structure():
     ax.zaxis.pane.set_edgecolor('lightgray')
     ax.grid(True, alpha=0.2)
 
-    ax.legend(loc='upper left', fontsize=8, frameon=False,
+    ax.legend(loc='upper left', fontsize=9, frameon=False,
               bbox_to_anchor=(0.0, 0.95))
 
     fig.savefig(FIGURES_DIR / 'graph_structure.pdf', bbox_inches='tight', dpi=300)
@@ -356,17 +356,17 @@ def fig_finite_size_scaling():
 
     axes[0].set_xlabel(r'$m^2$')
     axes[0].set_ylabel(r'$|\langle\phi\rangle|$')
-    axes[0].set_title('Order Parameter', fontsize=9)
+    axes[0].set_title('Order Parameter', fontsize=10)
     axes[0].legend(frameon=False)
 
     axes[1].set_xlabel(r'$m^2$')
     axes[1].set_ylabel(r'$\chi$')
-    axes[1].set_title('Susceptibility', fontsize=9)
+    axes[1].set_title('Susceptibility', fontsize=10)
     axes[1].legend(frameon=False)
 
     axes[2].set_xlabel(r'$m^2$')
     axes[2].set_ylabel(r'$\xi / L$')
-    axes[2].set_title(r'$\xi/L$ Crossing', fontsize=9)
+    axes[2].set_title(r'$\xi/L$ Crossing', fontsize=10)
     axes[2].legend(frameon=False)
 
     for ax in axes:
@@ -454,7 +454,7 @@ def fig_scaling_collapse():
     axes[0].set_xlabel(r'$m^2$')
     axes[0].set_ylabel(r'$\xi / L$')
     axes[0].set_title(r'$\xi/L$ Crossing', fontsize=10)
-    axes[0].legend(frameon=False, fontsize=7)
+    axes[0].legend(frameon=False, fontsize=10)
 
     # Right: Scaling collapse
     for L_str in sorted(sweep_data, key=int):
@@ -467,7 +467,7 @@ def fig_scaling_collapse():
     axes[1].set_xlabel(rf'$(m^2 - m^2_c) \cdot L^{{1/\nu}}$, $\nu={best_nu:.2f}$')
     axes[1].set_ylabel(r'$\xi / L$')
     axes[1].set_title(rf'Scaling Collapse: $\nu = {best_nu:.2f}$', fontsize=10)
-    axes[1].legend(frameon=False, fontsize=7)
+    axes[1].legend(frameon=False, fontsize=10)
 
     for ax in axes:
         ax.tick_params(direction='in')
@@ -529,12 +529,12 @@ def fig_depth_ablation():
     axes[0].set_ylabel('Pearson $r$')
     axes[0].set_ylim(-0.1, 1.05)
     axes[0].axhline(0.05, color='gray', ls=':', lw=0.8)
-    axes[0].legend(frameon=False, fontsize=7)
+    axes[0].legend(frameon=False, fontsize=10)
 
     axes[1].set_xlabel('Message-passing blocks $B$')
     axes[1].set_ylabel('$1 - r$')
     axes[1].set_yscale('log')
-    axes[1].legend(frameon=False, fontsize=7)
+    axes[1].legend(frameon=False, fontsize=10)
 
     for ax in axes:
         ax.tick_params(direction='in')
