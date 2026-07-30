@@ -66,7 +66,10 @@ workaround"; "to our knowledge, absent from ...") were already fixed in your pas
      placeholder in main.tex (`make anonymous` warns while it remains);
      (b) put the funding-none, no-COI, and identity statements in the
      cover letter (IOP: COI disclosure goes in the cover letter for
-     double-anonymous submissions); (c) upload the anonymous **PDF only**
+     double-anonymous submissions) — typeset in `paper/cover_letter.tex`
+     (build: `pdflatex cover_letter` in `paper/`; the PDF is gitignored).
+     The .tex is IDENTITY-BEARING and must be included in the `git rm`
+     strip list whenever the `mlst-review` branch is refreshed; (c) upload the anonymous **PDF only**
      (main_anonymous.tex retains identity in `\else` branches);
      (d) never sign rebuttals/responses with the author name during review.
    - *Deferred:* PRD is a stronger target for the **Phase II Schwinger/gauge

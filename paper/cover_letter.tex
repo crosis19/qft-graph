@@ -1,0 +1,102 @@
+% Cover letter for the MLST submission -- editor-facing, IDENTITY-BEARING.
+% This file and its PDF must stay on the mlst-review strip list.
+% Build: pdflatex cover_letter   (or `make cover` in paper/)
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb}
+\usepackage[hidelinks]{hyperref}
+% ~1.1in margins without geometry.sty (not installed in this MiKTeX)
+\setlength{\oddsidemargin}{0.1in}
+\setlength{\textwidth}{6.3in}
+\setlength{\topmargin}{-0.4in}
+\setlength{\textheight}{9in}
+% parskip-style paragraphs without parskip.sty
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1.8ex}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{flushright}
+Joshua Paul Brehm\\
+Independent Researcher\\
+\href{mailto:joshua.paul.brehm@gmail.com}{joshua.paul.brehm@gmail.com}\\[2ex]
+July 30, 2026
+\end{flushright}
+
+\noindent The Editors\\
+\emph{Machine Learning: Science and Technology}
+
+\vspace{1ex}
+\noindent\textbf{Re: Research-paper submission --- ``Heterogeneous Bipartite
+Graph Neural Networks for Lattice Quantum Field Theory''}
+
+\vspace{1ex}
+Dear Editors,
+
+Please consider the enclosed manuscript for publication in \emph{Machine
+Learning: Science and Technology} as a research paper.
+
+The manuscript's central contribution is architectural: a heterogeneous
+bipartite graph representation for lattice field theories that separates
+spacetime geometry from field content into distinct node types coupled by
+typed edges --- a design inspired by the geometry--matter distinction in
+continuum quantum field theory. Because the contribution is a representation
+advance motivated by, and validated on, a physics problem, we believe MLST
+--- at the interface of machine-learning methodology and the physical
+sciences --- is its natural venue.
+
+Four results support the design. First, we identify a structural failure
+mode of the standard homogeneous-graph representation: message passing
+destroys the field signal unless rescued by ad hoc skip connections, a
+failure the bipartite design eliminates by construction. Second, the model
+achieves near-perfect Euclidean-action prediction on two-dimensional scalar
+$\varphi^4$ theory ($r > 0.9999$), against convolutional,
+multilayer-perceptron, and homogeneous-GNN baselines. Third, a single model
+trained at $16 \times 16$ transfers to lattices from $8 \times 8$ to
+$64 \times 64$ with $r = 1.0000$ and no retraining. Fourth, the training
+ensembles are validated by a finite-size-scaling study using a
+Wolff/Brower--Tamayo cluster sampler, reproducing the exact Ising exponents
+($\gamma/\nu = 1.732(8)$, $\nu = 1.04(8)$) once critical slowing down is
+controlled --- itself an illustration of the sampling bottleneck that
+motivates learned surrogates. The architecture accommodates gauge and
+fermion fields at the same lattice sites without structural change, giving
+a direct path toward lattice QCD.
+
+We have selected \textbf{double-anonymous review}, and the manuscript is
+anonymized per your checklist. The following declarations therefore appear
+here rather than in the manuscript, to be restored to the Acknowledgements
+on acceptance:
+
+\begin{itemize}
+  \item \textbf{Author:} Joshua Paul Brehm (independent researcher,
+    unaffiliated), sole author, who takes full responsibility for the work.
+  \item \textbf{Funding:} this work received no funding from any agency in
+    the public, commercial, or not-for-profit sectors.
+  \item \textbf{Conflicts of interest:} the author declares none.
+  \item \textbf{Generative AI:} used in preparing the work and disclosed,
+    with models, versions, and roles, in the manuscript's Acknowledgements
+    per IOP policy (the disclosure is identity-neutral and retained in the
+    review copy).
+\end{itemize}
+
+For reviewers, the complete code and analysis-level data --- sufficient to
+regenerate every figure, table, and quoted number --- are available through
+an anonymized repository mirror linked in the manuscript's Data availability
+section; the public repository will be linked on acceptance.
+
+The manuscript is original, has not been published previously, is not under
+consideration elsewhere, and has not been posted to any preprint server.
+
+Finally, as an unaffiliated researcher with no institutional or grant
+support, I would be grateful to be considered for a waiver or discount of
+the article publication charge, and I am happy to provide any documentation
+required.
+
+Thank you for your consideration.
+
+\vspace{2ex}
+Sincerely,
+
+Joshua Paul Brehm
+
+\end{document}
