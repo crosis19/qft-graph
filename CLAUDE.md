@@ -2,8 +2,10 @@
 
 Working spec for all Claude Code sessions in this repo:
 **[qft_graph_implementation_plan.md](qft_graph_implementation_plan.md)** — read the relevant
-task section (P1-x / A-x / B-x) before starting work. Read `ARCHITECTURE.md` before touching
-model or graph code.
+task section (P1-x / A-x / B-x) before starting work. For the Phase I journal-revision
+workstream (V2-x tasks, branch `paper-v2`), the working spec is
+**[docs/v2_cluster_fss_plan.md](docs/v2_cluster_fss_plan.md)** instead. Read
+`ARCHITECTURE.md` before touching model or graph code.
 
 ## Ground rules
 
@@ -14,8 +16,8 @@ model or graph code.
 2. **Conventions in the plan are frozen** (gamma matrices, plaquette orientation,
    gauge-transform signs, χ definition). Propose changes in a comment; never change
    silently mid-project.
-3. **One task ID per session/PR.** Tasks are labeled P1-x, A-x, B-x in the plan, with
-   explicit definitions of done.
+3. **One task ID per session/PR.** Tasks are labeled P1-x, A-x, B-x in the plan (and V2-x
+   in `docs/v2_cluster_fss_plan.md`), with explicit definitions of done.
 4. **Every figure and table is regenerable** by a committed script + config file. No
    numbers pasted into the paper by hand without a script that produced them.
 5. **Reproducibility:** all seeds from config files; log `(git commit, config hash, seeds,

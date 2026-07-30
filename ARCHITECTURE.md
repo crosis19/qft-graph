@@ -27,7 +27,7 @@ Our architecture introduces a **heterogeneous bipartite graph** that formally se
 │   │      │                  │                  │                  │  │
 │   │    (0,3)───adjacent───(1,3)───adjacent───(2,3)───adjacent───(3,3)
 │   │                                                             │   │
-│   │    Features: [x¹, x², lattice_spacing a]                   │   │
+│   │    Features: [x¹, x²] (spacing a scales edge vectors)      │   │
 │   │    Edges: 4-connected grid with direction vectors           │   │
 │   │    (periodic BCs: edges wrap around boundaries)             │   │
 │   └────────────────────────┬────────────────────────────────────┘   │
@@ -79,7 +79,9 @@ This separation is impossible in a homogeneous graph where everything is a singl
 ```
 HeteroData(
   spacetime={
-    x: [N², dim+1],              # [coordinates, lattice_spacing]
+    x: [N², dim],                # coordinates (default a_in_edges=True: spacing
+                                 # scales adjacent edge_attr; coordinate-free
+                                 # "constant" mode uses [N², 1])
     num_nodes: N²
   },
   scalar={
@@ -88,7 +90,7 @@ HeteroData(
   },
   (spacetime, adjacent, spacetime)={
     edge_index: [2, N²·2d],     # nearest-neighbor lattice edges
-    edge_attr: [N²·2d, dim]     # unit direction vectors ±x̂, ±ŷ
+    edge_attr: [N²·2d, dim]     # direction vectors ±a·x̂, ±a·ŷ (spacing-scaled; default a_in_edges=True)
   },
   (scalar, inhabits, spacetime)={
     edge_index: [2, N²],         # bipartite: field_i → spacetime_i
@@ -100,7 +102,7 @@ HeteroData(
 )
 ```
 
-For a 16×16 lattice: 256 spacetime nodes + 256 scalar nodes + 2,048 adjacency edges + 512 bipartite edges.
+For a 16×16 lattice: 256 spacetime nodes + 256 scalar nodes + 1,024 adjacency edges + 512 bipartite edges.
 
 ---
 
@@ -113,8 +115,8 @@ For a 16×16 lattice: 256 spacetime nodes + 256 scalar nodes + 2,048 adjacency e
 │  ┌───────────────────── ENCODING ─────────────────────┐             │
 │  │                                                     │             │
 │  │  Spacetime Encoder (MLP)    Field Encoder (MLP)     │             │
-│  │  [x¹,x²,a] → h_st          [φ] → h_field           │             │
-│  │       dim+1 → H                  1 → H              │             │
+│  │  [x¹,x²] → h_st            [φ] → h_field           │             │
+│  │       dim → H                    1 → H              │             │
 │  │                                                     │             │
 │  │  Edge Encoder (MLP)                                 │             │
 │  │  [±x̂, ±ŷ] → e_adj                                  │             │
@@ -153,7 +155,7 @@ For a 16×16 lattice: 256 spacetime nodes + 256 scalar nodes + 2,048 adjacency e
 │                            ▼                                        │
 │  ┌───────────────────── READOUT ──────────────────────┐             │
 │  │                                                     │             │
-│  │  Energy Head:                                       │             │
+│  │  Action Head (ActionHead; output key "energy"):     │             │
 │  │    S_E = Σ_x  MLP([h_st(x) ∥ h_field(x)]) · a^d   │             │
 │  │              ↑                              ↑       │             │
 │  │         per-site energy            lattice volume    │             │
@@ -182,11 +184,11 @@ For a 16×16 lattice: 256 spacetime nodes + 256 scalar nodes + 2,048 adjacency e
  │  MCConfig ──→ MetropolisSampler                                 │
  │                    │                                             │
  │                    ▼                                             │
- │  Thermalize (1000 sweeps) → Generate (10000 configs × 10 sweeps)│
+ │  Thermalize (1000 sweeps) → Generate (5000 configs × 10 sweeps) │
  │                    │                                             │
  │                    ▼                                             │
- │  mc_data.pt: { configurations: [10000, 256],                    │
- │                actions: [10000],                                 │
+ │  mc_data.pt: { configurations: [5000, 256],                     │
+ │                actions: [5000],                                  │
  │                acceptance_rate: 0.45 }                           │
  └──────────────────────┬───────────────────────────────────────────┘
                         │
@@ -220,9 +222,11 @@ For a 16×16 lattice: 256 spacetime nodes + 256 scalar nodes + 2,048 adjacency e
                         ▼
  ┌──────────────────────────────────────────────────────────────────┐
  │  4. PHYSICS ANALYSIS                                             │
- │     scripts/evaluate.py + scripts/sweep.py                       │
+ │     scripts/evaluate.py + scripts/sweep.py (per-size m² sweep)   │
+ │     scripts/run_cluster_fss.py + scripts/analyze_fss.py          │
+ │     (paper-v2 FSS: cluster sampler, results/fss_analysis_*.json) │
  │                                                                  │
- │  Coupling sweep at L = 8, 16, 32:                               │
+ │  Coupling sweep at L = 16, 24, 32, 48, 64, 96, 128:              │
  │    ┌─────────────┐    ┌──────────────┐    ┌───────────────────┐ │
  │    │ Compute ξ/L │───→│ Find crossing│───→│ Extract ν from    │ │
  │    │ vs m² for   │    │ point → m²_c │    │ scaling collapse  │ │
@@ -238,7 +242,7 @@ For a 16×16 lattice: 256 spacetime nodes + 256 scalar nodes + 2,048 adjacency e
 The codebase uses abstract base classes so later phases add new implementations without modifying existing code:
 
 ```
-Phase 1 (current)          Phase 2 (U(1)+Fermions)     Phase 3 (SU(3) 4D)
+Phase 1 (complete)         Phase 2 (U(1)+Fermions)     Phase 3 (SU(3) 4D)
 ─────────────────          ───────────────────────      ──────────────────
 Lattice:                   Lattice:                     Lattice:
   HypercubicLattice(2D)     HypercubicLattice(2D/3D)    HypercubicLattice(4D)
@@ -266,6 +270,15 @@ HeteroGraphBuilder:        HeteroGraphBuilder:          HeteroGraphBuilder:
   (no changes needed)        (no changes needed)          (no changes needed)
 ```
 
+> **Status note (2026-07-30):** Phase IIa (quenched U(1)) has shipped with slightly
+> different names than sketched above: `U1GaugeField` (fields/gauge.py),
+> `WilsonGaugeAction` (actions/wilson.py), `U1HeatbathSampler` (mc/heatbath.py —
+> von Mises heatbath, not HMC), `GaugeThreeStageBlock`
+> (models/message_passing/gauge_stage.py), `U1GaugeGNN` (models/u1_gnn.py), and an
+> HDF5 U(1) dataset pipeline (graphs/u1_dataset.py). Fermions remain a stub. The V2
+> paper revision also added the Wolff/Brower-Tamayo embedded-cluster sampler for
+> phi^4 (mc/cluster.py).
+
 ### Key Extension Points
 
 | Component | How it extends | What stays the same |
@@ -291,16 +304,20 @@ config.py
     ├──→ fields/
     │      ├── base.py (ABC)
     │      ├── scalar.py
-    │      ├── gauge.py (stub)
+    │      ├── gauge.py (U1GaugeField: compact U(1) links, Phase IIa)
     │      └── fermion.py (stub)
     │
     ├──→ actions/
     │      ├── base.py (ABC)
-    │      └── phi4.py ──→ lattice, fields
+    │      ├── phi4.py ──→ lattice, fields
+    │      └── wilson.py ──→ fields.gauge (Wilson plaquette action)
     │
     ├──→ mc/
     │      ├── sampler.py (ABC)
     │      ├── metropolis.py ──→ actions
+    │      ├── cluster.py ──→ actions (Wolff/Brower-Tamayo embedded-cluster hybrid)
+    │      ├── heatbath.py ──→ actions.wilson (U(1) von Mises heatbath)
+    │      ├── exact_u1.py (exact U(1) plaquette oracles)
     │      ├── observables.py ──→ lattice
     │      └── analysis.py
     │
@@ -308,6 +325,7 @@ config.py
     │      ├── node_types.py
     │      ├── edge_types.py
     │      ├── builder.py ──→ lattice, fields (produces PyG HeteroData)
+    │      ├── u1_dataset.py ──→ fields.gauge (HDF5 U(1) ensembles + gauge augmentation)
     │      └── transforms.py
     │
     ├──→ models/
@@ -316,11 +334,15 @@ config.py
     │      │     ├── field_to_st.py ──→ PyG MessagePassing
     │      │     ├── st_to_st.py ──→ PyG MessagePassing
     │      │     ├── st_to_field.py ──→ PyG MessagePassing
-    │      │     └── stage.py ──→ edge_types, all 3 MP layers
+    │      │     ├── stage.py ──→ edge_types, all 3 MP layers
+    │      │     └── gauge_stage.py (GaugeThreeStageBlock, SpacetimeOnlyBlock)
     │      ├── heads/
-    │      │     ├── energy.py
+    │      │     ├── action.py (ActionHead; output dict key stays "energy")
+    │      │     ├── pooled.py (PooledReadoutHead)
     │      │     └── correlator.py
-    │      └── hetero_gnn.py ──→ encoders, stage, heads
+    │      ├── baselines/ (mlp_baseline, lattice_cnn, homogeneous_gnn)
+    │      ├── hetero_gnn.py ──→ encoders, stage, heads
+    │      └── u1_gnn.py ──→ encoders, gauge_stage, heads (U1GaugeGNN)
     │
     ├──→ training/
     │      ├── losses.py
@@ -337,6 +359,7 @@ config.py
     └──→ utils/
            ├── reproducibility.py
            ├── checkpointing.py
+           ├── run_logging.py
            └── logging.py
 ```
 
@@ -382,7 +405,7 @@ Plotting `ξ/L` vs `m²` for different L values:
 
 ## Monte Carlo Samplers
 
-Two sampler implementations are provided, automatically selected by `create_sampler()`:
+Four sampler implementations share the `MCSampler` ABC. For scalar φ⁴, `create_sampler()` (mc/metropolis.py) picks between the two local Metropolis variants below; the Wolff/Brower–Tamayo embedded-cluster hybrid (`ClusterSampler`, mc/cluster.py, via `create_cluster_sampler()`) supersedes both for near-critical FSS production runs, cutting τ_int from ~185 to ~8–9. U(1) gauge ensembles use `U1HeatbathSampler` (mc/heatbath.py, von Mises heatbath):
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

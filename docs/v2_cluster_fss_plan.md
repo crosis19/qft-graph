@@ -1,7 +1,7 @@
 # Phase I journal v2 — cluster sampler + precision FSS (handoff spec)
 
 **Owner:** Josh Brehm · **Branch:** `paper-v2` (do all this work here) ·
-**Created:** 2026-07-18 · **Status:** approved by Josh, ready to start.
+**Created:** 2026-07-18 · **Status (updated 2026-07-29):** COMPLETE — V2-1/V2-2/V2-3 all delivered on `paper-v2` (sampler d5e071e; cluster FSS fdca039→5629ddc, gamma/nu = 1.732(8); paper rewrite da23bb6/221b51e; plus V2-4 IOP pass 0c3c197). Note: the arXiv framing in §0 is historical — the arXiv route was abandoned 2026-07-23 (bfdc2fb); the paper targets journal (MLST) submission only. Retained as a historical handoff spec.
 
 A fresh session can execute this without the originating conversation. Read
 `CLAUDE.md` (ground rules) and this file; you do **not** need to read the whole

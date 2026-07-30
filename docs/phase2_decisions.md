@@ -105,6 +105,12 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
    Bachtis2021 bib error inherited from paper/references.bib — fixed in
    both). Open TODOs in the draft: repository URL, Phase I arXiv id,
    commit the pilot MLP-probe script before quoting its exact numbers.
+   **[Update 2026-07-29: the "Phase I arXiv id" TODO is moot — the arXiv
+   route was abandoned 2026-07-22 (commit bfdc2fb; Phase I goes
+   journal-only to MLST, docs/v2_review_brief.md), so the paper_gauge
+   self-citation (references.bib, note "arXiv preprint, submission
+   pending") should cite the MLST submission/DOI instead. The
+   repository-URL and MLP-probe-script TODOs remain open.]**
 
 9. **Variant C (invariant_oracle) is the WS2 winning graph variant**
    (Josh, 2026-07-14, ratifying the A-4/A-5 evidence: A/B at chance
@@ -118,11 +124,23 @@ made. Sessions working on A-x/B-x tasks: read this before starting.
    for sampling; decide at WS3).
 8. Whether Phase I v2 absorbs the delayed-acceptance idea or it stays
    exclusive to the IIb paper (plan assumes the latter).
+   **[Resolved de facto 2026-07-18: the Josh-approved Phase I v2 scope
+   (docs/v2_cluster_fss_plan.md) is cluster sampler + precision FSS
+   only, and v2 executed to completion on that scope (V2-1..V2-4,
+   commits d5e071e..0c3c197) with no delayed-acceptance content — it
+   stays with the IIb paper, as the plan assumed. Move to "Decided"
+   once Josh confirms.]**
 
-## Status pointers (as of 2026-07-11)
+## Status pointers (as of 2026-07-11; later entries dated inline)
 
 - WS1 complete; `paper-v1` tag pushed; arXiv submission pending hep-lat
-  endorsement (requested from D. Schaich).
+  endorsement (requested from D. Schaich). **[Update 2026-07-29:
+  superseded — v1 was submitted to arXiv and declined by moderation
+  (ticket MOD-97144); the arXiv route is abandoned (2026-07-22, commit
+  bfdc2fb) — journal publication only. The journal version (v2:
+  Wolff/Brower–Tamayo cluster FSS, gamma/nu = 1.732(8)) lives on branch
+  `paper-v2`, targeting *Machine Learning: Science and Technology*
+  (IOP); see docs/v2_review_brief.md and docs/v2_cluster_fss_plan.md.]**
 - A-1/A-2 complete: labeled U(1) ensembles in `data/u1_configs/*.h5`
   (theta[N,2,L,L] float32 + action/q/wilson datasets; validation tables in
   `results/u1_heatbath_data.json`, `results/u1_labels.json`).

@@ -17,8 +17,8 @@ This project introduces a **heterogeneous bipartite graph** where spacetime node
 
 | Phase | Duration | Theory | Goal |
 |-------|----------|--------|------|
-| **I** (current) | 3 months | Scalar φ⁴ in 2D | Recover Ising critical exponent ν ≈ 1 |
-| II | 4 months | U(1) Gauge + Fermions | Gauge-equivariant message passing |
+| **I** (complete — φ⁴ paper in v2 journal revision, MLST) | 3 months | Scalar φ⁴ in 2D | Recover Ising critical exponent ν ≈ 1 |
+| **II** (IIa gauge study complete 2026-07; IIb fermions pending) | 4 months | U(1) Gauge + Fermions | Gauge-equivariant message passing |
 | III | 6 months | SU(3) Yang–Mills in 4D | Benchmark against lattice QCD |
 | IV | 4 months | Wick Rotation Bridge | Euclidean → Minkowski spectral functions |
 | V | 6 months | Native Minkowski | Real-time dynamics via complex Langevin |
@@ -50,7 +50,7 @@ pip install -e ".[dev]"
 
 ### Generate Monte Carlo Data
 
-The sampler automatically selects the best algorithm: sequential Metropolis for small lattices (≤16×16) and vectorized checkerboard decomposition for large lattices (≥32×32), giving 10–50x speedups.
+The sampler automatically selects the best algorithm: sequential Metropolis for small lattices (≤16×16) and vectorized checkerboard decomposition for large lattices (≥32×32), giving 10–50x speedups. For critical-region sweeps, a Wolff/Brower–Tamayo embedded-cluster sampler (`src/qft_graph/mc/cluster.py`) removes critical slowing down (τ_int ≈ 185 → ≈ 8–9 at L = 64, up to 21x faster decorrelation); enable it with `scripts/sweep.py --sampler cluster`.
 
 ```bash
 # Small lattice (sequential sampler)
@@ -116,25 +116,29 @@ qft_graph/
 │   └── mc/                     # Monte Carlo sampler configs
 ├── src/qft_graph/              # Main package
 │   ├── lattice/                # Spacetime geometry (N-dim hypercubic)
-│   ├── fields/                 # Quantum fields (scalar, gauge*, fermion*)
+│   ├── fields/                 # Quantum fields (scalar, U(1) gauge, fermion*)
 │   ├── graphs/                 # Heterogeneous graph construction
-│   ├── actions/                # Lattice action functionals (φ⁴)
+│   ├── actions/                # Lattice action functionals (φ⁴, U(1) Wilson)
 │   ├── mc/                     # Monte Carlo sampling + observables
 │   ├── models/                 # GNN architecture
 │   │   ├── encoders/           # Type-specific node/edge encoders
 │   │   ├── message_passing/    # 3-stage message passing blocks
-│   │   └── heads/              # Energy + correlator readout heads
+│   │   └── heads/              # Action (S_E) + correlator readout heads (output key: `energy`)
 │   ├── training/               # Training loop, losses, metrics
 │   ├── analysis/               # Critical exponents, correlations, plots
 │   └── utils/                  # Reproducibility, checkpointing, logging
 ├── scripts/                    # CLI entry points
 ├── tests/                      # Test suite (pytest)
 ├── notebooks/                  # Jupyter exploration notebooks
+├── paper/                      # Phase I paper (LaTeX; `make -C paper`, `make -C paper submission`)
+├── paper_gauge/                # Phase IIa paper draft (learned vs. exact gauge invariance)
+├── docs/                       # Decision records and plans (phase2_decisions.md, ...)
+├── results/                    # Committed analysis + provenance JSONs (fss_analysis_cluster.json, cluster_fss/ snapshot)
 ├── data/                       # Generated data (gitignored)
 └── experiments/                # Run logs and checkpoints (gitignored)
 ```
 
-*\* Stubs for Phase 2+*
+*\* `fermion.py` is a stub for Phase IIb; gauge fields are fully implemented (Phase IIa).*
 
 ## Running Tests
 
@@ -179,9 +183,9 @@ traces to a committed script + `results/*.json` provenance record.
 | Action prediction (8×8 / 16×16) | r = 0.99999 / 0.99998 | GNN vs exact action, held-out sets |
 | Action prediction (64×64) | r = 0.981 ± 0.036 (4/5 seeds ≥ 0.9989) | one slow-converging seed, see paper |
 | Size transfer (train 16×16 → eval 8–64) | r = 1.0000 at all sizes | single model, no retraining |
-| Critical exponent ν | 1.10 ± 0.43 | ξ/L crossing + collapse, bootstrap errors (exact: ν = 1) |
-| Critical point m²_c | −2.22 ± 0.24 (λ=0.5) | k≠0 two-momentum ξ estimator, L=16/32 crossing |
-| Susceptibility scaling γ/ν | 1.57 ± 0.12 | weighted ln χ_max vs ln L fit (exact: 1.75) |
+| Critical exponent ν | 1.04 ± 0.08 | pseudo-critical-shift fits, cluster ensembles, 7 sizes L = 16–128 (exact: ν = 1) |
+| Critical point m²_c | −2.217 ± 0.003 (λ=0.5) | χ-peak pseudo-critical extrapolation, cluster ensembles |
+| Susceptibility scaling γ/ν | 1.732 ± 0.008 | ln χ_max vs ln L, Wolff/Brower–Tamayo cluster sampler (exact: 1.75); local-Metropolis comparison 1.60 ± 0.03 is biased by critical slowing down |
 | Over-smoothing ablation | no-skip homogeneous GNN collapses by B=6 | depth study, 3 variants × 5 depths |
 
 ### Reproducing every figure and table
@@ -201,11 +205,18 @@ python scripts/train_baselines.py --data data/mc_configs/phi4_16x16_m2=-0.5_lam=
 python scripts/generate_multicoupling_data.py
 python scripts/train_multicoupling.py --seeds 0 1 2 3 4
 
-# Fig. 2 + scaling collapse (FSS with errors; one sweep per size, then analysis)
-python scripts/sweep.py --dimensions 16 16 --n_sweeps_between 10 --warm_start --store_series --output data/sweep_results_v2
-python scripts/sweep.py --dimensions 32 32 --n_sweeps_between 20 --warm_start --store_series --output data/sweep_results_v2
-python scripts/sweep.py --dimensions 64 64 --n_sweeps_between 40 --warm_start --store_series --output data/sweep_results_v2
-python scripts/analyze_fss.py --output results/fss_analysis_v2.json
+# Fig. 2 + FSS numbers (cluster-sampler pipeline, 7 sizes L=16..128; the local run
+# survives only as the comparison arm, results/fss_analysis_v5.json)
+python scripts/run_cluster_fss.py            # base + chi-peak cluster sweeps -> data/sweep_cluster{,_peak} (gitignored)
+#   (peak grids were later refined to uniform dense scans via scripts/dense_peak_scan.py;
+#    the committed point-data snapshot results/cluster_fss/{base,peak} already reflects
+#    this, so the analysis below reproduces the committed numbers without re-running sweeps)
+python scripts/analyze_fss.py --sweep_dir results/cluster_fss/base \
+    --peak_dir results/cluster_fss/peak --sizes 16 24 32 48 64 96 128 \
+    --peak_n_points 9 --output results/fss_analysis_cluster.json
+python scripts/tau_int_comparison.py         # matched local-vs-cluster autocorrelation run
+python scripts/assemble_fss_comparison.py    # -> results/fss_local_vs_cluster.json
+python scripts/make_fss_numbers.py           # -> paper/fss_numbers.tex (every FSS number in the paper)
 
 # Depth ablation figure / size-transfer table
 python scripts/run_depth_ablation.py --data data/mc_configs/phi4_16x16_m2=-0.5_lam=0.5/mc_data.pt \
@@ -222,7 +233,12 @@ GPU acceleration: every training script takes `--device cuda`;
 `notebooks/07_ws1_experiments_colab.ipynb` runs the full suite on Colab.
 Exact analysis-environment versions: `paper/requirements-paper.txt`.
 
-### Phase IIa (in progress)
+### Phase IIa (complete 2026-07)
+
+A-1–A-5 done: the A/B gauge-null finding is measured, Variant C
+(gauge-invariant inputs) is ratified as the winning graph variant, and the
+study is written up as a standalone paper draft — see
+`docs/phase2_decisions.md` for the decision record.
 
 U(1) gauge ensembles + labels (heatbath validated against torus-exact
 character expansion):

@@ -7,6 +7,17 @@
 - **WS2 — Phase IIa:** quenched compact U(1) gauge theory in 2D — the link-node vs. edge-feature architecture experiment and gauge-invariance measurement (~3–5 weeks).
 - **WS3 — Phase IIb:** Schwinger model — GNN surrogate for the fermion determinant, closed with exactness-preserving sampling (multi-month flagship).
 
+> **Status note (2026-07-30):** This plan predates two developments it does not cover.
+> (1) WS1 is complete, but after submission arXiv v1 was declined by moderation and the
+> arXiv route is **abandoned** (commit bfdc2fb) — publication is journal-only, targeting
+> *Machine Learning: Science and Technology* (MLST/IOP). The journal-revision tasks
+> (V2-1..V2-3: Wolff/Brower–Tamayo cluster sampler, 7-size FSS to L=128) live in
+> **`docs/v2_cluster_fss_plan.md`**, and the venue decision + arXiv postmortem in
+> **`docs/v2_review_brief.md`** (the MLST/IOP compliance pass landed as commit 0c3c197,
+> "V2-4") — not here.
+> (2) WS2 (A-1..A-5) is complete; a standalone Phase IIa paper is drafted in `paper_gauge/`
+> and Variant C was ratified as the winning graph variant — see `docs/phase2_decisions.md`.
+
 ## 0. Ground rules for Claude Code
 
 1. **Physics tests gate everything.** No training run launches until the exact-value unit tests for that module pass. The tests defined in this doc are the arbiters of sign conventions — if a derivation in this doc conflicts with a passing exact-value test, trust the test and flag the discrepancy.
@@ -14,12 +25,12 @@
 3. **One task ID per session/PR.** Tasks are labeled P1-x, A-x, B-x below, with explicit definitions of done.
 4. **Every figure and table is regenerable** by a committed script + config file. No numbers pasted into the paper by hand without a script that produced them.
 5. **Reproducibility:** all seeds from config files; log `(git commit, config hash, seeds, metrics)` to `results/<run_id>.json`. Prefer boring numpy/scipy/torch; no new heavy dependencies without approval.
-6. **CPU-first.** Everything here is sized for a laptop (model is ~150k params). GPU is optional acceleration, never a requirement (`configs/defaults.yaml` currently sets `device: cuda` — make device auto-detecting).
-7. **Read `ARCHITECTURE.md` before touching model or graph code.** Extend the existing registries (`graphs/node_types.py` `NodeType` enum, `graphs/edge_types.py` helpers, `actions/base.py`, `fields/base.py`) rather than inventing parallel structures. Terminology note: the codebase says **"energy"** (`models/heads/energy.py`, `loss: energy_matching`) where the paper says **"action"** — keep code terminology, map the two in prose/docstrings, do not mass-rename.
+6. **CPU-first.** Everything here is sized for a laptop (model is ~150k params). GPU is optional acceleration, never a requirement (`device: auto` in `configs/defaults.yaml` — done in commit 176ef10).
+7. **Read `ARCHITECTURE.md` before touching model or graph code.** Extend the existing registries (`graphs/node_types.py` `NodeType` enum, `graphs/edge_types.py` helpers, `actions/base.py`, `fields/base.py`) rather than inventing parallel structures. Terminology note: after the terminology cleanup the code says **"action"** (`models/heads/action.py`, `ActionHead`) where the paper says action S_E[φ], but the training-loss key and output dict key remain `energy` (`loss: energy_matching`, `output["energy"]`) — map the two in prose/docstrings, do not mass-rename.
 
 ## 1. Repo layout — current state and where new code goes (WS0)
 
-**No restructuring needed.** The repo already has a clean `src/qft_graph` package (actions, fields, graphs, lattice, mc, models, training, analysis, utils), a mirrored pytest suite, OmegaConf-composed configs (`configs/defaults.yaml` + `lattice/`, `mc/`, `model/`, `training/`), entry-point scripts (`generate_mc_data.py`, `train.py`, `evaluate.py`, `sweep.py`), and in-repo LaTeX (`paper/` with `Makefile` and `generate_figures.py`). `fields/gauge.py` and `fields/fermion.py` exist as documented stubs, and `NodeType` already registers `GAUGE` and `FERMION` — Phase II was pre-scaffolded. Follow this map:
+**No restructuring needed.** The repo already has a clean `src/qft_graph` package (actions, fields, graphs, lattice, mc, models, training, analysis, utils), a mirrored pytest suite, OmegaConf-composed configs (`configs/defaults.yaml` + `lattice/`, `mc/`, `model/`, `training/`), entry-point scripts (`generate_mc_data.py`, `train.py`, `evaluate.py`, `sweep.py`), and in-repo LaTeX (`paper/` with `Makefile` and `generate_figures.py`). `fields/gauge.py` and `fields/fermion.py` exist as documented stubs *(2026-07 note: `gauge.py` has since been fully implemented in A-1; `fermion.py` remains a stub pending B-1)*, and `NodeType` already registers `GAUGE` and `FERMION` — Phase II was pre-scaffolded. Follow this map:
 
 | New capability | Home |
 |---|---|
@@ -32,7 +43,7 @@
 | Delayed-acceptance sampler | new `src/qft_graph/mc/delayed_acceptance.py` |
 | All new physics tests | mirrored dirs under `tests/` (e.g. `tests/test_mc/test_heatbath.py`, `tests/test_fermions/`) |
 
-Add a `CLAUDE.md` at repo root containing: the Ground Rules above, `pytest` invocation, the energy↔action terminology note, and a pointer to this plan. Optional tidiness: move `gnn-qft-plan.jsx` and `gnn-qft-proposal.docx` from root into `docs/`.
+Add a `CLAUDE.md` at repo root containing: the Ground Rules above, `pytest` invocation, the energy↔action terminology note, and a pointer to this plan. Optional tidiness: move `gnn-qft-plan.jsx` and `gnn-qft-proposal.docx` from root into `docs/`. *(Done: `CLAUDE.md` exists at root; both files now live in `docs/`.)*
 
 ---
 
@@ -81,7 +92,7 @@ Work items:
 
 ### Task P1-3: m² and λ as model inputs + multi-coupling training
 
-The current model has no coupling input, so the old Table III conflates distribution shift with an unlearnable label shift.
+The current model has no coupling input, so the old Table III conflates distribution shift with an unlearnable label shift. *(2026-07 note: done in P1-3 — coupling conditioning shipped as `ModelConfig.condition_on_couplings` with graph-level `(m², λ)` inputs in `graphs/builder.py` (the "task P1-3" block), plus `scripts/generate_multicoupling_data.py` / `scripts/evaluate_generalization.py`.)*
 
 1. **Model change:** field-node features `[phi_i]` → `[phi_i, m2, lambda]`; also append `(m2, lambda)` to the readout MLP input. Keep it this simple (no global node).
 2. **Postmortem first:** inspect the original Table III eval script and determine which m² entered the target action (almost certainly the new one). Write a 3-sentence summary for the paper explaining the old protocol honestly.
@@ -124,7 +135,7 @@ Caveat to test: absolute coordinate features (x1, x2) may not transfer across L.
 
 ### WS1 exit criteria
 
-All P1 tasks done → tag `paper-v1`, submit to arXiv. Phase IIa training may then begin.
+All P1 tasks done → tag `paper-v1`, submit to arXiv. Phase IIa training may then begin. *(Outcome, 2026-07: tag `paper-v1` exists and v1 was submitted, but arXiv declined it via moderation and the arXiv route is abandoned (commit bfdc2fb); Phase I publication continues as a journal submission (MLST) — see `docs/v2_cluster_fss_plan.md` and `docs/v2_review_brief.md`.)*
 
 ---
 
@@ -214,7 +225,7 @@ Files: extend `graphs/edge_types.py` (add `("gauge", "starts_at", "spacetime")`,
 
 ### WS2 exit criteria / deliverables
 
-Sampler oracles green; A vs B vs C decided with evidence (this choice feeds WS3); receptive-field heatmap; gauge-invariance study. Output: either a short standalone paper ("learned vs. exact gauge invariance in heterogeneous GNNs for lattice gauge theory") or Section 1 of the Schwinger paper — Josh decides after seeing results.
+Sampler oracles green; A vs B vs C decided with evidence (this choice feeds WS3); receptive-field heatmap; gauge-invariance study. Output: either a short standalone paper ("learned vs. exact gauge invariance in heterogeneous GNNs for lattice gauge theory") or Section 1 of the Schwinger paper — Josh decides after seeing results. *(Decided 2026-07-14: standalone paper — first draft in `paper_gauge/`; Variant C ratified as the winning variant. See `docs/phase2_decisions.md`.)*
 ---
 
 ## 4. WS3 — Phase IIb: Schwinger model (flagship)
@@ -316,6 +327,8 @@ B-3 → B-4                      (last)
 | B-3 | 2–4 weeks | Tuning the inner/outer balance is the research part |
 
 ### Open decisions for Josh (flag, don't decide silently)
+
+*(Resolutions are recorded in `docs/phase2_decisions.md`. As of 2026-07: decision 2 resolved — standalone Phase IIa paper, drafted in `paper_gauge/`; decision 4 resolved — coordinate-free features adopted everywhere in Phase II. Decisions 1 and 3 remain open.)*
 
 1. N_f = 2 (positive measure, cleanest) vs N_f = 1 (matches the famous g/√π result) as the *paper's* framing — plan assumes N_f = 2 for sampling, N_f = 1 only if B-4 happens.
 2. IIa as standalone short paper vs. first section of the Schwinger paper.

@@ -42,6 +42,14 @@ workaround"; "to our knowledge, absent from ...") were already fixed in your pas
    access (article publication charge — verify the current rate and IOP's waiver
    policy as an unaffiliated author), and it uses IOP style rather than the
    current revtex4-2 (likely fine for a format-neutral initial submission).
+   - *Update 2026-07-29:* the style/format check is **done** — MLST/IOP
+     compliance pass committed (0c3c197): Data availability section,
+     funding-none and conflicts-of-interest statements, pinned AI-disclosure
+     versions, keywords comment for the submission form, figure fonts in the
+     IOP 8–12 pt band, and a 12 pt single-column review build
+     (`make submission` in `paper/`, producing the gitignored
+     `main_submission.pdf`). Still **open**: verify the current APC rate and
+     IOP's waiver policy for an unaffiliated author.
    - *Deferred:* PRD is a stronger target for the **Phase II Schwinger/gauge
      paper**, once there are gauge results; reviewers reasonably note PRD referees
      would ask "where is the gauge theory?" for the present scalar-only manuscript.

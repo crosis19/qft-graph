@@ -1,4 +1,5 @@
 > **APPROVED** by Josh, 2026-07-09 — the two-momentum estimator is adopted for xi in Fig. 2 and the nu extraction; chi stays as frozen.
+> **Update 2026-07-29:** the two-momentum estimator remains the paper's xi definition (xi/L crossings), but the nu extraction changed in V2-3 (commit 30599e4, 2026-07-20): the xi/L data-collapse nu estimator was found to be a method artefact (no interior minimum), and nu/m2_c now come from the pseudocritical-shift fit m2_peak(L) = m2_c - a·L^(-1/nu) (`src/qft_graph/analysis/critical.py::fit_nu_from_pseudocritical_shifts`), giving nu = 1.04(8), m2_c = -2.217(3).
 
 # FLAG for Josh: the frozen ξ recipe degenerates — proposed k≠0 estimator (P1-2)
 
