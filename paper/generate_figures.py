@@ -309,16 +309,19 @@ def load_sweep_data():
             print(f"  Using v2 sweep data from {base}")
             return out
 
-    sweep_path = PROJECT_ROOT / 'experiments' / 'runs' / 'colab_run' / 'sweep_results.json'
-    if sweep_path.exists():
-        with open(sweep_path) as f:
-            data = json.load(f)
-        for d in data.values():
-            n = len(d['m2_values'])
-            for key in ('mags_err', 'chis_err', 'xi_over_L_err'):
-                d.setdefault(key, [0.0] * n)
-        print(f"  Using legacy sweep data from {sweep_path} (no error bars)")
-        return data
+    for sweep_path in (
+        PROJECT_ROOT / 'results' / 'phase1_paper' / 'sweep_results.json',
+        PROJECT_ROOT / 'experiments' / 'runs' / 'colab_run' / 'sweep_results.json',
+    ):
+        if sweep_path.exists():
+            with open(sweep_path) as f:
+                data = json.load(f)
+            for d in data.values():
+                n = len(d['m2_values'])
+                for key in ('mags_err', 'chis_err', 'xi_over_L_err'):
+                    d.setdefault(key, [0.0] * n)
+            print(f"  Using legacy sweep data from {sweep_path} (no error bars)")
+            return data
     return None
 
 
@@ -551,7 +554,9 @@ def fig_baseline_comparison():
     print("Generating: baseline_comparison.pdf")
 
     import json
-    results_path = PROJECT_ROOT / 'experiments' / 'baseline_results.json'
+    results_path = PROJECT_ROOT / 'results' / 'phase1_paper' / 'baseline_results.json'
+    if not results_path.exists():
+        results_path = PROJECT_ROOT / 'experiments' / 'baseline_results.json'
     if not results_path.exists():
         print("  SKIPPED: baseline_results.json not found. Run train_baselines.py first.")
         return
@@ -593,7 +598,9 @@ def fig_generalization():
     print("Generating: generalization.pdf")
 
     import json
-    results_path = PROJECT_ROOT / 'experiments' / 'generalization_results.json'
+    results_path = PROJECT_ROOT / 'results' / 'phase1_paper' / 'generalization_results.json'
+    if not results_path.exists():
+        results_path = PROJECT_ROOT / 'experiments' / 'generalization_results.json'
     if not results_path.exists():
         print("  SKIPPED: generalization_results.json not found. Run evaluate_generalization.py first.")
         return
