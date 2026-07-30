@@ -313,8 +313,8 @@ def fit_gamma_over_nu_corrections(
     The naive power law chi_max ~ L^(gamma/nu) is biased by the leading
     irrelevant operator on small lattices; including a (1 + b L^(-omega))
     correction removes that curvature. With clean (unbiased) cluster data the
-    corrected and naive slopes should agree — reporting both is Schaich's
-    robustness cross-check (corrections-to-scaling / AIC, arXiv:2008.01069).
+    corrected and naive slopes should agree — reporting both is the external
+    expert's robustness cross-check (corrections-to-scaling / AIC, arXiv:2008.01069).
 
     Args:
         L_values: Lattice sizes.

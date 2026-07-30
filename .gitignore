@@ -22,3 +22,4 @@ logs_cluster/
 
 # MLST 12pt submission build (regenerable via 'make submission' in paper/)
 paper/main_submission.*
+paper/main_anonymous.*

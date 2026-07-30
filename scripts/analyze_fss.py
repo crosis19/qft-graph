@@ -199,7 +199,7 @@ def main() -> None:
     logger.info("gamma/nu (naive power law) = %.3f +/- %.3f (exact: 1.75)",
                 gamma_nu, gamma_nu_err)
 
-    # --- Robustness cross-checks on the naive power law (Schaich): a
+    # --- Robustness cross-checks on the naive power law (external-expert feedback): a
     # corrections-to-scaling fit chi_max = A L^(g/n)(1 + b L^(-w)) and an
     # AIC-weighted average over small-L cuts (arXiv:2008.01069). With clean
     # (unbiased) cluster data these should agree with the naive slope.

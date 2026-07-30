@@ -24,13 +24,29 @@
 % scripts/make_fss_numbers.py (ground rule 4). Re-run that script to update.
 \input{fss_numbers}
 
+% Double-anonymous review build: `make anonymous` (in paper/) flips the switch
+% below to \anonymoustrue and produces main_anonymous.pdf per the IOP checklist
+% (publishingsupport.iopscience.iop.org/questions/checklist-for-anonymising-your-manuscript/).
+% Upload the anonymous PDF only -- this .tex retains identity in \else branches.
+\newif\ifanonymous
+\anonymousfalse
+\ifanonymous
+\hypersetup{pdfauthor={Anonymous},
+  pdftitle={Heterogeneous Bipartite Graph Neural Networks for Lattice Quantum Field Theory}}
+\fi
+
 \begin{document}
 
 \title{Heterogeneous Bipartite Graph Neural Networks\\for Lattice Quantum Field Theory}
 
+\ifanonymous
+\author{Anonymous}
+\affiliation{Author details withheld for double-anonymous review}
+\else
 \author{Joshua Paul Brehm}
 \email{joshua.paul.brehm@gmail.com}
 \affiliation{Independent Researcher}
+\fi
 
 \date{\today}
 
@@ -64,6 +80,9 @@ quantum chromodynamics (QCD) without architectural changes.
 % graph neural networks; lattice field theory; heterogeneous graphs;
 % action matching; Monte Carlo simulation; finite-size scaling;
 % critical exponents; machine learning for physics
+%
+% Social media abstract for the MLST submission form (95 chars, limit 100):
+% A #GNN that separates spacetime from matter learns lattice φ⁴ theory and transfers across sizes
 
 \maketitle
 
@@ -815,16 +834,17 @@ physically reside and enabling clean integration with gauge link variables in
 future phases. This provides a unified framework for progressing from toy models
 to physically relevant theories, with lattice QCD as the ultimate target.
 
+\ifanonymous
+Code and data are available via an anonymized repository mirror (see the Data
+availability section).
+\else
 Code and data are available at
 \url{https://github.com/crosis19/qft-graph}.
+\fi
 
 \begin{acknowledgments}
-% ---------------------------------------------------------------------------
-% PENDING PERMISSION -- do NOT uncomment until D. Schaich confirms in writing
-% (request drafted in docs/schaich_email_draft.md). Wording deliberately
-% acknowledges his comments without implying he endorses the conclusions.
-% We thank D.~Schaich for helpful comments on the finite-size scaling analysis.
-% ---------------------------------------------------------------------------
+% A pending acknowledgment awaits written permission -- see the note at the top
+% of docs/schaich_email_draft.md (kept out of this file for review anonymity).
 Generative AI was used in the preparation of this work. Anthropic's Claude
 models (Claude Opus~4.6, Claude Opus~4.8, and Claude Fable~5, used via Claude
 Code) assisted with implementing and testing the
@@ -837,11 +857,33 @@ directed the work and takes full responsibility for its content.
 Pre-submission feedback was obtained from OpenAI's ChatGPT (GPT-5.5) and
 Google's Gemini (Gemini~3~Pro), which informed revisions to the presentation.
 
+\ifanonymous
+% Funding and conflicts-of-interest statements are omitted for double-anonymous
+% review (a "no funding / independent" statement is itself identifying); they
+% are declared in the cover letter and restored here on acceptance, per the
+% IOP anonymisation checklist.
+\else
 This work received no funding from any agency in the public, commercial, or
 not-for-profit sectors. The author declares no conflicts of interest.
+\fi
 \end{acknowledgments}
 
 \section*{Data availability}
+\ifanonymous
+% TODO before submitting double-anonymous: create the anonymized mirror at
+% https://anonymous.4open.science (point it at the project repository)
+% and replace the placeholder URL below. `make anonymous` warns while the
+% placeholder is present.
+The analysis-level data supporting this study---Monte Carlo observables,
+finite-size-scaling fit inputs and outputs, and training metrics---and all
+code required to regenerate every figure, table, and quoted number are
+available in an anonymized mirror of the project repository at
+\url{https://anonymous.4open.science/r/qft-graph-XXXX} (identifying
+information redacted for double-anonymous review; the public repository will
+be linked on acceptance). Raw Monte Carlo field configurations and model
+checkpoints are not deposited owing to their size, but are exactly
+regenerable from the committed configuration files and seeds.
+\else
 The analysis-level data supporting this study---Monte Carlo observables,
 finite-size-scaling fit inputs and outputs, and training metrics---and all
 code required to regenerate every figure, table, and quoted number are openly
@@ -849,6 +891,7 @@ available at \url{https://github.com/crosis19/qft-graph}. Raw Monte Carlo
 field configurations and model checkpoints are not deposited owing to their
 size, but are exactly regenerable from the committed configuration files and
 seeds.
+\fi
 
 \bibliography{references}
 

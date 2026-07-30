@@ -41,7 +41,7 @@ def fmt_pct_pm(mean: float, std: float) -> str:
 
 
 def fmt_one_minus_r(r_mean: float, r_std: float) -> str:
-    """Report 1 - r in scientific notation (Schaich suggestion: with many
+    """Report 1 - r in scientific notation (external-expert suggestion: with many
     r values near 1, the deviation is the informative quantity)."""
     v = 1.0 - r_mean
     if v <= 0:

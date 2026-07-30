@@ -281,7 +281,7 @@ def load_sweep_data():
     ):
         required = {L: base / f'sweep_{L}x{L}_lam=0.5.json' for L in (16, 32, 64)}
         if all(p.exists() for p in required.values()):
-            # Optional intermediate sizes (Schaich suggestion: more dof
+            # Optional intermediate sizes (external-expert suggestion: more dof
             # for the gamma/nu fit) are included when present
             files = dict(required)
             for L in (24, 48):
@@ -332,7 +332,7 @@ def fig_finite_size_scaling():
         return
 
     # Distinct color AND marker per L: legible in black-and-white print
-    # and for colorblind readers (Schaich suggestion)
+    # and for colorblind readers (external-expert suggestion)
     styles = {
         '16': ('#0072b2', 'o'), '24': ('#e69f00', 'D'), '32': ('#009e73', 's'),
         '48': ('#cc79a7', 'v'), '64': ('#d55e00', '^'),

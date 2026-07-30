@@ -50,6 +50,25 @@ workaround"; "to our knowledge, absent from ...") were already fixed in your pas
      (`make submission` in `paper/`, producing the gitignored
      `main_submission.pdf`). Still **open**: verify the current APC rate and
      IOP's waiver policy for an unaffiliated author.
+   - *Update 2026-07-30:* **Double-anonymous review chosen** (MLST offers
+     author's choice; as an unaffiliated author, removing the
+     first-impression affiliation bias is worth the anonymization cost, and
+     with no arXiv preprint the anonymization is actually effective).
+     `make anonymous` in `paper/` produces the anonymized 12 pt review build
+     `main_anonymous.pdf` per the IOP checklist (author block → Anonymous,
+     PDF /Author metadata anonymized, funding/COI statements omitted —
+     restored on acceptance, repo URLs replaced by an anonymized-mirror
+     placeholder; leak-checked programmatically: no
+     Brehm/crosis19/gmail/Independent-Researcher strings in text or raw
+     bytes). **Manual steps before submitting:** (a) create the anonymized
+     mirror at https://anonymous.4open.science pointing at
+     github.com/crosis19/qft-graph and replace the `qft-graph-XXXX`
+     placeholder in main.tex (`make anonymous` warns while it remains);
+     (b) put the funding-none, no-COI, and identity statements in the
+     cover letter (IOP: COI disclosure goes in the cover letter for
+     double-anonymous submissions); (c) upload the anonymous **PDF only**
+     (main_anonymous.tex retains identity in `\else` branches);
+     (d) never sign rebuttals/responses with the author name during review.
    - *Deferred:* PRD is a stronger target for the **Phase II Schwinger/gauge
      paper**, once there are gauge results; reviewers reasonably note PRD referees
      would ask "where is the gauge theory?" for the present scalar-only manuscript.
