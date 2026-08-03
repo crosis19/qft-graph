@@ -1,11 +1,12 @@
 # Draft email to Prof. Schaich (v2 update)
 
-> **PENDING ACKNOWLEDGMENT (moved here from paper/main.tex for review
-> anonymity, 2026-07-30):** do NOT add the acknowledgment to the paper until
-> D. Schaich confirms in writing. Approved wording, deliberately not implying
-> he endorses the conclusions: *"We thank D.~Schaich for helpful comments on
-> the finite-size scaling analysis."* On acceptance (or his confirmation),
-> add it to the acknowledgments environment in paper/main.tex.
+> **RESOLVED (2026-08-03): permission GRANTED in writing.** The acknowledgment
+> now lives in paper/main.tex inside the acknowledgments environment, in the
+> non-anonymous (`\else`) branch only — the anonymized review build continues
+> to omit it (identity-adjacent under double-anonymous review). It flows into
+> the manuscript automatically at the first revision that de-anonymizes, or at
+> acceptance when IOP restores acknowledgements. Nothing to send the journal
+> before then.
 
 *Draft for Josh to edit/send. Kept deliberately short with two clear asks —
 senior readers respond best to that. Attach `paper/main.pdf`.*
